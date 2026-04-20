@@ -36,7 +36,6 @@ services:
         condition: service_healthy
 
   # ── Next.js (static) served by nginx ────────────────────────────────────────
-  # NEXT_PUBLIC_API is baked at build time; rebuild the frontend image after changing it.
   frontend:
     build:
       context: ./frontend
