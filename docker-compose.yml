@@ -43,7 +43,7 @@ services:
         NEXT_PUBLIC_API: ${NEXT_PUBLIC_API}
     restart: unless-stopped
     ports:
-      - "3099:80"
+      - "3001:80"
     depends_on:
       - api
 
