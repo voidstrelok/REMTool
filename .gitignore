@@ -1,0 +1,16 @@
+# Environment secrets — never commit
+.env
+
+# .NET build output
+api/.vs
+api/bin/
+api/obj/
+api/appsettings.*
+!api/appsettings.example.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+#db
+db/
