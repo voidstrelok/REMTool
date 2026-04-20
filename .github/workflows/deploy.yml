@@ -19,5 +19,5 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd /home/deploy/REMTool
-            git pull
+            git pull origin prod
             docker compose -f docker-compose.prod.yml up --build -d
