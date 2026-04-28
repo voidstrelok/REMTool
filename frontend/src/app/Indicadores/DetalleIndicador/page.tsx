@@ -32,7 +32,10 @@ function DetalleIndicadorInner() {
   const id = searchParams.get("id") ?? undefined;
   const tipoParam = searchParams.get("tipo");
   const tipo = tipoParam && isTipoIndicador(tipoParam) ? tipoParam : null;
-  const backHref = tipo ? `/Indicadores?tipo=${tipo}` : "/Indicadores";
+  const backParam = searchParams.get("back");
+  const backHref = backParam
+    ? decodeURIComponent(backParam)
+    : tipo ? `/Indicadores?tipo=${tipo}` : "/Indicadores";
 
   const [showInfo, setShowInfo] = useState(false);
   const [selectedSector, setSelectedSector] = useState<string>("");
@@ -92,6 +95,7 @@ function DetalleIndicadorInner() {
     isTasa,
     overallPercent,
     metaPercent,
+    isColaborativo,
   } = useIndicadorDetail(id, selectedSector || undefined, selectedEstablecimiento || undefined);
 
   if (loading) {
@@ -257,8 +261,10 @@ function DetalleIndicadorInner() {
         <div className="overall-header">
           <span>Avance general del indicador</span>
           <span className="overall-value">
-            {overallNumerador}/{Math.round(overallDenominador)}{" "}
-            —{" "}
+            {isColaborativo
+              ? `${Math.round(overallNumerador)} / ${Math.round(overallDenominador)}`
+              : `${Math.round(overallNumerador)}/${Math.round(overallDenominador)}`}
+            {" "}—{" "}
             {isTasa ? (overallNumerador/overallDenominador).toFixed(2) : `${overallPercent}%`}
           </span>
         </div>
@@ -339,9 +345,10 @@ function DetalleIndicadorInner() {
                     }
                     const numerador = mesData.numerador ?? 0;
                     const denominador = mesData.denominador ?? 0;
-                    const showDen = !data?.isDenFijo;
-                    const cellContent = showDen ? `${numerador}/${denominador}` : `${numerador}`;
-                    const isCero = showDen ? denominador === 0 && numerador === 0 : false;
+                    // Mostrar solo numerador si es colaborativo
+                    const showDen = isColaborativo ? false : !data?.isDenFijo;
+                    const cellContent = showDen ? `${numerador}/${denominador}` : `${Math.round(numerador)}`;
+                    const isCero = showDen ? denominador === 0 && numerador === 0 : numerador === 0;
                     return (
                       <td key={`cell-${est.key}-${mes}`} style={{ padding: "10px", textAlign: "center", fontSize: "0.8rem", color: isCero ? "var(--text-light)" : "var(--text)", fontWeight: 500 }}>
                         {cellContent}
@@ -349,22 +356,23 @@ function DetalleIndicadorInner() {
                     );
                   })}
                   <td style={{ padding: "10px", textAlign: "center", verticalAlign: "middle" }}>
-                    {est.denominadorTotal === 0 ? (
+                    {isColaborativo ? (
+                      <span style={{ fontWeight: 700, color: "var(--accent)" }}>{Math.round(est.numeradorTotal)}</span>
+                    ) : est.denominadorTotal === 0 ? (
                       <span style={{ color: "var(--text-light)" }}>Sin datos</span>
                     ) : isTasa ? (
                       <span style={{ fontWeight: 700, color: "var(--accent)" }}>
-                        {est.numeradorTotal}/{Math.round(est.denominadorTotal)}<br></br>
-                        {((est.numeradorTotal / est.denominadorTotal)).toFixed(1)}
+                        {Math.round(est.numeradorTotal)}/{Math.round(est.denominadorTotal)}<br></br>
+                        {(est.numeradorTotal / est.denominadorTotal).toFixed(1)}
                       </span>
-                      
                     ) : (
                       <div>
                         <div style={{ fontWeight: 700, color: "var(--accent)", marginBottom: 8 }}>
-                          {est.numeradorTotal}/{Math.round(est.denominadorTotal)}
+                          {Math.round(est.numeradorTotal)}/{Math.round(est.denominadorTotal)}
                         </div>
                         <ProgressBar
-                          numerador={est.numeradorTotal}
-                          denominador={est.denominadorTotal}
+                          numerador={Math.round(est.numeradorTotal)}
+                          denominador={Math.round(est.denominadorTotal)}
                           metaPercent={metaPercent}
                           width={180}
                           height={12}

@@ -31,15 +31,13 @@ const tools = [
     comment: "Seguimiento del avance de indicadores IAAPS.",
     external: false,
   },
-  /*
   {
     name: "Convenios",
     icon: Building2,
-    link: "/Indicadores?tipo=Convenios",
+    link: "/Convenios",
     comment: "Seguimiento del avance de convenios.",
     external: false,
   },
-  */
   {
     name: "Repositorio REM",
     icon: FolderOpen,

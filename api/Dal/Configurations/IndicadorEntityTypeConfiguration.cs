@@ -89,6 +89,10 @@ namespace RemTool
                 .HasDefaultValue(false);
 
             builder
+                .Property(x => x.IsColaborativo)
+                .HasColumnName("is_colaborativo");
+
+            builder
                 .ToTable("indicador", "REMTool");
         }
     }

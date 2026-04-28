@@ -35,7 +35,14 @@ namespace RemTool
         /// </summary>
         public bool EsPeriodoOctubreSep { get; set; }
 
+        /// <summary>
+        /// Si es true, el denominador es comunal y los establecimientos solo aportan numerador.
+        /// </summary>
+        public bool IsColaborativo { get; set; }
+
         public virtual ICollection<ResultadoIndicador> ResultadoIndicadors { get; set; } = new HashSet<ResultadoIndicador>();
+
+        public virtual ICollection<IndicadorConvenio> IndicadorConvenios { get; set; } = new HashSet<IndicadorConvenio>();
 
 
     }

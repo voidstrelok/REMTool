@@ -56,6 +56,7 @@ namespace RemTool.Controllers
                     EsPeriodoOctubreSep = i.EsPeriodoOctubreSep,
                     Tipoindicador = i.Tipoindicador ?? 0,
                     Orden = i.Orden,
+                    IsColaborativo = i.IsColaborativo,
                     Resultados = i.ResultadoIndicadors
                         .Where(r =>
                             (establecimientoId == null || establecimientoId == 0 || r.id_establecimiento == establecimientoId) &&
@@ -158,8 +159,32 @@ namespace RemTool.Controllers
 
                 denominador = decimal.Round(denominador * (decimal)indicadorDto.Meta);
                 indicadorDto.Meta = 1.0f;
+            }
 
-                
+            // Para indicadores colaborativos el denominador es un valor único comunal
+            // almacenado en cada fila. Usar Sum() lo inflaría por el nº de establecimientos;
+            // tomamos el máximo como representante del denominador comunal.
+            if (indicadorDto.IsColaborativo && indicadorDto.Resultados.Any())
+            {
+                denominador = decimal.Round(indicadorDto.Resultados.Max(r => r.Denominador));
+            }
+
+            // Guardar denominador comunal antes de zerear los registros por establecimiento
+            indicadorDto.Denominador = denominador;
+
+            // Si es colaborativo, el denominador comunal se muestra solo en el resumen;
+            // los establecimientos solo aportan numerador.
+            if (indicadorDto.IsColaborativo)
+            {
+                indicadorDto.Resultados = indicadorDto.Resultados.Select(r => new ResultadoIndicadorDTO
+                {
+                    Mes = r.Mes,
+                    Numerador = r.Numerador,
+                    Denominador = 0,
+                    EstablecimientoNombre = r.EstablecimientoNombre,
+                    SectorId = r.SectorId,
+                    EstablecimientoId = r.EstablecimientoId
+                }).ToList();
             }
 
             decimal avanceIndicador = denominador != 0 ? (numerador / denominador) / (decimal)indicadorDto.Meta : 0;
@@ -174,6 +199,8 @@ namespace RemTool.Controllers
             public string Nombre { get; set; } = string.Empty;
             public float Meta { get; set; }
             public float Avance { get; set; }
+            /// <summary>Denominador comunal (solo relevante cuando IsColaborativo = true).</summary>
+            public decimal Denominador { get; set; }
             public int Año { get; set; }
             public bool IsDenFijo { get; set; }
             public bool IsTasa { get; set; }
@@ -182,6 +209,7 @@ namespace RemTool.Controllers
             public int Orden { get; set; }
             public int DenFijo { get; set; }
             public bool Mensual { get; set; }
+            public bool IsColaborativo { get; set; }
             public List<ResultadoIndicadorDTO> Resultados { get; set; } = new List<ResultadoIndicadorDTO>();
         }
 
@@ -207,6 +235,7 @@ namespace RemTool.Controllers
             public float Actual { get; set; }
             public bool Mensual { get; set; }
             public bool IsTasa { get; set; }
+            public bool IsColaborativo { get; set; }
 
         }
 
@@ -240,7 +269,9 @@ namespace RemTool.Controllers
                 decimal den = i.EsPeriodoOctubreSep
                     ? decimal.Round(i.ResultadoIndicadors.Where(r => r.Mes < 10).Sum(r => r.Denominador))
                       + prevDenMap.GetValueOrDefault(i.Orden, 0m)
-                    : decimal.Round(i.ResultadoIndicadors.Sum(r => r.Denominador));
+                    : i.IsColaborativo && i.ResultadoIndicadors.Any()
+                        ? decimal.Round(i.ResultadoIndicadors.Max(r => r.Denominador))
+                        : decimal.Round(i.ResultadoIndicadors.Sum(r => r.Denominador));
 
                 decimal displayDen = i.IsDenFijo ? decimal.Round(den * (decimal)i.Meta) : den;
                 float displayMeta  = i.IsDenFijo ? 1.0f : i.Meta;
@@ -259,7 +290,8 @@ namespace RemTool.Controllers
                     Actual = actual,
                     Aporte = i.Peso * avance,
                     Mensual = i.Mensual,
-                    IsTasa = i.IsTasa
+                    IsTasa = i.IsTasa,
+                    IsColaborativo = i.IsColaborativo
                 });
             }
 
@@ -326,7 +358,9 @@ namespace RemTool.Controllers
                                 decimal den = i.EsPeriodoOctubreSep
                                     ? decimal.Round(filteredList.Where(r => r.Mes < 10).Sum(r => r.Denominador))
                                       + prevDenMap.GetValueOrDefault(i.Orden, 0m)
-                                    : decimal.Round(filteredList.Sum(r => r.Denominador));
+                                    : i.IsColaborativo && filteredList.Any()
+                                        ? decimal.Round(filteredList.Max(r => r.Denominador))
+                                        : decimal.Round(filteredList.Sum(r => r.Denominador));
 
                                 decimal displayDen = i.IsDenFijo ? decimal.Round(den * (decimal)i.Meta) : den;
                                 float displayMeta  = i.IsDenFijo ? 1.0f : i.Meta;
@@ -345,7 +379,8 @@ namespace RemTool.Controllers
                                     Actual = actual,
                                     Aporte = i.Peso * avance,
                                     Mensual = i.Mensual,
-                                    IsTasa = i.IsTasa
+                                    IsTasa = i.IsTasa,
+                                    IsColaborativo = i.IsColaborativo
                                 });
                             }
 

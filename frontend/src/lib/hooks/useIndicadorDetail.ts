@@ -93,10 +93,15 @@ export function useIndicadorDetail(
     (s, e) => s + (e.numeradorTotal || 0),
     0
   );
-  const overallDenominador = establecimientos.reduce(
-    (s, e) => s + (e.denominadorTotal || 0),
-    0
-  );
+
+  const isColaborativo = data?.isColaborativo === true;
+
+  // Para indicadores colaborativos el denominador es comunal (un único valor para toda la
+  // comuna) y los result-rows tienen denominador = 0. Usamos el campo `denominador` del DTO
+  // en vez de sumar los ceros de los establecimientos.
+  const overallDenominador = isColaborativo
+    ? (data?.denominador ?? 0)
+    : establecimientos.reduce((s, e) => s + (e.denominadorTotal || 0), 0);
   const arrayMeses =
     data?.mensual === true
       ? Array.from({ length: 12 }, (_, i) => i + 1)
@@ -125,5 +130,6 @@ export function useIndicadorDetail(
     isTasa,
     overallPercent,
     metaPercent,
+    isColaborativo,
   };
 }

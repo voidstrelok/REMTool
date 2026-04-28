@@ -42,6 +42,8 @@ namespace RemTool
 
         public virtual DbSet<Parametros> Parametros { get; set; }
         public virtual DbSet<Regla> Regla { get; set; }
+        public virtual DbSet<Convenio> Convenio { get; set; }
+        public virtual DbSet<IndicadorConvenio> IndicadorConvenio { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -69,6 +71,8 @@ namespace RemTool
             modelBuilder.ApplyConfiguration(new ResultadoIndicadorEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new ParametrosEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new ReglaEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new ConvenioEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new IndicadorConvenioEntityTypeConfiguration());
 
             base.OnModelCreating(modelBuilder);
         }
