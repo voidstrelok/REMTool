@@ -54,7 +54,7 @@ namespace RemTool.Controllers
             var convenios = await db.Convenio
                 .Include(c => c.IndicadorConvenios)
                     .ThenInclude(ic => ic.Indicador)
-                        .ThenInclude(i => i.ResultadoIndicadors)
+                        .ThenInclude(i => i.ResultadoIndicadors.Where(e => !EstablecimientosExcluidos.Contains(e.id_establecimiento)))
                 .OrderBy(c => c.Nombre)
                 .ToListAsync();
 
@@ -71,7 +71,7 @@ namespace RemTool.Controllers
             {
                 var prevData = await db.Indicador
                     .Where(i => i.Año == ano - 1 && octSepOrden.Contains(i.Orden))
-                    .Select(i => new { i.Orden, Den = i.ResultadoIndicadors.Where(r => r.Mes >= 10).Sum(r => r.Denominador) })
+                    .Select(i => new { i.Orden, Den = i.ResultadoIndicadors.Where(r => r.Mes >= 10 && !EstablecimientosExcluidos.Contains(r.id_establecimiento)).Sum(r => r.Denominador) })
                     .ToListAsync();
                 prevDenMap = prevData.ToDictionary(x => x.Orden, x => decimal.Round(x.Den));
             }
@@ -136,7 +136,7 @@ namespace RemTool.Controllers
                 .Where(c => c.Id == convenioId)
                 .Include(c => c.IndicadorConvenios)
                     .ThenInclude(ic => ic.Indicador)
-                        .ThenInclude(i => i.ResultadoIndicadors)
+                        .ThenInclude(i => i.ResultadoIndicadors.Where(e => !EstablecimientosExcluidos.Contains(e.id_establecimiento)))
                 .FirstOrDefaultAsync();
 
             if (convenio == null)
@@ -159,7 +159,7 @@ namespace RemTool.Controllers
             {
                 var prevData = await db.Indicador
                     .Where(i => i.Año == ano - 1 && octSepOrden.Contains(i.Orden))
-                    .Select(i => new { i.Orden, Den = i.ResultadoIndicadors.Where(r => r.Mes >= 10).Sum(r => r.Denominador) })
+                    .Select(i => new { i.Orden, Den = i.ResultadoIndicadors.Where(r => r.Mes >= 10 && !EstablecimientosExcluidos.Contains(r.id_establecimiento)).Sum(r => r.Denominador) })
                     .ToListAsync();
                 prevDenMap = prevData.ToDictionary(x => x.Orden, x => decimal.Round(x.Den));
             }

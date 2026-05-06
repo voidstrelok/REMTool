@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RemTool;
@@ -12,9 +13,11 @@ using RemTool;
 namespace RemTool.Dal.Migrations
 {
     [DbContext(typeof(VoidDataContext))]
-    partial class VoidDataContextModelSnapshot : ModelSnapshot
+    [Migration("20260429193814_AddNumeradorPDenominadorP")]
+    partial class AddNumeradorPDenominadorP
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -6,6 +6,8 @@ export interface MesData {
   mes: number;
   numerador: number;
   denominador: number;
+  numeradorP: number;
+  denominadorP: number;
 }
 
 export interface Establecimiento {
@@ -14,6 +16,8 @@ export interface Establecimiento {
   sectorId: number | null;
   numeradorTotal: number;
   denominadorTotal: number;
+  numeradorPTotal: number;
+  denominadorPTotal: number;
   meses: MesData[];
 }
 
@@ -70,15 +74,21 @@ export function useIndicadorDetail(
           sectorId: r.sectorId ?? null,
           numeradorTotal: 0,
           denominadorTotal: 0,
+          numeradorPTotal: 0,
+          denominadorPTotal: 0,
           meses: [] as MesData[],
         };
       }
       acc[key].numeradorTotal += r.numerador || 0;
       acc[key].denominadorTotal += r.denominador || 0;
+      acc[key].numeradorPTotal += r.numeradorP || 0;
+      acc[key].denominadorPTotal += r.denominadorP || 0;
       acc[key].meses.push({
         mes: r.mes,
         numerador: r.numerador || 0,
         denominador: r.denominador || 0,
+        numeradorP: r.numeradorP || 0,
+        denominadorP: r.denominadorP || 0,
       });
       return acc;
     },
@@ -90,7 +100,7 @@ export function useIndicadorDetail(
   );
 
   const overallNumerador = establecimientos.reduce(
-    (s, e) => s + (e.numeradorTotal || 0),
+    (s, e) => s + (e.numeradorTotal || 0) + (e.numeradorPTotal || 0),
     0
   );
 
@@ -101,7 +111,19 @@ export function useIndicadorDetail(
   // en vez de sumar los ceros de los establecimientos.
   const overallDenominador = isColaborativo
     ? (data?.denominador ?? 0)
-    : establecimientos.reduce((s, e) => s + (e.denominadorTotal || 0), 0);
+    : establecimientos.reduce(
+        (s, e) => s + (e.denominadorTotal || 0) + (e.denominadorPTotal || 0),
+        0
+      );
+
+  const overallNumeradorP = establecimientos.reduce(
+    (s, e) => s + (e.numeradorPTotal || 0),
+    0
+  );
+  const overallDenominadorP = establecimientos.reduce(
+    (s, e) => s + (e.denominadorPTotal || 0),
+    0
+  );
   const arrayMeses =
     data?.mensual === true
       ? Array.from({ length: 12 }, (_, i) => i + 1)
@@ -126,6 +148,8 @@ export function useIndicadorDetail(
     establecimientos,
     overallNumerador,
     overallDenominador,
+    overallNumeradorP,
+    overallDenominadorP,
     arrayMeses,
     isTasa,
     overallPercent,

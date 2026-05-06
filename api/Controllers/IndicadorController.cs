@@ -41,7 +41,7 @@ namespace RemTool.Controllers
             // Proyección a DTO para poder ordenar los establecimientos por sector
             var indicadorDto = await db.Indicador
                 .Where(i => i.Id == id_indicador)
-                .Include(i=>i.ResultadoIndicadors)
+                .Include(i=>i.ResultadoIndicadors.Where(e => !EstablecimientosExcluidos.Contains(e.id_establecimiento)))
                 .ThenInclude(r=>r.Establecimiento)
                 .ThenInclude(e=>e.Sector)
                 .Select(i => new IndicadorDetalleDTO
@@ -59,6 +59,7 @@ namespace RemTool.Controllers
                     IsColaborativo = i.IsColaborativo,
                     Resultados = i.ResultadoIndicadors
                         .Where(r =>
+                            !EstablecimientosExcluidos.Contains(r.id_establecimiento) &&
                             (establecimientoId == null || establecimientoId == 0 || r.id_establecimiento == establecimientoId) &&
                             (sectorId == null || sectorId == 0 || (r.Establecimiento != null && r.Establecimiento.Sector != null && r.Establecimiento.Sector.Id == sectorId)))
                         .Select(r => new ResultadoIndicadorDTO
@@ -66,6 +67,8 @@ namespace RemTool.Controllers
                             Mes = r.Mes,
                             Numerador = r.Numerador,
                             Denominador = r.Denominador,
+                            NumeradorP = r.NumeradorP,
+                            DenominadorP = r.DenominadorP,
                             EstablecimientoNombre = r.Establecimiento != null ? r.Establecimiento.Nombre : string.Empty,
                             SectorId = r.Establecimiento != null && r.Establecimiento.Sector != null ? r.Establecimiento.Sector.Id : 0,
                             EstablecimientoId = r.id_establecimiento
@@ -95,6 +98,7 @@ namespace RemTool.Controllers
                              && i.Orden == indicadorDto.Orden)
                     .SelectMany(i => i.ResultadoIndicadors)
                     .Where(r => r.Mes >= 10
+                             && !EstablecimientosExcluidos.Contains(r.id_establecimiento)
                              && (establecimientoId == null || establecimientoId == 0 || r.id_establecimiento == establecimientoId)
                              && (sectorId == null || sectorId == 0 || (r.Establecimiento != null && r.Establecimiento.Sector != null && r.Establecimiento.Sector.Id == sectorId)))
                     .Select(r => new
@@ -127,6 +131,8 @@ namespace RemTool.Controllers
                             Mes = targetMes,
                             Numerador = 0,
                             Denominador = prev.Denominador,
+                            NumeradorP = 0,
+                            DenominadorP = 0,
                             EstablecimientoNombre = prev.EstablecimientoNombre,
                             SectorId = prev.SectorId,
                             EstablecimientoId = prev.id_establecimiento
@@ -145,13 +151,15 @@ namespace RemTool.Controllers
                 denominador = decimal.Round(indicadorDto.Resultados.Sum(f => f.Denominador));
             }
 
-            if (indicadorDto.IsDenFijo && denominador != 0)
+            if (indicadorDto.IsDenFijo                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            )
             {
                 indicadorDto.Resultados = indicadorDto.Resultados.Select(r => new ResultadoIndicadorDTO
                 {
                     Mes = r.Mes,
                     Numerador = r.Numerador,
                     Denominador = r.Denominador * (decimal)indicadorDto.Meta,
+                    NumeradorP = r.NumeradorP,
+                    DenominadorP = r.DenominadorP * (decimal)indicadorDto.Meta,
                     EstablecimientoNombre = r.EstablecimientoNombre,
                     SectorId = r.SectorId,
                     EstablecimientoId = r.EstablecimientoId
@@ -181,6 +189,8 @@ namespace RemTool.Controllers
                     Mes = r.Mes,
                     Numerador = r.Numerador,
                     Denominador = 0,
+                    NumeradorP = r.NumeradorP,
+                    DenominadorP = 0,
                     EstablecimientoNombre = r.EstablecimientoNombre,
                     SectorId = r.SectorId,
                     EstablecimientoId = r.EstablecimientoId
@@ -218,6 +228,8 @@ namespace RemTool.Controllers
             public int Mes { get; set; }
             public decimal Numerador { get; set; }
             public decimal Denominador { get; set; }
+            public decimal NumeradorP { get; set; }
+            public decimal DenominadorP { get; set; }
             public string EstablecimientoNombre { get; set; } = string.Empty;
             public long SectorId { get; set; }
             public long EstablecimientoId { get; set; }
@@ -244,7 +256,7 @@ namespace RemTool.Controllers
         {
             var indicadores = await db.Indicador
                 .Where(i => i.Año == ano && i.Tipoindicador == tipo)
-                .Include(i => i.ResultadoIndicadors)
+                .Include(i => i.ResultadoIndicadors.Where(e => !EstablecimientosExcluidos.Contains(e.id_establecimiento)))
                 .OrderBy(i => i.Orden)
                 .ToListAsync();
 
@@ -257,7 +269,7 @@ namespace RemTool.Controllers
             {
                 var prevData = await db.Indicador
                     .Where(i => i.Año == ano - 1 && i.Tipoindicador == tipo && octSepOrden.Contains(i.Orden))
-                    .Select(i => new { i.Orden, Den = i.ResultadoIndicadors.Where(r => r.Mes >= 10).Sum(r => r.Denominador) })
+                    .Select(i => new { i.Orden, Den = i.ResultadoIndicadors.Where(r => r.Mes >= 10 && !EstablecimientosExcluidos.Contains(r.id_establecimiento)).Sum(r => r.Denominador + r.DenominadorP) })
                     .ToListAsync();
                 prevDenMap = prevData.ToDictionary(x => x.Orden, x => decimal.Round(x.Den));
             }
@@ -265,13 +277,13 @@ namespace RemTool.Controllers
             var resumen = new List<IndicadorResumenDTO>();
             foreach (var i in indicadores)
             {
-                var num = decimal.Round(i.ResultadoIndicadors.Sum(r => r.Numerador));
+                var num = decimal.Round(i.ResultadoIndicadors.Sum(r => r.Numerador + r.NumeradorP));
                 decimal den = i.EsPeriodoOctubreSep
-                    ? decimal.Round(i.ResultadoIndicadors.Where(r => r.Mes < 10).Sum(r => r.Denominador))
+                    ? decimal.Round(i.ResultadoIndicadors.Where(r => r.Mes < 10).Sum(r => r.Denominador + r.DenominadorP))
                       + prevDenMap.GetValueOrDefault(i.Orden, 0m)
                     : i.IsColaborativo && i.ResultadoIndicadors.Any()
-                        ? decimal.Round(i.ResultadoIndicadors.Max(r => r.Denominador))
-                        : decimal.Round(i.ResultadoIndicadors.Sum(r => r.Denominador));
+                        ? decimal.Round(i.ResultadoIndicadors.Max(r => r.Denominador + r.DenominadorP))
+                        : decimal.Round(i.ResultadoIndicadors.Sum(r => r.Denominador + r.DenominadorP));
 
                 decimal displayDen = i.IsDenFijo ? decimal.Round(den * (decimal)i.Meta) : den;
                 float displayMeta  = i.IsDenFijo ? 1.0f : i.Meta;
@@ -310,7 +322,7 @@ namespace RemTool.Controllers
                         {
                             var indicadores = await db.Indicador
                                 .Where(i => i.Año == ano && i.Tipoindicador == tipo)
-                                .Include(i => i.ResultadoIndicadors)
+                                .Include(i => i.ResultadoIndicadors.Where(e => !EstablecimientosExcluidos.Contains(e.id_establecimiento)))
                                     .ThenInclude(r => r.Establecimiento)
                                         .ThenInclude(e => e.Sector)
                                 .OrderBy(i => i.Orden)
@@ -325,7 +337,7 @@ namespace RemTool.Controllers
                             {
                                 var prevIndicadores = await db.Indicador
                                     .Where(i => i.Año == ano - 1 && i.Tipoindicador == tipo && octSepOrden.Contains(i.Orden))
-                                    .Include(i => i.ResultadoIndicadors)
+                                    .Include(i => i.ResultadoIndicadors.Where(r => !EstablecimientosExcluidos.Contains(r.id_establecimiento)))
                                         .ThenInclude(r => r.Establecimiento)
                                             .ThenInclude(e => e.Sector)
                                     .ToListAsync();
@@ -337,7 +349,7 @@ namespace RemTool.Controllers
                                         prevSrc = prevSrc.Where(r => r.id_establecimiento == establecimientoId.Value);
                                     else if (sectorId.HasValue && sectorId.Value != 0)
                                         prevSrc = prevSrc.Where(r => r.Establecimiento?.Sector?.Id == sectorId.Value);
-                                    prevDenMap[prev.Orden] = decimal.Round(prevSrc.Sum(r => r.Denominador));
+                                    prevDenMap[prev.Orden] = decimal.Round(prevSrc.Sum(r => r.Denominador + r.DenominadorP));
                                 }
                             }
 
@@ -354,13 +366,13 @@ namespace RemTool.Controllers
 
                                 var filteredList = resultados.ToList();
 
-                                var num = decimal.Round(filteredList.Sum(r => r.Numerador));
+                                var num = decimal.Round(filteredList.Sum(r => r.Numerador + r.NumeradorP));
                                 decimal den = i.EsPeriodoOctubreSep
-                                    ? decimal.Round(filteredList.Where(r => r.Mes < 10).Sum(r => r.Denominador))
+                                    ? decimal.Round(filteredList.Where(r => r.Mes < 10).Sum(r => r.Denominador + r.DenominadorP))
                                       + prevDenMap.GetValueOrDefault(i.Orden, 0m)
                                     : i.IsColaborativo && filteredList.Any()
-                                        ? decimal.Round(filteredList.Max(r => r.Denominador))
-                                        : decimal.Round(filteredList.Sum(r => r.Denominador));
+                                        ? decimal.Round(filteredList.Max(r => r.Denominador + r.DenominadorP))
+                                        : decimal.Round(filteredList.Sum(r => r.Denominador + r.DenominadorP));
 
                                 decimal displayDen = i.IsDenFijo ? decimal.Round(den * (decimal)i.Meta) : den;
                                 float displayMeta  = i.IsDenFijo ? 1.0f : i.Meta;

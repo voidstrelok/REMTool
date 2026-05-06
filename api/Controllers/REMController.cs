@@ -31,6 +31,7 @@ namespace RemTool.Controllers
             {
                 ultima_actualizacion = parametros.UltimaActualizacion,
                 servicio_enabled = parametros.ServicioEnabled,
+                monitoreo_enabled = parametros.MonitoreoEnabled,
             });
         }
 

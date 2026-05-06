@@ -19,7 +19,7 @@ const navLinks: NavLink[] = [
   /*{ href: "/ConstruyeREM", label: "Construye REM" },*/
   { href: "/Indicadores?tipo=MetasSanitarias", label: "Metas Sanitarias", tipoParam: "MetasSanitarias" },
   { href: "/Indicadores?tipo=IAAPS", label: "IAAPS", tipoParam: "IAAPS" },
-  { href: "/Convenios", label: "Convenios" },
+  /*{ href: "/Convenios", label: "Convenios" },*/
   {
     href: "https://drive.google.com/drive/folders/1vlCWcZMrdayOv5n8-ev1PstQCQIoSQCT?usp=sharing",
     label: "Repositorio",

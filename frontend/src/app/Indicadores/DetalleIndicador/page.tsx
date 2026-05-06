@@ -91,6 +91,8 @@ function DetalleIndicadorInner() {
     establecimientos,
     overallNumerador,
     overallDenominador,
+    overallNumeradorP,
+    overallDenominadorP,
     arrayMeses,
     isTasa,
     overallPercent,
@@ -303,12 +305,24 @@ function DetalleIndicadorInner() {
         }}
         className="hide-scrollbar"
       >
+        {(() => {
+          const _now = new Date();
+          const hasSerieP = establecimientos.some(
+            (e) => e.numeradorPTotal !== 0 || e.denominadorPTotal !== 0
+          );
+          const showSerieP = data?.año === _now.getFullYear() && (_now.getMonth() + 1) < 7 && hasSerieP;
+          return (
         <table className="metas-table">
           <thead>
             <tr style={{ backgroundColor: "var(--primary)", color: "#fff" }}>
               <th style={{ padding: "12px", textAlign: "left", minWidth: "200px", fontWeight: 600 }}>
                 Establecimiento
               </th>
+              {showSerieP && (
+                <th style={{ padding: "10px", textAlign: "center", minWidth: "80px", fontWeight: 700, backgroundColor: "var(--accent)", color: "#fff" }}>
+                  Serie P Año anterior
+                </th>
+              )}
               {arrayMeses.map((mes) => (
                 <th key={`header-${mes}`} style={{ padding: "10px", textAlign: "center", minWidth: "60px", fontWeight: 600 }}>
                   {monthName(mes)}
@@ -334,6 +348,17 @@ function DetalleIndicadorInner() {
                   <td style={{ padding: "10px", fontWeight: 600, minWidth: "200px", color: "var(--text)" }}>
                     {est.nombre}
                   </td>
+                  {showSerieP && (
+                    <td style={{ padding: "10px", textAlign: "center", fontSize: "0.8rem", verticalAlign: "middle" }}>
+                      {est.numeradorPTotal === 0 && est.denominadorPTotal === 0 ? (
+                        <span style={{ color: "var(--text-light)" }}>-</span>
+                      ) : (
+                        <span style={{ fontWeight: 600, color: "var(--text)" }}>
+                          {Math.round(est.numeradorPTotal)}/{Math.round(est.denominadorPTotal)}
+                        </span>
+                      )}
+                    </td>
+                  )}
                   {arrayMeses.map((mes) => {
                     const mesData = est.meses.find((m) => m.mes === mes);
                     if (!mesData) {
@@ -357,22 +382,22 @@ function DetalleIndicadorInner() {
                   })}
                   <td style={{ padding: "10px", textAlign: "center", verticalAlign: "middle" }}>
                     {isColaborativo ? (
-                      <span style={{ fontWeight: 700, color: "var(--accent)" }}>{Math.round(est.numeradorTotal)}</span>
+                      <span style={{ fontWeight: 700, color: "var(--accent)" }}>{Math.round(est.numeradorTotal+est.numeradorPTotal)}</span>
                     ) : est.denominadorTotal === 0 ? (
                       <span style={{ color: "var(--text-light)" }}>Sin datos</span>
                     ) : isTasa ? (
                       <span style={{ fontWeight: 700, color: "var(--accent)" }}>
-                        {Math.round(est.numeradorTotal)}/{Math.round(est.denominadorTotal)}<br></br>
-                        {(est.numeradorTotal / est.denominadorTotal).toFixed(1)}
+                        {Math.round(est.numeradorTotal+est.numeradorPTotal)}/{Math.round(est.denominadorTotal+est.denominadorPTotal)}<br></br>
+                        {((est.numeradorTotal+est.numeradorPTotal) / (est.denominadorTotal+est.denominadorPTotal)).toFixed(1)}
                       </span>
                     ) : (
                       <div>
                         <div style={{ fontWeight: 700, color: "var(--accent)", marginBottom: 8 }}>
-                          {Math.round(est.numeradorTotal)}/{Math.round(est.denominadorTotal)}
+                          {Math.round(est.numeradorTotal+est.numeradorPTotal)}/{Math.round(est.denominadorTotal+est.denominadorPTotal)}
                         </div>
                         <ProgressBar
-                          numerador={Math.round(est.numeradorTotal)}
-                          denominador={Math.round(est.denominadorTotal)}
+                          numerador={Math.round(est.numeradorTotal+est.numeradorPTotal)}
+                          denominador={Math.round(est.denominadorTotal+est.denominadorPTotal)}
                           metaPercent={metaPercent}
                           width={180}
                           height={12}
@@ -392,6 +417,8 @@ function DetalleIndicadorInner() {
             )}
           </tbody>
         </table>
+          );
+        })()}
       </div>
     </div>
   );

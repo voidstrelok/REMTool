@@ -24,6 +24,11 @@ namespace RemTool
                 .HasColumnName("servicio_enabled");
 
             builder
+                .Property(x => x.MonitoreoEnabled)
+                .HasColumnName("monitoreo_enabled")
+                .HasDefaultValue(true);
+
+            builder
                 .Property(x => x.UltimaActualizacion)
                 .HasColumnName("ultima_actualizacion")
                 .HasColumnType("date")
