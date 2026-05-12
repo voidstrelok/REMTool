@@ -22,5 +22,9 @@ namespace RemTool
         public decimal Numerador { get; set; }
 
         public decimal Denominador { get; set; }
+
+        public decimal NumeradorP { get; set; }
+
+        public decimal DenominadorP { get; set; }
     }
 }

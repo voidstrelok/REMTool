@@ -156,7 +156,10 @@ function IndicadoresInner() {
         <div className="meta-numbers">
           <div>
             <div>Numerador: <strong>{item.numerador}</strong></div>
-            <div>Denominador: <strong>{item.denominador}</strong></div>
+            <div>
+              {item.isColaborativo ? "Denominador comunal" : "Denominador"}:{" "}
+              <strong>{item.denominador}</strong>
+            </div>
           </div>
           <div style={{ textAlign: "right" }}>
             <div>Actual: <strong>{actualLabel}</strong></div>

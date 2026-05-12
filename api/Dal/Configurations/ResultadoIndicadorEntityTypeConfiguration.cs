@@ -46,6 +46,18 @@ namespace RemTool
                 .HasColumnName("denominador");
 
             builder
+                .Property(x => x.NumeradorP)
+                .HasColumnName("numerador_p")
+                .HasColumnType("numeric")
+                .HasDefaultValue(0m);
+
+            builder
+                .Property(x => x.DenominadorP)
+                .HasColumnName("denominador_p")
+                .HasColumnType("numeric")
+                .HasDefaultValue(0m);
+
+            builder
                 .ToTable("resultado_indicador", "REMTool");
         }
     }

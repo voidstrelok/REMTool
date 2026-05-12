@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RemTool;
@@ -12,9 +13,11 @@ using RemTool;
 namespace RemTool.Dal.Migrations
 {
     [DbContext(typeof(VoidDataContext))]
-    partial class VoidDataContextModelSnapshot : ModelSnapshot
+    [Migration("20260429193814_AddNumeradorPDenominadorP")]
+    partial class AddNumeradorPDenominadorP
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -263,43 +266,6 @@ namespace RemTool.Dal.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("parametros", "REMTool");
-                });
-
-            modelBuilder.Entity("RemTool.PercapitaSsc", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<int>("AñoCorte")
-                        .HasColumnType("integer")
-                        .HasColumnName("año_corte");
-
-                    b.Property<int>("Edad")
-                        .HasColumnType("integer")
-                        .HasColumnName("edad");
-
-                    b.Property<int>("Inscritos")
-                        .HasColumnType("integer")
-                        .HasColumnName("inscritos");
-
-                    b.Property<string>("Sexo")
-                        .IsRequired()
-                        .HasColumnType("character varying")
-                        .HasColumnName("sexo");
-
-                    b.Property<long>("id_establecimiento")
-                        .HasColumnType("bigint")
-                        .HasColumnName("id_establecimiento");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("id_establecimiento");
-
-                    b.ToTable("PERCAPITA_SSC", "REMTool");
                 });
 
             modelBuilder.Entity("RemTool.Prestacion", b =>
@@ -627,17 +593,6 @@ namespace RemTool.Dal.Migrations
                     b.Navigation("Convenio");
 
                     b.Navigation("Indicador");
-                });
-
-            modelBuilder.Entity("RemTool.PercapitaSsc", b =>
-                {
-                    b.HasOne("RemTool.Establecimiento", "Establecimiento")
-                        .WithMany()
-                        .HasForeignKey("id_establecimiento")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Establecimiento");
                 });
 
             modelBuilder.Entity("RemTool.Prestacion", b =>

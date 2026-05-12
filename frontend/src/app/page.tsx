@@ -1,14 +1,15 @@
 import Link from "next/link";
-import { Settings, CheckCircle2, BarChart2, Building2, FolderOpen, ExternalLink, FileDown } from "lucide-react";
+import { Settings, CheckCircle2, BarChart2, Building2, FolderOpen, ExternalLink, FileDown, Lock } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-const tools = [
+const allTools = [
   {
     name: "Compilar REM",
     icon: Settings,
     link: "/CompilarREM",
     comment: "Consolidación de archivos REM en una única planilla.",
     external: false,
+    requiresMonitoreo: false,
   },
   {
     name: "Revisar REM",
@@ -16,6 +17,7 @@ const tools = [
     link: "/RevisarREM",
     comment: "Validación y detección de inconsistencias en archivos REM.",
     external: false,
+    requiresMonitoreo: false,
   },
   {
     name: "Metas Sanitarias",
@@ -23,6 +25,7 @@ const tools = [
     link: "/Indicadores?tipo=MetasSanitarias",
     comment: "Seguimiento del avance de metas sanitarias.",
     external: false,
+    requiresMonitoreo: true,
   },
   {
     name: "IAAPS",
@@ -30,22 +33,23 @@ const tools = [
     link: "/Indicadores?tipo=IAAPS",
     comment: "Seguimiento del avance de indicadores IAAPS.",
     external: false,
-  },
-  /*
+    requiresMonitoreo: true,
+  },/*
   {
     name: "Convenios",
     icon: Building2,
-    link: "/Indicadores?tipo=Convenios",
+    link: "/Convenios",
     comment: "Seguimiento del avance de convenios.",
     external: false,
-  },
-  */
+    requiresMonitoreo: true,
+  },*/
   {
     name: "Repositorio REM",
     icon: FolderOpen,
     link: "https://drive.google.com/drive/folders/1vlCWcZMrdayOv5n8-ev1PstQCQIoSQCT?usp=sharing",
     comment: "Archivos REM y consolidados en Google Drive.",
     external: true,
+    requiresMonitoreo: false,
   },
 ];
 
@@ -56,8 +60,24 @@ const informesMensuales = [
 
 const API = process.env.NEXT_PUBLIC_API ?? "";
 
-export default function Home() {
+async function getParametros() {
+  try {
+    const res = await fetch(`${API}getUltimaActualizacion`, { cache: "no-store" });
+    if (!res.ok) return { monitoreo_enabled: true };
+    return await res.json();
+  } catch {
+    return { monitoreo_enabled: true };
+  }
+}
+
+export default async function Home() {
   const currentYear = new Date().getFullYear();
+  const parametros = await getParametros();
+  const monitoreoEnabled: boolean = parametros.monitoreo_enabled ?? true;
+  const tools = allTools.map((t) => ({
+    ...t,
+    disabled: t.requiresMonitoreo && !monitoreoEnabled,
+  }));
   return (
     <div className="py-4">
       <div className="mb-8">
@@ -75,6 +95,59 @@ export default function Home() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {tools.map((tool) => {
           const Icon = tool.icon;
+          const cardContent = (
+            <Card
+              className="h-full transition-all duration-200 group-hover:shadow-md"
+              style={{
+                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                opacity: tool.disabled ? 0.45 : 1,
+              }}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="p-2.5 rounded-lg flex-shrink-0"
+                      style={{ background: "var(--accent-light)" }}
+                    >
+                      <Icon
+                        size={22}
+                        style={{ color: "var(--primary)" }}
+                      />
+                    </div>
+                    <span
+                      className="font-semibold text-base leading-tight"
+                      style={{ color: "var(--text)" }}
+                    >
+                      {tool.name}
+                    </span>
+                  </div>
+                  {tool.disabled ? (
+                    <Lock size={14} className="flex-shrink-0 mt-1" style={{ color: "var(--text-light)" }} />
+                  ) : tool.external ? (
+                    <ExternalLink
+                      size={14}
+                      className="flex-shrink-0 mt-1"
+                      style={{ color: "var(--text-light)" }}
+                    />
+                  ) : null}
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-sm" style={{ color: "var(--text-light)" }}>
+                  {tool.comment}
+                </p>
+              </CardContent>
+            </Card>
+          );
+          if (tool.disabled) {
+            return (
+              <div key={tool.name} className="rounded-xl cursor-not-allowed">
+                {cardContent}
+              </div>
+            );
+          }
           return (
             <Link
               href={tool.link}
@@ -83,47 +156,7 @@ export default function Home() {
               rel={tool.external ? "noopener noreferrer" : undefined}
               className="group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] rounded-xl"
             >
-              <Card
-                className="h-full transition-all duration-200 group-hover:shadow-md"
-                style={{
-                  border: "1px solid var(--border)",
-                  background: "var(--surface)",
-                }}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="p-2.5 rounded-lg flex-shrink-0"
-                        style={{ background: "var(--accent-light)" }}
-                      >
-                        <Icon
-                          size={22}
-                          style={{ color: "var(--primary)" }}
-                        />
-                      </div>
-                      <span
-                        className="font-semibold text-base leading-tight"
-                        style={{ color: "var(--text)" }}
-                      >
-                        {tool.name}
-                      </span>
-                    </div>
-                    {tool.external && (
-                      <ExternalLink
-                        size={14}
-                        className="flex-shrink-0 mt-1"
-                        style={{ color: "var(--text-light)" }}
-                      />
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <p className="text-sm" style={{ color: "var(--text-light)" }}>
-                    {tool.comment}
-                  </p>
-                </CardContent>
-              </Card>
+              {cardContent}
             </Link>
           );
         })}

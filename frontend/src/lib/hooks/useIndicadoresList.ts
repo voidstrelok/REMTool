@@ -14,6 +14,7 @@ export interface MetaItem {
   actual: number;
   mensual: boolean;
   isTasa?: boolean;
+  isColaborativo?: boolean;
 }
 
 export function useIndicadoresList(

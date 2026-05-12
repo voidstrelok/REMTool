@@ -7,6 +7,7 @@ const API = process.env.NEXT_PUBLIC_API;
 type InfoResponse = {
   ultima_actualizacion: string;
   servicio_enabled: boolean;
+  monitoreo_enabled: boolean;
 };
 
 export default function InfoActualizacion() {
