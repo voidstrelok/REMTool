@@ -201,10 +201,15 @@ namespace RemTool.Controllers
                         den = decimal.Round(den * (decimal)indicador.Meta);
 
                     float val = den != 0 ? MathF.Round((float)(num / den), 4) : 0f;
+                    float pctEsp = indicador.Mensual
+                        ? MathF.Round(metaEfectiva * (mes / 12f), 4)
+                        : MathF.Round(metaEfectiva * (mes <= 6 ? 0.5f : 1.0f), 4);
+                    decimal numEsp = decimal.Round((decimal)pctEsp * den);
                     return (
                         Nombre: first.Establecimiento?.Nombre ?? "—",
                         Sector: first.Establecimiento?.Sector?.Nombre ?? "—",
-                        Num: num, Den: den, Valor: val
+                        Num: num, Den: den, Valor: val,
+                        NumEsperado: numEsp, PctEsperado: pctEsp
                     );
                 })
                 .OrderBy(e => e.Sector)
@@ -502,9 +507,11 @@ namespace RemTool.Controllers
                         {
                             c.RelativeColumn(3.5f);
                             c.RelativeColumn(1.5f);
+                            c.ConstantColumn(58);
                             c.ConstantColumn(55);
                             c.ConstantColumn(60);
-                            c.ConstantColumn(65);
+                            c.ConstantColumn(58);
+                            c.ConstantColumn(58);
                         });
 
                         static IContainer TH2(IContainer c) =>
@@ -513,7 +520,8 @@ namespace RemTool.Controllers
                         tbl2.Header(h =>
                         {
                             foreach (var t in new[] { "Establecimiento", "Sector",
-                                "Numerador", "Denominador", "Avance" })
+                                "Num. Esperado", "Numerador", "Denominador",
+                                "% Esperado", "Avance" })
                                 h.Cell().Element(TH2)
                                     .Text(t).Bold().FontColor(Colors.White).FontSize(7.5f);
                         });
@@ -523,18 +531,23 @@ namespace RemTool.Controllers
                         {
                             ri2++;
                             string bg = ri2 % 2 == 0 ? "#EEF4FF" : Colors.White;
-                            string valBg = e.Valor >= metaEfectiva         ? "#E3F7EC"
-                                         : e.Valor < metaEfectiva * 0.9f   ? "#FDECEA"
-                                         : bg;
+                            // Color del avance relativo al esperado al corte (margen 2%)
+                            string valBg = e.Valor >= e.PctEsperado                        ? "#E3F7EC"  // verde: cumple esperado
+                                         : e.Valor >= e.PctEsperado - 0.02f * metaEfectiva ? "#FFF9C4"  // amarillo: dentro del margen 2%
+                                         :                                                    "#FDECEA"; // rojo: no cumple
 
                             tbl2.Cell().Background(bg).Padding(4).AlignMiddle()
                                 .Text(e.Nombre).FontSize(7.5f);
                             tbl2.Cell().Background(bg).Padding(4).AlignMiddle()
                                 .Text(e.Sector).FontSize(7.5f);
                             tbl2.Cell().Background(bg).Padding(4).AlignCenter().AlignMiddle()
+                                .Text($"{e.NumEsperado:N0}").FontColor("#3D5A80");
+                            tbl2.Cell().Background(bg).Padding(4).AlignCenter().AlignMiddle()
                                 .Text($"{e.Num:N0}");
                             tbl2.Cell().Background(bg).Padding(4).AlignCenter().AlignMiddle()
                                 .Text($"{e.Den:N0}");
+                            tbl2.Cell().Background(bg).Padding(4).AlignCenter().AlignMiddle()
+                                .Text(FormatTasa(e.PctEsperado, indicador.IsTasa)).FontColor("#3D5A80");
                             tbl2.Cell().Background(valBg).Padding(4).AlignCenter().AlignMiddle()
                                 .Text(FormatTasa(e.Valor, indicador.IsTasa)).Bold();
                         }
