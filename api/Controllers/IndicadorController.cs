@@ -3,7 +3,8 @@
 using DocumentFormat.OpenXml.Office.Word;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using RemTool.Enum;
+using RemTool.Shared;
+using RemTool.Shared.Enum;
 using System.Text.Json;
 using static Antlr4.Runtime.Atn.SemanticContext;
 
@@ -15,10 +16,10 @@ namespace RemTool.Controllers
     {
 
         private readonly ILogger<IndicadorController> _logger;
-        private VoidDataContext db;
+        private RemToolDataContext db;
         private List<long> EstablecimientosExcluidos = new List<long>{(long)EnumEstablecimiento.ClinicaDentalMovilMontePatria, (long)EnumEstablecimiento.SARMontePatria,(long)EnumEstablecimiento.SURElPalqui };
 
-        public IndicadorController(ILogger<IndicadorController> logger, VoidDataContext context)
+        public IndicadorController(ILogger<IndicadorController> logger, RemToolDataContext context)
         {
             _logger = logger;
             db = context;

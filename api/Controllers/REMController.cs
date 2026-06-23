@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NCalc;
 using OfficeOpenXml;
+using RemTool.Shared;
 using RemTool.Util;
 
 
@@ -16,9 +17,9 @@ namespace RemTool.Controllers
     {
 
         private readonly ILogger<REMController> _logger;
-        private VoidDataContext db;
+        private RemToolDataContext db;
 
-        public REMController(ILogger<REMController> logger, VoidDataContext context)
+        public REMController(ILogger<REMController> logger, RemToolDataContext context)
         {
             _logger = logger;
             db = context;

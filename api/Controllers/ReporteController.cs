@@ -3,7 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using RemTool.Enum;
+using RemTool.Shared;
+using RemTool.Shared.Enum;
 
 namespace RemTool.Controllers
 {
@@ -11,10 +12,10 @@ namespace RemTool.Controllers
     [Route("api")]
     public class ReporteController : ControllerBase
     {
-        private readonly VoidDataContext _db;
+        private readonly RemToolDataContext _db;
         private List<long> EstablecimientosExcluidos = new List<long> { (long)EnumEstablecimiento.ClinicaDentalMovilMontePatria, (long)EnumEstablecimiento.SARMontePatria, (long)EnumEstablecimiento.SURElPalqui };
 
-        public ReporteController(VoidDataContext db)
+        public ReporteController(RemToolDataContext db)
         {
             _db = db;
         }

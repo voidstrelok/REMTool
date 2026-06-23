@@ -22,7 +22,8 @@ services:
   # ── .NET 8 API ───────────────────────────────────────────────────────────────
   api:
     build:
-      context: ./api
+      context: .
+      dockerfile: api/Dockerfile
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}

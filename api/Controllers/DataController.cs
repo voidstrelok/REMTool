@@ -1,8 +1,9 @@
+using RemTool.Shared;
 
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using RemTool.Enum;
+using RemTool.Services;
 
 namespace RemTool.Controllers
 {
@@ -12,19 +13,20 @@ namespace RemTool.Controllers
     {
 
         private readonly ILogger<DataController> _logger;
-        private VoidDataContext db;
-        private List<long> EstablecimientosExcluidos = new List<long> { (long)EnumEstablecimiento.ClinicaDentalMovilMontePatria, (long)EnumEstablecimiento.SARMontePatria, (long)EnumEstablecimiento.SURElPalqui };
+        private RemToolDataContext db;
+        private readonly IIndicadorService _indicadorService;
 
-        public DataController(ILogger<DataController> logger, VoidDataContext context)
+        public DataController(ILogger<DataController> logger, RemToolDataContext context, IIndicadorService indicadorService)
         {
             _logger = logger;
             db = context;
+            _indicadorService = indicadorService;
         }
         [HttpGet("getEstablecimientos/")]
         public async Task<IActionResult> GetEstablecimientos()
         {
             var Establecimientos = await db.Establecimiento
-                .Where(e => !EstablecimientosExcluidos.Contains(e.Id))
+                .Where(e => !_indicadorService.EstablecimientosExcluidos.Contains(e.Id))
                 .Include(e=>e.Sector).OrderBy(e=>e.CodDeis).ToListAsync();
             return Ok(Establecimientos);
         }
@@ -43,7 +45,7 @@ namespace RemTool.Controllers
         public async Task<IActionResult> GetEstablecimientosBySector(long sectorId)
         {
             var establecimientosdb = await db.Establecimiento
-                    .Where(e => !EstablecimientosExcluidos.Contains(e.Id))                    
+                    .Where(e => !_indicadorService.EstablecimientosExcluidos.Contains(e.Id))                    
                     .OrderBy(e => e.Nombre)
                     .ToListAsync();
             if (sectorId != 0)

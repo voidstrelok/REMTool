@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Settings, CheckCircle2, BarChart2, Building2, FolderOpen, ExternalLink, FileDown, Lock } from "lucide-react";
+import { Settings, CheckCircle2, BarChart2, Building2, FolderOpen, ExternalLink, FileDown, Lock, FileImage } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 const allTools = [
@@ -49,6 +49,14 @@ const allTools = [
     link: "https://drive.google.com/drive/folders/1vlCWcZMrdayOv5n8-ev1PstQCQIoSQCT?usp=sharing",
     comment: "Archivos REM y consolidados en Google Drive.",
     external: true,
+    requiresMonitoreo: false,
+  },
+  {
+    name: "Rasterizar PDF",
+    icon: FileImage,
+    link: "/RasterizarPDF",
+    comment: "Convierte las capas y anotaciones de un PDF en imagen permanente.",
+    external: false,
     requiresMonitoreo: false,
   },
 ];
