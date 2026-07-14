@@ -16,6 +16,10 @@ namespace RemTools
         private void InitializeComponent()
         {
             panel_top = new Panel();
+            serie_lbl = new Label();
+            serie_cmb = new ComboBox();
+            anio_lbl = new Label();
+            anio_cmb = new ComboBox();
             version_lbl = new Label();
             version_cmb = new ComboBox();
             panel_bottom = new Panel();
@@ -35,6 +39,10 @@ namespace RemTools
             // 
             panel_top.Controls.Add(version_cmb);
             panel_top.Controls.Add(version_lbl);
+            panel_top.Controls.Add(anio_cmb);
+            panel_top.Controls.Add(anio_lbl);
+            panel_top.Controls.Add(serie_cmb);
+            panel_top.Controls.Add(serie_lbl);
             panel_top.Dock = DockStyle.Top;
             panel_top.Location = new Point(0, 0);
             panel_top.Name = "panel_top";
@@ -45,20 +53,56 @@ namespace RemTools
             // version_lbl
             // 
             version_lbl.AutoSize = true;
-            version_lbl.Location = new Point(8, 12);
+            version_lbl.Location = new Point(350, 12);
             version_lbl.Name = "version_lbl";
             version_lbl.Size = new Size(57, 20);
             version_lbl.TabIndex = 0;
             version_lbl.Text = "Versión:";
             // 
+            // serie_lbl
+            // 
+            serie_lbl.AutoSize = true;
+            serie_lbl.Location = new Point(8, 12);
+            serie_lbl.Name = "serie_lbl";
+            serie_lbl.TabIndex = 2;
+            serie_lbl.Text = "Serie:";
+            // 
+            // serie_cmb
+            // 
+            serie_cmb.DropDownStyle = ComboBoxStyle.DropDownList;
+            serie_cmb.FormattingEnabled = true;
+            serie_cmb.Location = new Point(62, 9);
+            serie_cmb.Name = "serie_cmb";
+            serie_cmb.Size = new Size(155, 28);
+            serie_cmb.TabIndex = 1;
+            serie_cmb.SelectedIndexChanged += serie_cmb_SelectedIndexChanged;
+            // 
+            // anio_lbl
+            // 
+            anio_lbl.AutoSize = true;
+            anio_lbl.Location = new Point(225, 12);
+            anio_lbl.Name = "anio_lbl";
+            anio_lbl.TabIndex = 3;
+            anio_lbl.Text = "A\u00F1o:";
+            // 
+            // anio_cmb
+            // 
+            anio_cmb.DropDownStyle = ComboBoxStyle.DropDownList;
+            anio_cmb.FormattingEnabled = true;
+            anio_cmb.Location = new Point(266, 9);
+            anio_cmb.Name = "anio_cmb";
+            anio_cmb.Size = new Size(75, 28);
+            anio_cmb.TabIndex = 2;
+            anio_cmb.SelectedIndexChanged += anio_cmb_SelectedIndexChanged;
+            // 
             // version_cmb
             // 
             version_cmb.DropDownStyle = ComboBoxStyle.DropDownList;
             version_cmb.FormattingEnabled = true;
-            version_cmb.Location = new Point(72, 9);
+            version_cmb.Location = new Point(416, 9);
             version_cmb.Name = "version_cmb";
-            version_cmb.Size = new Size(350, 28);
-            version_cmb.TabIndex = 1;
+            version_cmb.Size = new Size(352, 28);
+            version_cmb.TabIndex = 3;
             version_cmb.SelectedIndexChanged += version_cmb_SelectedIndexChanged;
             // 
             // panel_bottom
@@ -165,6 +209,10 @@ namespace RemTools
         #endregion
 
         private Panel panel_top;
+        private Label serie_lbl;
+        private ComboBox serie_cmb;
+        private Label anio_lbl;
+        private ComboBox anio_cmb;
         private Label version_lbl;
         private ComboBox version_cmb;
         private DataGridView reglas_dgv;

@@ -23,10 +23,31 @@ namespace RemTools
 
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void revisar_A_btn_Click(object sender, EventArgs e)
         {
             MenuDeshabilitado();
-            _utils.RevisarRem();
+            _utils.RevisarRem("A");
+            MenuHabilitado();
+        }
+
+        private void revisar_BM_btn_Click(object sender, EventArgs e)
+        {
+            MenuDeshabilitado();
+            _utils.RevisarRem("BM");
+            MenuHabilitado();
+        }
+
+        private void revisar_D_btn_Click(object sender, EventArgs e)
+        {
+            MenuDeshabilitado();
+            _utils.RevisarRem("D");
+            MenuHabilitado();
+        }
+
+        private void revisar_P_btn_Click(object sender, EventArgs e)
+        {
+            MenuDeshabilitado();
+            _utils.RevisarRem("P");
             MenuHabilitado();
         }
 
@@ -39,7 +60,10 @@ namespace RemTools
 
         void MenuHabilitado()
         {
-            this.revisar_btn.Enabled = true;
+            this.revisar_A_btn.Enabled = true;
+            this.revisar_BM_btn.Enabled = true;
+            this.revisar_D_btn.Enabled = true;
+            this.revisar_P_btn.Enabled = true;
             this.desconstruir_btn.Enabled = true;
             this.gensql_btn.Enabled = true;
             this.button1.Enabled = true;
@@ -48,7 +72,10 @@ namespace RemTools
         }
         void MenuDeshabilitado()
         {
-            this.revisar_btn.Enabled = false;
+            this.revisar_A_btn.Enabled = false;
+            this.revisar_BM_btn.Enabled = false;
+            this.revisar_D_btn.Enabled = false;
+            this.revisar_P_btn.Enabled = false;
             this.desconstruir_btn.Enabled = false;
             this.gensql_btn.Enabled = false;
             this.button1.Enabled = false;
@@ -75,7 +102,7 @@ namespace RemTools
             //ProcesarArchivosSeleccionados();
             //return;
             // Ruta del directorio a recorrer
-            string directorioSerie = $@"C:\Users\Usuario\Desktop\Ricardo\dev\testopenpyxml\Libros\{año}\Serie {serie}\";
+            string directorioSerie = $@"C:\Users\Usuario\Desktop\Ricardo\dev\testopenpyxml\Libros\{año}\Serie {serie.ToUpper()}\";
 
             // Expresi�n regular para filtrar archivos (ejemplo: termina en A01.xlsm)
             string patron = @"\\[0-9]{6}[A-Z]{1,2}[0-9]{2}(?i:.xlsm)";

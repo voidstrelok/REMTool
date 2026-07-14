@@ -202,15 +202,10 @@ namespace RemTool.Controllers
                         den = decimal.Round(den * (decimal)indicador.Meta);
 
                     float val = den != 0 ? MathF.Round((float)(num / den), 4) : 0f;
-                    float pctEsp = indicador.Mensual
-                        ? MathF.Round(metaEfectiva * (mes / 12f), 4)
-                        : MathF.Round(metaEfectiva * (mes <= 6 ? 0.5f : 1.0f), 4);
-                    decimal numEsp = decimal.Round((decimal)pctEsp * den);
                     return (
                         Nombre: first.Establecimiento?.Nombre ?? "—",
                         Sector: first.Establecimiento?.Sector?.Nombre ?? "—",
-                        Num: num, Den: den, Valor: val,
-                        NumEsperado: numEsp, PctEsperado: pctEsp
+                        Num: num, Den: den, Valor: val
                     );
                 })
                 .OrderBy(e => e.Sector)
@@ -508,11 +503,9 @@ namespace RemTool.Controllers
                         {
                             c.RelativeColumn(3.5f);
                             c.RelativeColumn(1.5f);
-                            c.ConstantColumn(58);
                             c.ConstantColumn(55);
                             c.ConstantColumn(60);
-                            c.ConstantColumn(58);
-                            c.ConstantColumn(58);
+                            c.ConstantColumn(65);
                         });
 
                         static IContainer TH2(IContainer c) =>
@@ -521,8 +514,7 @@ namespace RemTool.Controllers
                         tbl2.Header(h =>
                         {
                             foreach (var t in new[] { "Establecimiento", "Sector",
-                                "Num. Esperado", "Numerador", "Denominador",
-                                "% Esperado", "Avance" })
+                                "Numerador", "Denominador", "Avance" })
                                 h.Cell().Element(TH2)
                                     .Text(t).Bold().FontColor(Colors.White).FontSize(7.5f);
                         });
@@ -532,23 +524,18 @@ namespace RemTool.Controllers
                         {
                             ri2++;
                             string bg = ri2 % 2 == 0 ? "#EEF4FF" : Colors.White;
-                            // Color del avance relativo al esperado al corte (margen 2%)
-                            string valBg = e.Valor >= e.PctEsperado                        ? "#E3F7EC"  // verde: cumple esperado
-                                         : e.Valor >= e.PctEsperado - 0.02f * metaEfectiva ? "#FFF9C4"  // amarillo: dentro del margen 2%
-                                         :                                                    "#FDECEA"; // rojo: no cumple
+                            string valBg = e.Valor >= metaEfectiva         ? "#E3F7EC"
+                                         : e.Valor < metaEfectiva * 0.9f   ? "#FDECEA"
+                                         : bg;
 
                             tbl2.Cell().Background(bg).Padding(4).AlignMiddle()
                                 .Text(e.Nombre).FontSize(7.5f);
                             tbl2.Cell().Background(bg).Padding(4).AlignMiddle()
                                 .Text(e.Sector).FontSize(7.5f);
                             tbl2.Cell().Background(bg).Padding(4).AlignCenter().AlignMiddle()
-                                .Text($"{e.NumEsperado:N0}").FontColor("#3D5A80");
-                            tbl2.Cell().Background(bg).Padding(4).AlignCenter().AlignMiddle()
                                 .Text($"{e.Num:N0}");
                             tbl2.Cell().Background(bg).Padding(4).AlignCenter().AlignMiddle()
                                 .Text($"{e.Den:N0}");
-                            tbl2.Cell().Background(bg).Padding(4).AlignCenter().AlignMiddle()
-                                .Text(FormatTasa(e.PctEsperado, indicador.IsTasa)).FontColor("#3D5A80");
                             tbl2.Cell().Background(valBg).Padding(4).AlignCenter().AlignMiddle()
                                 .Text(FormatTasa(e.Valor, indicador.IsTasa)).Bold();
                         }
@@ -637,8 +624,11 @@ namespace RemTool.Controllers
         public async Task<IActionResult> InformeMensual(
             int tipoIndicador, int ano,
             [FromQuery] long? sectorId,
-            [FromQuery] long? establecimientoId)
+            [FromQuery] long? establecimientoId,
+            [FromQuery] int? mesCorte = null)
         {
+            if (mesCorte.HasValue && (mesCorte.Value < 1 || mesCorte.Value > 12))
+                return BadRequest("mesCorte debe estar entre 1 y 12.");
             var establecimiento = establecimientoId.HasValue? _db.Establecimiento.FirstOrDefault(e=>e.Id == establecimientoId.Value):null;
             var sector = sectorId.HasValue ? _db.Sector.FirstOrDefault(s => s.Id == sectorId.Value):null;
 
@@ -653,7 +643,7 @@ namespace RemTool.Controllers
             if (!indicadores.Any())
                 return NotFound($"No se encontraron indicadores para el año {ano}.");
 
-            int mes = indicadores
+            int mesMaxDatos = indicadores
                 .SelectMany(i => i.ResultadoIndicadors)
                 .Where(r => !EstablecimientosExcluidos.Contains(r.id_establecimiento))
                 .Where(r => !sectorId.HasValue || r.Establecimiento?.id_sector == sectorId.Value)
@@ -662,8 +652,10 @@ namespace RemTool.Controllers
                 .DefaultIfEmpty(0)
                 .Max();
 
-            if (mes == 0)
+            if (mesMaxDatos == 0)
                 return NotFound($"No hay datos cargados para el año {ano}.");
+
+            int mes = mesCorte.HasValue ? Math.Min(mesCorte.Value, mesMaxDatos) : mesMaxDatos;
 
             // Pre-fetch denominadores oct–dic del año anterior para indicadores con período oct–sep
             var octSepOrden = indicadores
@@ -947,10 +939,12 @@ namespace RemTool.Controllers
         [HttpGet("detalleIndicador/{id:int}")]
         public async Task<IActionResult> DetalleIndicador(
             int id,
-
             [FromQuery] long? sectorId,
-            [FromQuery] long? establecimientoId)
+            [FromQuery] long? establecimientoId,
+            [FromQuery] int? mesCorte = null)
         {
+            if (mesCorte.HasValue && (mesCorte.Value < 1 || mesCorte.Value > 12))
+                return BadRequest("mesCorte debe estar entre 1 y 12.");
             var indicador = await _db.Indicador
                 .Where(i => i.Id == id)
                 .Include(i => i.ResultadoIndicadors.Where(e => !EstablecimientosExcluidos.Contains(e.id_establecimiento)))
@@ -969,13 +963,15 @@ namespace RemTool.Controllers
 
             // Mes de corte = máximo mes reportado en el año, independiente del filtro aplicado.
             // EstablecimientosExcluidos ya están excluidos por el filtro del Include.
-            int mes = indicador.ResultadoIndicadors
+            int mesMaxDatos = indicador.ResultadoIndicadors
                 .Select(r => r.Mes)
                 .DefaultIfEmpty(0)
                 .Max();
 
-            if (mes == 0)
+            if (mesMaxDatos == 0)
                 return NotFound($"No hay datos cargados para el indicador con ID {id}.");
+
+            int mes = mesCorte.HasValue ? Math.Min(mesCorte.Value, mesMaxDatos) : mesMaxDatos;
 
             int ano = indicador.Año;
 

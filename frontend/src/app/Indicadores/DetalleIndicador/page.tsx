@@ -360,19 +360,36 @@ function DetalleIndicadorInner() {
                     </td>
                   )}
                   {arrayMeses.map((mes) => {
-                    const mesData = est.meses.find((m) => m.mes === mes);
-                    if (!mesData) {
+                    let numerador: number;
+                    let denominador: number;
+                    let hasData: boolean;
+
+                    if (data?.mensual === false) {
+                      // Para indicadores semestrales, acumular todos los meses del semestre
+                      // (igual que el informe PDF: hastaCorte filtrado al mes 6 o 12).
+                      // Se incluye la serie P para que coincida con la columna Total (num+numP / den+denP).
+                      const semStart = mes === 6 ? 1 : 7;
+                      const semMonths = est.meses.filter((m) => m.mes >= semStart && m.mes <= mes);
+                      hasData = semMonths.length > 0;
+                      numerador = semMonths.reduce((s, m) => s + (m.numerador ?? 0) + (m.numeradorP ?? 0), 0);
+                      denominador = semMonths.reduce((s, m) => s + (m.denominador ?? 0) + (m.denominadorP ?? 0), 0);
+                    } else {
+                      const mesData = est.meses.find((m) => m.mes === mes);
+                      hasData = mesData != null;
+                      numerador = mesData?.numerador ?? 0;
+                      denominador = mesData?.denominador ?? 0;
+                    }
+
+                    if (!hasData) {
                       return (
                         <td key={`cell-${est.key}-${mes}`} style={{ padding: "10px", textAlign: "center", fontSize: "0.8rem", color: "var(--text-light)", fontWeight: 400 }}>
                           -
                         </td>
                       );
                     }
-                    const numerador = mesData.numerador ?? 0;
-                    const denominador = mesData.denominador ?? 0;
                     // Mostrar solo numerador si es colaborativo
                     const showDen = isColaborativo ? false : !data?.isDenFijo;
-                    const cellContent = showDen ? `${numerador}/${denominador}` : `${Math.round(numerador)}`;
+                    const cellContent = showDen ? `${Math.round(numerador)}/${Math.round(denominador)}` : `${Math.round(numerador)}`;
                     const isCero = showDen ? denominador === 0 && numerador === 0 : numerador === 0;
                     return (
                       <td key={`cell-${est.key}-${mes}`} style={{ padding: "10px", textAlign: "center", fontSize: "0.8rem", color: isCero ? "var(--text-light)" : "var(--text)", fontWeight: 500 }}>
@@ -383,7 +400,7 @@ function DetalleIndicadorInner() {
                   <td style={{ padding: "10px", textAlign: "center", verticalAlign: "middle" }}>
                     {isColaborativo ? (
                       <span style={{ fontWeight: 700, color: "var(--accent)" }}>{Math.round(est.numeradorTotal+est.numeradorPTotal)}</span>
-                    ) : est.denominadorTotal === 0 ? (
+                    ) : est.denominadorTotal === 0 && est.denominadorPTotal === 0 ? (
                       <span style={{ color: "var(--text-light)" }}>Sin datos</span>
                     ) : isTasa ? (
                       <span style={{ fontWeight: 700, color: "var(--accent)" }}>

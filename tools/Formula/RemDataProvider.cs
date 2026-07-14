@@ -45,7 +45,7 @@ namespace RemTools
                 pYear = año;
                 pMonth = 12;
             }
-            else if (ahora.Month >= 7)
+            else if (ahora.Month >= 6)
             {
                 pYear = año;
                 pMonth = 6;

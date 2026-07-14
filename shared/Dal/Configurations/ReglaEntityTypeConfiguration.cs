@@ -34,6 +34,17 @@ namespace RemTool.Shared
                 .HasColumnType("character varying");
 
             builder
+                .Property(x => x.IdTipoRegla)
+                .HasColumnName("id_tipo_regla")
+                .HasDefaultValue(1);
+
+            builder
+                .HasOne(x => x.TipoRegla)
+                .WithMany(x => x.Reglas)
+                .HasForeignKey(x => x.IdTipoRegla)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder
                 .ToTable("regla", "REMTool");
         }
     }

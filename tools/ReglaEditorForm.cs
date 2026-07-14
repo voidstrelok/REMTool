@@ -7,6 +7,9 @@ namespace RemTools
     {
         private readonly RemToolDataContext _bdd;
         private List<Regla> _reglas = [];
+        private List<TipoRegla> _tiposRegla = [];
+        private List<SerieRem> _series = [];
+        private List<VersionRem> _todasVersiones = [];
         private VersionRem? _versionSeleccionada;
 
         public ReglaEditorForm(RemToolDataContext dbContext)
@@ -17,29 +20,102 @@ namespace RemTools
 
         private void ReglaEditorForm_Load(object sender, EventArgs e)
         {
+            _tiposRegla = _bdd.TipoRegla.OrderBy(t => t.Id).ToList();
+
+            var colTipo = new DataGridViewComboBoxColumn
+            {
+                Name = "col_TipoRegla",
+                HeaderText = "Tipo",
+                DataPropertyName = "IdTipoRegla",
+                DataSource = _tiposRegla,
+                DisplayMember = "Nombre",
+                ValueMember = "Id",
+                Width = 110,
+                DisplayIndex = 1
+            };
+            reglas_dgv.Columns.Add(colTipo);
+
             CargarVersiones();
         }
 
         private void CargarVersiones()
         {
-            var versiones = _bdd.VersionRem
+            _series = _bdd.SerieRem.OrderBy(s => s.Nombre).ToList();
+            _todasVersiones = _bdd.VersionRem
                 .Include(v => v.SerieRem)
                 .OrderBy(v => v.SerieRem.Nombre)
                 .ThenBy(v => v.Nombre)
                 .ToList();
 
-            version_cmb.DataSource = versiones;
-            version_cmb.DisplayMember = "Nombre";
-            version_cmb.ValueMember = "Id";
+            serie_cmb.SelectedIndexChanged -= serie_cmb_SelectedIndexChanged;
+            serie_cmb.Items.Clear();
+            serie_cmb.Items.Add("(Todas)");
+            foreach (var serie in _series)
+                serie_cmb.Items.Add(serie.Nombre);
+            serie_cmb.SelectedIndex = 0;
+            serie_cmb.SelectedIndexChanged += serie_cmb_SelectedIndexChanged;
 
-            if (versiones.Count > 0)
-                version_cmb.SelectedIndex = 0;
-            else
-                CargarReglas(null);
+            ActualizarAnosCmb(_todasVersiones);
+            FiltrarVersiones();
         }
 
         private void version_cmb_SelectedIndexChanged(object sender, EventArgs e)
         {
+            _versionSeleccionada = version_cmb.SelectedItem as VersionRem;
+            CargarReglas(_versionSeleccionada);
+        }
+
+        private void serie_cmb_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            var versiones = _todasVersiones.AsEnumerable();
+            if (serie_cmb.SelectedIndex > 0 && serie_cmb.SelectedIndex - 1 < _series.Count)
+            {
+                var serie = _series[serie_cmb.SelectedIndex - 1];
+                versiones = versiones.Where(v => v.id_serie == serie.Id);
+            }
+            ActualizarAnosCmb(versiones);
+            FiltrarVersiones();
+        }
+
+        private void anio_cmb_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            FiltrarVersiones();
+        }
+
+        private void ActualizarAnosCmb(IEnumerable<VersionRem> versiones)
+        {
+            anio_cmb.SelectedIndexChanged -= anio_cmb_SelectedIndexChanged;
+            anio_cmb.Items.Clear();
+            anio_cmb.Items.Add("(Todos)");
+            foreach (var anio in versiones.Select(v => v.Fecha.Year).Distinct().OrderDescending())
+                anio_cmb.Items.Add(anio.ToString());
+            anio_cmb.SelectedIndex = 0;
+            anio_cmb.SelectedIndexChanged += anio_cmb_SelectedIndexChanged;
+        }
+
+        private void FiltrarVersiones()
+        {
+            var filtradas = _todasVersiones.AsEnumerable();
+
+            if (serie_cmb.SelectedIndex > 0 && serie_cmb.SelectedIndex - 1 < _series.Count)
+            {
+                var serie = _series[serie_cmb.SelectedIndex - 1];
+                filtradas = filtradas.Where(v => v.id_serie == serie.Id);
+            }
+
+            if (anio_cmb.SelectedIndex > 0 && int.TryParse(anio_cmb.SelectedItem?.ToString(), out int anio))
+                filtradas = filtradas.Where(v => v.Fecha.Year == anio);
+
+            var lista = filtradas.ToList();
+
+            version_cmb.SelectedIndexChanged -= version_cmb_SelectedIndexChanged;
+            version_cmb.DataSource = lista;
+            version_cmb.DisplayMember = "Nombre";
+            version_cmb.ValueMember = "Id";
+            if (lista.Count > 0)
+                version_cmb.SelectedIndex = 0;
+            version_cmb.SelectedIndexChanged += version_cmb_SelectedIndexChanged;
+
             _versionSeleccionada = version_cmb.SelectedItem as VersionRem;
             CargarReglas(_versionSeleccionada);
         }
@@ -53,6 +129,7 @@ namespace RemTools
             else
             {
                 _reglas = _bdd.Regla
+                    .Include(r => r.TipoRegla)
                     .Where(r => r.id_version == version.Id)
                     .OrderBy(r => r.Id)
                     .ToList();
@@ -73,6 +150,7 @@ namespace RemTools
             var nueva = new Regla
             {
                 id_version = _versionSeleccionada.Id,
+                IdTipoRegla = 1,
                 Expresion = string.Empty,
                 Mensaje = string.Empty
             };
@@ -128,6 +206,7 @@ namespace RemTools
                 {
                     tracked.Expresion = regla.Expresion;
                     tracked.Mensaje = regla.Mensaje;
+                    tracked.IdTipoRegla = regla.IdTipoRegla;
                 }
                 else
                 {

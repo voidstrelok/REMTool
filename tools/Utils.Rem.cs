@@ -162,9 +162,9 @@ namespace RemTools
             Bdd.SaveChanges();
         }
 
-        public void RevisarRem()
+        public void RevisarRem(string serie)
         {
-            MessageBox.Show("Seleccione los archivos Serie A a revisar.", "Revisor REM Serie A");
+            MessageBox.Show($"Seleccione los archivos Serie {serie} a revisar.", $"Revisor REM Serie {serie}");
 
             var files = SelectFiles();
             if (files == null || files.Length == 0) return;
@@ -173,7 +173,7 @@ namespace RemTools
             using var wordDoc = WordprocessingDocument.Create(docPath, WordprocessingDocumentType.Document);
             MainDocumentPart mainPart = wordDoc.AddMainDocumentPart();
             mainPart.Document = new Document(new Body());
-            AddHeading(mainPart, "REVISIÓN REM SERIE A", 0);
+            AddHeading(mainPart, $"REVISIÓN REM SERIE {serie.ToUpper()}", 0);
 
             foreach (var file in files)
             {
@@ -189,10 +189,14 @@ namespace RemTools
                     var Establecimiento = Bdd.Establecimiento.Where(e => e.CodDeis.Equals(CodigoREM)).FirstOrDefault();
                     string MesTxt = new DateTime(2025, int.Parse(MesREM), 1).ToString("MMMM", CultureInfo.CreateSpecificCulture("es")).ToUpper();
 
-                    Console.WriteLine("Revisando : " + Establecimiento.Nombre + " - REM A - " + MesTxt);
+                    Console.WriteLine($"Revisando : {Establecimiento.Nombre} - REM {serie.ToUpper()} - {MesTxt}");
                     AddHeading(mainPart, $"{CodigoREM} - {Establecimiento.Nombre} - {MesTxt}", 2);
 
-                    var Reglas = Bdd.Regla.Include(r => r.VersionREM).Where(r => r.VersionREM.Nombre.Equals(versionArchivo)).ToList();
+                    var Reglas = Bdd.Regla.OrderBy(r=>r.Id)
+                        .Include(r => r.VersionREM).ThenInclude(v => v.SerieRem)
+                        .ToList();
+
+                    Reglas = Reglas.Where(r => r.VersionREM.Nombre.Equals(versionArchivo) && r.VersionREM.SerieRem.Nombre.Equals(serie, StringComparison.OrdinalIgnoreCase)).ToList();
 
                     if (Reglas.Count == 0)
                     {
@@ -202,6 +206,7 @@ namespace RemTools
 
                     foreach (var regla in Reglas)
                     {
+                        
                         string resultado = Regex.Replace(regla.Expresion, RegexHoja, x => ParseaHojas(x.Value, workbook));
                         resultado = resultado.Replace("[", "").Replace("]", "");
                         Expression Expr = new Expression(resultado);
@@ -211,7 +216,7 @@ namespace RemTools
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"Se omite el archivo: {file}. No se pudo extraer el nombre del archivo." + e);
+                    Console.WriteLine($"Se omite el archivo: {file}. Ha ocurrido un error." + e);
                 }
             }
 
@@ -256,7 +261,8 @@ namespace RemTools
             {
                 { "A",  "D32" },
                 { "BM", "D7"  },
-                { "D",  "E13" }
+                { "D",  "E13" },
+                { "P",  "D17" }
             };
 
             // Cargar todas las versiones en memoria y quedarse con la más reciente por serie

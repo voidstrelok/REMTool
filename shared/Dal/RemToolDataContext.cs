@@ -37,6 +37,7 @@ namespace RemTool.Shared
         public virtual DbSet<Indicador> Indicador { get; set; }
         public virtual DbSet<TipoIndicador> TipoIndicador { get; set; }
         public virtual DbSet<Parametros> Parametros { get; set; }
+        public virtual DbSet<TipoRegla> TipoRegla { get; set; }
         public virtual DbSet<Regla> Regla { get; set; }
         public virtual DbSet<Convenio> Convenio { get; set; }
         public virtual DbSet<IndicadorConvenio> IndicadorConvenio { get; set; }
@@ -59,6 +60,7 @@ namespace RemTool.Shared
             modelBuilder.ApplyConfiguration(new TipoIndicadorEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new ResultadoIndicadorEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new ParametrosEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new TipoReglaEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new ReglaEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new ConvenioEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new IndicadorConvenioEntityTypeConfiguration());

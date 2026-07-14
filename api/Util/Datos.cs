@@ -9,10 +9,12 @@ public static class Datos
 {
     private static readonly IConfiguration _configuration;
     public static string consolidadoAPath;
-    public static string versionBase ;
+    public static string versionBase;
+    public static string versionBaseP;
     static Datos()
     {
-        versionBase = Environment.GetEnvironmentVariable("Paths__BaseSA");
+        versionBase  = Environment.GetEnvironmentVariable("Paths__BaseSA");
+        versionBaseP = Environment.GetEnvironmentVariable("Paths__BaseSP");
     }
         
 
@@ -144,6 +146,19 @@ public static class Datos
         }
     }  };
 
-
+    // HojaControl para Serie P.
+    // TODO: completar los mappings de las 11 hojas una vez confirmados los nombres.
+    // Formato: { "<Nombre versión P>", new Dictionary<string, string> { { "P01", "<celda en Control>" }, ... } }
+    public static readonly Dictionary<string, Dictionary<string, string>> HojaControlP = new()
+    {
+        // Ejemplo:
+        // { "Versión 1.2: Febrero 2026", new Dictionary<string, string>
+        //     {
+        //         { "P01", "E5" },
+        //         { "P02", "E6" },
+        //         ...
+        //     }
+        // }
+    };
 
 }

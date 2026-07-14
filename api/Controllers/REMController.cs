@@ -42,6 +42,7 @@ namespace RemTool.Controllers
             public string serie { get; set; }
             public string revisado { get; set; }
             public List<string> errores { get; set; }
+            public List<string> advertencias { get; set; }
         }
 
         [HttpPost("revisarREM/")]
@@ -58,9 +59,9 @@ namespace RemTool.Controllers
 
                 using (var workbook = new ExcelPackage(stream))
                 {
-                    bool hayerrores = false;
                     try
                     {
+                    bool hayerrores = false;
                         var hojaNombre = workbook.Workbook.Worksheets["NOMBRE"];
 
                         string TipoREM = hojaNombre.Cells["B17"].Value.ToString()[hojaNombre.Cells["B17"].Value.ToString().Length - 1].ToString() ?? "";
@@ -71,24 +72,38 @@ namespace RemTool.Controllers
                         string MesTxt = new DateTime(2025, int.Parse(MesREM), 1).ToString("MMMM", CultureInfo.CreateSpecificCulture("es")).ToUpper();
 
                         var Establecimiento = db.Establecimiento.FirstOrDefault(e => e.CodDeis.Equals(CodigoREM));
-                        var Reglas = db.Regla.Include(r => r.VersionREM).Where(r => r.VersionREM.Nombre.Equals(versionArchivo)).ToList();
-                        ResultadoRevision ListaErrores = new ResultadoRevision { serie = "A", revisado = $"{CodigoREM} - {Establecimiento.Nombre} - {MesTxt}", errores = new List<string>() };
+                        var versionDb = db.VersionRem
+                            .Include(v => v.SerieRem)
+                            .Where(v => v.Nombre.Equals(versionArchivo))
+                            .FirstOrDefault();
+                        string serieNombre = versionDb?.SerieRem?.Nombre ?? "A";
+                        var Reglas = db.Regla
+                            .Include(r => r.VersionREM)
+                            .Include(r => r.TipoRegla)
+                            .Where(r => r.VersionREM.Nombre.Equals(versionArchivo))
+                            .ToList();
+                        ResultadoRevision ListaErrores = new ResultadoRevision
+                        {
+                            serie = serieNombre,
+                            revisado = $"{CodigoREM} - {Establecimiento.Nombre} - {MesTxt}",
+                            errores = new List<string>(),
+                            advertencias = new List<string>()
+                        };
                         foreach (var regla in Reglas)
                         {
                             string resultado = Regex.Replace(regla.Expresion, Utils.RegexHoja, x => Utils.ParseaHojas(x.Value, workbook));
                             resultado = resultado.Replace("[", "").Replace("]", "");
                             Expression Expr = new Expression(resultado);
-                            //Console.WriteLine(resultado + ((bool)Expr.Evaluate()).ToString());
                             if (!(bool)Expr.Evaluate())
                             {
-                                ListaErrores.errores.Add(regla.Mensaje);
+                                if (regla.TipoRegla.Nombre == "Advertencia")
+                                    ListaErrores.advertencias.Add(regla.Mensaje);
+                                else
+                                    ListaErrores.errores.Add(regla.Mensaje);
                                 hayerrores = true;
                             }
                         }
-                        if (hayerrores)
-                            return Ok(ListaErrores);
-                        else
-                            return Ok("Sin errores");
+                        return Ok(ListaErrores);
                     }
 
                     catch (Exception e)
@@ -139,10 +154,12 @@ namespace RemTool.Controllers
                         if (string.IsNullOrEmpty(versionArchivo))
                             return BadRequest("No se encontr� la versi�n en la celda A9.");
 
-                        var VersionActual = db.VersionRem.Where(v=>v.id_serie == (long)SeriesREM.A).OrderByDescending(v => v.Fecha).FirstOrDefault();
-                        //if (!VersionActual.Nombre.Equals(versionArchivo))
-                        //    return BadRequest("Los archivos deben tener la versi�n " + Datos.VersionesSerieA.Last() + ".");
-
+                        var VersionActual = db.VersionRem
+                            .Include(v => v.SerieRem)
+                            .Where(v => v.Nombre.Equals(versionArchivo))
+                            .FirstOrDefault();
+                        if (VersionActual == null)
+                            return BadRequest($"No se encontró la versión '{versionArchivo}' en la base de datos.");
 
                         var HojaControl = workbook.Workbook.Worksheets["Control"];
 
@@ -164,8 +181,22 @@ namespace RemTool.Controllers
 
                             bool PrestacionConDatos = false;
                             var HojaREM = workbook.Workbook.Worksheets[prestacion.HojaRem.Nombre];
-                            string ErroresHoja = Datos.HojaControl[VersionActual.Nombre][prestacion.HojaRem.Nombre].Replace("E","D");
-                            ErroresHoja = workbook.Workbook.Worksheets["Control"].Cells[ErroresHoja].Value?.ToString() ?? "";
+
+                            // Verifica errores en la hoja de control según la serie
+                            string ErroresHoja = "0";
+                            var hojaControlDict = VersionActual.SerieRem.Nombre switch
+                            {
+                                "A" => Datos.HojaControl,
+                                "P" => Datos.HojaControlP,
+                                _   => null
+                            };
+                            if (hojaControlDict != null
+                                && hojaControlDict.TryGetValue(VersionActual.Nombre, out var hojaMap)
+                                && hojaMap.TryGetValue(prestacion.HojaRem.Nombre, out var celdaControl))
+                            {
+                                string celdaD = celdaControl.Replace("E", "D");
+                                ErroresHoja = workbook.Workbook.Worksheets["Control"]?.Cells[celdaD]?.Value?.ToString() ?? "0";
+                            }
 
                             foreach (var dato in prestacion.Coordenada)
                             {
@@ -305,9 +336,96 @@ namespace RemTool.Controllers
                     );
                 }
             }
+        }
 
+        [HttpPost("CompilarREMP/")]
+        public async Task<IActionResult> CompilarREMP([FromBody] CompilarRemRequest request)
+        {
+            if (string.IsNullOrEmpty(Datos.versionBaseP))
+                return BadRequest("La plantilla para Serie P no está configurada (Paths__BaseSP).");
 
+            using (var package = new ExcelPackage(new FileInfo(Datos.versionBaseP)))
+            {
+                var Establecimiento = db.Establecimiento.FirstOrDefault(e => e.CodDeis.Equals(request.CodDEIS));
+                if (Establecimiento == null)
+                    return BadRequest("El establecimiento de la solicitud no existe.");
 
+                string MesTxt = new DateTime(2025, request.Mes, 1).ToString("MMMM", CultureInfo.CreateSpecificCulture("es")).ToUpper();
+
+                var HojaNombre = package.Workbook.Worksheets["NOMBRE"];
+                HojaNombre.Cells["B2"].Value = "MONTE PATRIA";
+                HojaNombre.Cells["C2"].Value = 0;
+                HojaNombre.Cells["D2"].Value = 4;
+                HojaNombre.Cells["E2"].Value = 3;
+                HojaNombre.Cells["F2"].Value = 0;
+                HojaNombre.Cells["G2"].Value = 3;
+
+                HojaNombre.Cells["B3"].Value = Establecimiento.Nombre;
+                HojaNombre.Cells["C3"].Value = int.Parse(request.CodDEIS[0].ToString());
+                HojaNombre.Cells["D3"].Value = int.Parse(request.CodDEIS[1].ToString());
+                HojaNombre.Cells["E3"].Value = int.Parse(request.CodDEIS[2].ToString());
+                HojaNombre.Cells["F3"].Value = int.Parse(request.CodDEIS[3].ToString());
+                HojaNombre.Cells["G3"].Value = int.Parse(request.CodDEIS[4].ToString());
+                HojaNombre.Cells["H3"].Value = int.Parse(request.CodDEIS[5].ToString());
+
+                HojaNombre.Cells["B6"].Value = MesTxt;
+                HojaNombre.Cells["C6"].Value = int.Parse(request.Mes.ToString("D2")[0].ToString());
+                HojaNombre.Cells["D6"].Value = int.Parse(request.Mes.ToString("D2")[1].ToString());
+
+                HojaNombre.Cells["B11"].Value = Establecimiento.Director;
+                HojaNombre.Cells["B12"].Value = "RICARDO CONTRERAS CORTES";
+
+                var PrestacionesVersion = db.Prestacion
+                    .Include(p => p.HojaRem)
+                    .Where(p => p.VersionRem.Nombre == HojaNombre.Cells["A9"].Value.ToString())
+                    .ToList();
+
+                foreach (EstrategiaRemDTO estrategia in request.Estrategias)
+                {
+                    foreach (PrestacionRemDTO prestacion in estrategia.Datos)
+                    {
+                        var DatosPrestacion = PrestacionesVersion
+                            .Where(p => p.CodigoPrestacion.Equals(prestacion.Prestacion))
+                            .FirstOrDefault();
+                        int index = 0;
+                        foreach (string valor in prestacion.Valores)
+                        {
+                            string celda = DatosPrestacion.Coordenada.ElementAt(index).ToString();
+                            var hoja = DatosPrestacion.HojaRem.Nombre.ToString() ?? "";
+                            var HojaREM = package.Workbook.Worksheets[hoja];
+                            if (string.IsNullOrEmpty(HojaREM.Cells[celda].Formula))
+                            {
+                                string valorold = HojaREM.Cells[celda].Value?.ToString() ?? "0";
+                                try
+                                {
+                                    int valornuevo = int.Parse(valorold) + int.Parse(valor);
+                                    if (!HojaREM.Cells[celda].Style.Locked)
+                                        HojaREM.Cells[celda].Value = valornuevo;
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine($"Error en {DatosPrestacion.CodigoPrestacion}: parseando {valorold}, {valor}, {e.Message}");
+                                    return BadRequest("Error en la solicitud.");
+                                }
+                            }
+                            index += 1;
+                        }
+                    }
+                }
+
+                using (var stream = new MemoryStream())
+                {
+                    package.Workbook.Calculate();
+                    package.SaveAs(stream);
+                    stream.Position = 0;
+
+                    return File(
+                        stream.ToArray(),
+                        "application/vnd.ms-excel.sheet.macroEnabled.12",
+                        request.CodDEIS + "P" + request.Mes.ToString("D2") + "-compilado.xlsm"
+                    );
+                }
+            }
         }
 
     }

@@ -40,6 +40,7 @@ namespace RemTools
                         .Max(r => r.Reporte.Mes)
                     : 12;
 
+                
                 foreach (var Establecimiento in Establecimientos)
                 {
                     // Contexto para el corte P (mes de aplicación: 1 si fallback año anterior, 6 o 12 si corte corriente)
