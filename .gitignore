@@ -16,3 +16,9 @@ Thumbs.db
 db/
 .vs/
 api/Properties/launchSettings.json
+
+
+shared/bin/*
+shared/obj/*
+tools/bin/*
+tools/obj/*

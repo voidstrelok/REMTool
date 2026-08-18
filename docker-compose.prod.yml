@@ -22,13 +22,15 @@ services:
   # ── .NET 8 API ───────────────────────────────────────────────────────────────
   api:
     build:
-      context: ./api
+      context: .
+      dockerfile: api/Dockerfile
     restart: always
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
       ASPNETCORE_URLS: http://+:${API_PORT}
       ConnectionStrings__PostgreSQL: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
       Paths__BaseSA: /app/resources/${BASE_SA}
+      Paths__BaseSP: /app/resources/${BASE_SP}
     volumes:
       - ./api/resources:/app/resources:ro
     ports:

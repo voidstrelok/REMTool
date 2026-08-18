@@ -16,6 +16,8 @@ interface NavLink {
 const navLinks: NavLink[] = [
   { href: "/CompilarREM", label: "Compilar REM" },
   { href: "/RevisarREM", label: "Revisar REM" },
+  { href: "/PanelREM", label: "Panel REM" },
+  { href: "/RasterizarPDF", label: "Rasterizar PDF" },
   /*{ href: "/ConstruyeREM", label: "Construye REM" },*/
   { href: "/Indicadores?tipo=MetasSanitarias", label: "Metas Sanitarias", tipoParam: "MetasSanitarias" },
   { href: "/Indicadores?tipo=IAAPS", label: "IAAPS", tipoParam: "IAAPS" },

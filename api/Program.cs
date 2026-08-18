@@ -4,12 +4,15 @@ using Microsoft.Extensions.DependencyInjection;
 using OfficeOpenXml;
 using QuestPDF.Infrastructure;
 using RemTool;
+using RemTool.Shared;
 using RemTool.Controllers;
+using RemTool.Services;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// REBUILD_MARKER_v2
 // Add services to the container.
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -17,13 +20,15 @@ builder.Services.AddControllers()
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<VoidDataContext>(options =>
+builder.Services.AddDbContext<RemToolDataContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("PostgreSQL"),
         npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "REMTool")));
 
 builder.Services.AddScoped<DataController>();
 builder.Services.AddScoped<REMController>();
+builder.Services.AddScoped<IIndicadorService, IndicadorService>();
+builder.Services.AddScoped<IRemAnalyzer, RemAnalyzerService>();
 
 QuestPDF.Settings.License = LicenseType.Community;
 
@@ -46,7 +51,7 @@ var app = builder.Build();
 // ── Auto-migrate ──────────────────────────────────────────────────────────────
 using (var scope = app.Services.CreateScope())
 {
-    var db     = scope.ServiceProvider.GetRequiredService<VoidDataContext>();
+    var db     = scope.ServiceProvider.GetRequiredService<RemToolDataContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     var pending = await db.Database.GetPendingMigrationsAsync();
     if (pending.Any())

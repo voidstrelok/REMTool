@@ -2,11 +2,13 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-COPY RemTool.csproj .
-RUN dotnet restore
+COPY shared/RemTool.Shared.csproj shared/
+COPY api/RemTool.csproj api/
+RUN dotnet restore api/RemTool.csproj
 
-COPY . .
-RUN dotnet publish -c Release -o /app/publish
+COPY shared/ shared/
+COPY api/ api/
+RUN dotnet publish api/RemTool.csproj -c Release -o /app/publish
 
 # ── Runtime stage ─────────────────────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime

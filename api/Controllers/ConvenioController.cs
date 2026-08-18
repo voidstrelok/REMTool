@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using RemTool.Enum;
+using RemTool.Shared;
+using RemTool.Shared.Enum;
 
 namespace RemTool.Controllers
 {
@@ -8,10 +9,10 @@ namespace RemTool.Controllers
     [Route("api")]
     public class ConvenioController : ControllerBase
     {
-        private readonly VoidDataContext db;
+        private readonly RemToolDataContext db;
         private List<long> EstablecimientosExcluidos = new List<long> { (long)EnumEstablecimiento.ClinicaDentalMovilMontePatria, (long)EnumEstablecimiento.SARMontePatria, (long)EnumEstablecimiento.SURElPalqui };
 
-        public ConvenioController(VoidDataContext context)
+        public ConvenioController(RemToolDataContext context)
         {
             db = context;
         }

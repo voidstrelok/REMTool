@@ -1,16 +1,32 @@
 import Link from "next/link";
-import { Settings, CheckCircle2, BarChart2, Building2, FolderOpen, ExternalLink, FileDown, Lock } from "lucide-react";
+import { Settings, CheckCircle2, BarChart2, Building2, FolderOpen, ExternalLink, FileDown, Lock, FileImage, ClipboardList } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 const allTools = [
   {
-    name: "Compilar REM",
-    icon: Settings,
-    link: "/CompilarREM",
-    comment: "Consolidación de archivos REM en una única planilla.",
+    name: "Panel REM",
+    icon: ClipboardList,
+    link: "/PanelREM",
+    comment: "Estado de revisión de archivos REM por establecimiento y serie.",
     external: false,
     requiresMonitoreo: false,
   },
+  {
+    name: "Compilar REM Serie A",
+    icon: Settings,
+    link: "/CompilarREM",
+    comment: "Consolidación de archivos REM Serie A en una única planilla.",
+    external: false,
+    requiresMonitoreo: false,
+  },/*
+  {
+    name: "Compilar REM Serie P",
+    icon: Settings,
+    link: "/CompilarREMP",
+    comment: "Consolidación de archivos REM Serie P en una única planilla.",
+    external: false,
+    requiresMonitoreo: false,
+  },*/
   {
     name: "Revisar REM",
     icon: CheckCircle2,
@@ -49,6 +65,14 @@ const allTools = [
     link: "https://drive.google.com/drive/folders/1vlCWcZMrdayOv5n8-ev1PstQCQIoSQCT?usp=sharing",
     comment: "Archivos REM y consolidados en Google Drive.",
     external: true,
+    requiresMonitoreo: false,
+  },
+  {
+    name: "Rasterizar PDF",
+    icon: FileImage,
+    link: "/RasterizarPDF",
+    comment: "Convierte las capas y anotaciones de un PDF en imagen permanente.",
+    external: false,
     requiresMonitoreo: false,
   },
 ];
