@@ -10,6 +10,9 @@
     <Compile Update="NodoTipoDialog.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Update="PuntoResumenEditorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="ReglaEditorForm.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -11,5 +11,6 @@ namespace RemTool.Shared
 
         public virtual ICollection<VersionRem> VersionRems { get; set; } = new HashSet<VersionRem>();
         public virtual ICollection<HojaRem> HojaRems { get; set; } = new HashSet<HojaRem>();
+        public virtual ICollection<PuntoResumen> PuntosResumen { get; set; } = new HashSet<PuntoResumen>();
     }
 }

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Settings, CheckCircle2, BarChart2, Building2, FolderOpen, ExternalLink, FileDown, Lock, FileImage, ClipboardList } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-const allTools = [/*
+const allTools = [
   {
     name: "Panel REM",
     icon: ClipboardList,
@@ -10,7 +10,7 @@ const allTools = [/*
     comment: "Estado de revisión de archivos REM por establecimiento y serie.",
     external: false,
     requiresMonitoreo: false,
-  },*/
+  },
   {
     name: "Compilar REM Serie A",
     icon: Settings,

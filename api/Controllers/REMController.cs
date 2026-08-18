@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NCalc;
 using OfficeOpenXml;
+using RemTool.Services;
 using RemTool.Shared;
 using RemTool.Util;
 
@@ -18,11 +19,16 @@ namespace RemTool.Controllers
 
         private readonly ILogger<REMController> _logger;
         private RemToolDataContext db;
+        private readonly IRemAnalyzer _analyzer;
 
-        public REMController(ILogger<REMController> logger, RemToolDataContext context)
+        public REMController(
+            ILogger<REMController> logger,
+            RemToolDataContext context,
+            IRemAnalyzer analyzer)
         {
             _logger = logger;
             db = context;
+            _analyzer = analyzer;
         }
         [HttpGet("getUltimaActualizacion/")]
         public async Task<IActionResult> GetUltimaActualizacion()
@@ -46,71 +52,33 @@ namespace RemTool.Controllers
         }
 
         [HttpPost("revisarREM/")]
-        public async Task<IActionResult> RevisarREM(IFormFile archivo)
+        public async Task<IActionResult> RevisarREM(IFormFile archivo, CancellationToken cancellationToken)
         {
             if (archivo == null || archivo.Length == 0)
                 return BadRequest("No se ha enviado ningún archivo.");
 
+            if (!string.Equals(Path.GetExtension(archivo.FileName), ".xlsm", StringComparison.OrdinalIgnoreCase))
+                return BadRequest("Sólo se permiten archivos con extensión .xlsm.");
 
-            using (var stream = new MemoryStream())
+            await using var stream = archivo.OpenReadStream();
+            try
             {
-                await archivo.CopyToAsync(stream);
-                stream.Position = 0;
+                var analisis = await _analyzer.AnalizarAsync(stream, cancellationToken: cancellationToken);
+                var mesTxt = new DateTime(analisis.Año, analisis.Mes, 1)
+                    .ToString("MMMM", CultureInfo.CreateSpecificCulture("es"))
+                    .ToUpper(CultureInfo.CreateSpecificCulture("es"));
 
-                using (var workbook = new ExcelPackage(stream))
+                return Ok(new ResultadoRevision
                 {
-                    try
-                    {
-                    bool hayerrores = false;
-                        var hojaNombre = workbook.Workbook.Worksheets["NOMBRE"];
-
-                        string TipoREM = hojaNombre.Cells["B17"].Value.ToString()[hojaNombre.Cells["B17"].Value.ToString().Length - 1].ToString() ?? "";
-                        string CodigoREM = hojaNombre.Cells["C3"].Value.ToString() + hojaNombre.Cells["D3"].Value.ToString() + hojaNombre.Cells["E3"].Value.ToString() + hojaNombre.Cells["F3"].Value.ToString() + hojaNombre.Cells["G3"].Value.ToString() + hojaNombre.Cells["H3"].Value.ToString();
-                        string MesREM = hojaNombre.Cells["C6"].Value.ToString() + hojaNombre.Cells["D6"].Value.ToString();
-                        string versionArchivo = hojaNombre.Cells["A9"].Value.ToString();
-
-                        string MesTxt = new DateTime(2025, int.Parse(MesREM), 1).ToString("MMMM", CultureInfo.CreateSpecificCulture("es")).ToUpper();
-
-                        var Establecimiento = db.Establecimiento.FirstOrDefault(e => e.CodDeis.Equals(CodigoREM));
-                        var versionDb = db.VersionRem
-                            .Include(v => v.SerieRem)
-                            .Where(v => v.Nombre.Equals(versionArchivo))
-                            .FirstOrDefault();
-                        string serieNombre = versionDb?.SerieRem?.Nombre ?? "A";
-                        var Reglas = db.Regla
-                            .Include(r => r.VersionREM)
-                            .Include(r => r.TipoRegla)
-                            .Where(r => r.VersionREM.Nombre.Equals(versionArchivo))
-                            .ToList();
-                        ResultadoRevision ListaErrores = new ResultadoRevision
-                        {
-                            serie = serieNombre,
-                            revisado = $"{CodigoREM} - {Establecimiento.Nombre} - {MesTxt}",
-                            errores = new List<string>(),
-                            advertencias = new List<string>()
-                        };
-                        foreach (var regla in Reglas)
-                        {
-                            string resultado = Regex.Replace(regla.Expresion, Utils.RegexHoja, x => Utils.ParseaHojas(x.Value, workbook));
-                            resultado = resultado.Replace("[", "").Replace("]", "");
-                            Expression Expr = new Expression(resultado);
-                            if (!(bool)Expr.Evaluate())
-                            {
-                                if (regla.TipoRegla.Nombre == "Advertencia")
-                                    ListaErrores.advertencias.Add(regla.Mensaje);
-                                else
-                                    ListaErrores.errores.Add(regla.Mensaje);
-                                hayerrores = true;
-                            }
-                        }
-                        return Ok(ListaErrores);
-                    }
-
-                    catch (Exception e)
-                    {
-                        return BadRequest("Error al procesar el archivo: " + e.Message);
-                    }
-                }
+                    serie = analisis.Serie,
+                    revisado = $"{analisis.CodDeis} - {analisis.NombreEstablecimiento} - {mesTxt}",
+                    errores = analisis.Errores,
+                    advertencias = analisis.Advertencias
+                });
+            }
+            catch (RemAnalysisException ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
 
@@ -246,6 +214,20 @@ namespace RemTool.Controllers
         [HttpPost("CompilarREM/")]
         public async Task<IActionResult> CompilarREM([FromBody] CompilarRemRequest request)
         {
+            if (request is null)
+                return BadRequest("La solicitud es requerida.");
+
+            if (request.Mes is < 1 or > 12)
+                return BadRequest("El mes debe estar entre 1 y 12.");
+
+            if (string.IsNullOrWhiteSpace(request.CodDEIS)
+                || request.CodDEIS.Length != 6
+                || !request.CodDEIS.All(char.IsDigit))
+                return BadRequest("El CodDEIS debe contener exactamente 6 dígitos.");
+
+            if (string.IsNullOrWhiteSpace(Datos.versionBase) || !System.IO.File.Exists(Datos.versionBase))
+                return BadRequest("La plantilla base para Serie A no está configurada o no existe.");
+
             using (var package = new ExcelPackage(new FileInfo(Datos.versionBase)))
             {
                 var Establecimiento = db.Establecimiento.FirstOrDefault(e => e.CodDeis.Equals(request.CodDEIS));
@@ -282,38 +264,45 @@ namespace RemTool.Controllers
 
                 var PrestacionesVersion = db.Prestacion.Include(p=>p.HojaRem).Where(p => p.VersionRem.Nombre == HojaNombre.Cells["A9"].Value.ToString()).ToList();
 
-                foreach (EstrategiaRemDTO estrategia in request.Estrategias)
+                foreach (var estrategia in request.Estrategias ?? [])
                 {
-                    foreach (PrestacionRemDTO prestacion in estrategia.Datos)
+                    foreach (var prestacion in estrategia.Datos ?? [])
                     {
-                        var DatosPrestacion = PrestacionesVersion.Where(p=>p.CodigoPrestacion.Equals(prestacion.Prestacion)).FirstOrDefault();
+                        if (string.IsNullOrWhiteSpace(prestacion.Prestacion))
+                            return BadRequest("La solicitud contiene una prestación sin código.");
+
+                        var DatosPrestacion = PrestacionesVersion
+                            .FirstOrDefault(p => p.CodigoPrestacion.Equals(prestacion.Prestacion));
+                        if (DatosPrestacion is null)
+                            return BadRequest($"La prestación '{prestacion.Prestacion}' no existe en la plantilla base de Serie A.");
+
+                        if (prestacion.Valores is null)
+                            continue;
+
+                        if (prestacion.Valores.Count > DatosPrestacion.Coordenada.Count)
+                            return BadRequest($"La prestación '{prestacion.Prestacion}' contiene {prestacion.Valores.Count} valores, pero la plantilla sólo admite {DatosPrestacion.Coordenada.Count}.");
+
                         int index = 0;
                         foreach (string valor in prestacion.Valores)
                         {
-                            string celda = DatosPrestacion.Coordenada.ElementAt(index).ToString();
+                            string celda = DatosPrestacion.Coordenada[index].ToString();
                             var hoja = DatosPrestacion.HojaRem.Nombre.ToString() ?? "";
                             var HojaREM = package.Workbook.Worksheets[hoja];
+                            if (HojaREM is null)
+                                return BadRequest($"No se encontró la hoja '{hoja}' para la prestación '{prestacion.Prestacion}'.");
+
                             if (string.IsNullOrEmpty(HojaREM.Cells[celda.ToString()].Formula))
                             {
-                                
                                 string valorold = HojaREM.Cells[celda.ToString()].Value?.ToString() ?? "0";
 
-                                try
-                                {
-                                    int valornuevo = int.Parse(valorold) + int.Parse(valor);
-                                    if (!HojaREM.Cells[celda.ToString()].Style.Locked)
-                                    {
-                                        HojaREM.Cells[celda.ToString()].Value = valornuevo;
-                                    }
-                                }
-                                catch (Exception e)
-                                {
-                                    Console.WriteLine($"Error en {DatosPrestacion.CodigoPrestacion}: parseando {valorold}, {valor}, {e.Message}");
-                                    return BadRequest("Error en la solicitud.");
-                                }
-                                
+                                if (!TryParseRemNumber(valorold, out var valorBase)
+                                    || !TryParseRemNumber(valor ?? "0", out var valorNuevo))
+                                    return BadRequest($"No se pudo interpretar un valor numérico para la prestación '{prestacion.Prestacion}' en la celda '{celda}'.");
+
+                                if (!HojaREM.Cells[celda].Style.Locked)
+                                    HojaREM.Cells[celda].Value = valorBase + valorNuevo;
                             }
-                                
+
                             index += 1;
                         }
 
@@ -336,6 +325,14 @@ namespace RemTool.Controllers
                     );
                 }
             }
+        }
+
+        private static bool TryParseRemNumber(string? raw, out decimal value)
+        {
+            if (decimal.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out value))
+                return true;
+
+            return decimal.TryParse(raw, NumberStyles.Any, CultureInfo.GetCultureInfo("es-CL"), out value);
         }
 
         [HttpPost("CompilarREMP/")]

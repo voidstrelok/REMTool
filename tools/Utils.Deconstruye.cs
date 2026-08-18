@@ -24,9 +24,8 @@ namespace RemTools
 
             using var workbook_base = new ExcelPackage(dir_base);
             VersionArchivo = workbook_base.Workbook.Worksheets["NOMBRE"].Cells["A9"].Value.ToString() ?? "";
-            var serieRaw = workbook_base.Workbook.Worksheets["NOMBRE"].Cells["B17"].Value.ToString();
-            var aux1 = serieRaw.Substring(serieRaw.IndexOf(' ') + 1);
-            string Serie = aux1.Length < 2 ? aux1 : aux1.Split(' ')[0];
+            var serieRaw = workbook_base.Workbook.Worksheets["NOMBRE"].Cells["B17"].Value?.ToString() ?? "";
+            string Serie = ExtraerSerieDesdeNombre(serieRaw);
 
             dialog = new OpenFileDialog
             {

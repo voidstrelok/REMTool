@@ -1,10 +1,10 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NCalc;
-using OfficeOpenXml;
+using RemTool.Services;
 using RemTool.Shared;
-using RemTool.Util;
 
 namespace RemTool.Controllers
 {
@@ -13,164 +13,171 @@ namespace RemTool.Controllers
     public class PanelController : ControllerBase
     {
         private readonly RemToolDataContext _db;
+        private readonly IRemAnalyzer _analyzer;
 
-        public PanelController(RemToolDataContext context)
+        public PanelController(RemToolDataContext context, IRemAnalyzer analyzer)
         {
             _db = context;
+            _analyzer = analyzer;
         }
 
         [HttpGet("GetSeries/")]
-        public IActionResult GetSeries()
+        public async Task<IActionResult> GetSeries(CancellationToken cancellationToken)
         {
-            var series = _db.SerieRem
+            var series = await _db.SerieRem
                 .OrderBy(s => s.Nombre)
                 .Select(s => new { s.Id, s.Nombre })
-                .ToList();
+                .ToListAsync(cancellationToken);
             return Ok(series);
         }
 
         [HttpPost("AnalizarREM/")]
-        public async Task<IActionResult> AnalizarREM(IFormFile archivo)
+        public async Task<IActionResult> AnalizarREM(
+            [FromForm] IFormFile? archivo,
+            [FromForm] string? serieEsperada,
+            [FromForm] string? versionEsperada,
+            [FromForm] bool esComplementaria,
+            [FromForm] int? mesEsperado,
+            [FromForm(Name = "añoEsperado")] int? añoEsperado,
+            [FromForm] string? codDeisEsperado,
+            CancellationToken cancellationToken)
         {
-            if (archivo == null || archivo.Length == 0)
+            if (archivo is null || archivo.Length == 0)
                 return BadRequest("No se ha enviado ningún archivo.");
 
-            using var stream = new MemoryStream();
-            await archivo.CopyToAsync(stream);
-            stream.Position = 0;
+            if (!string.Equals(Path.GetExtension(archivo.FileName), ".xlsm", StringComparison.OrdinalIgnoreCase))
+                return BadRequest("Sólo se permiten archivos con extensión .xlsm.");
 
-            using var workbook = new ExcelPackage(stream);
+            await using var stream = archivo.OpenReadStream();
             try
             {
-                var hojaNombre = workbook.Workbook.Worksheets["NOMBRE"];
-                if (hojaNombre == null)
-                    return BadRequest("No se encontró la hoja 'NOMBRE'.");
+                var resultado = await _analyzer.AnalizarAsync(
+                    stream,
+                    new RemAnalysisExpectations
+                    {
+                        Serie = serieEsperada,
+                        Version = versionEsperada,
+                        SoloValidarSerieYVersion = esComplementaria,
+                        Mes = mesEsperado,
+                        Año = añoEsperado,
+                        CodDeis = codDeisEsperado
+                    },
+                    cancellationToken);
 
-                // --- Parse header fields ---
-                string codDeis = (hojaNombre.Cells["C3"].Value?.ToString() ?? "")
-                               + (hojaNombre.Cells["D3"].Value?.ToString() ?? "")
-                               + (hojaNombre.Cells["E3"].Value?.ToString() ?? "")
-                               + (hojaNombre.Cells["F3"].Value?.ToString() ?? "")
-                               + (hojaNombre.Cells["G3"].Value?.ToString() ?? "")
-                               + (hojaNombre.Cells["H3"].Value?.ToString() ?? "");
+                return Ok(resultado);
+            }
+            catch (RemAnalysisException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
-                string mesRaw = (hojaNombre.Cells["C6"].Value?.ToString() ?? "")
-                              + (hojaNombre.Cells["D6"].Value?.ToString() ?? "");
+        [HttpGet("GetPuntosResumen/{serieNombre}")]
+        public async Task<IActionResult> GetPuntosResumen(string serieNombre, CancellationToken cancellationToken)
+        {
+            var serie = await _db.SerieRem
+                .Include(s => s.PuntosResumen)
+                .FirstOrDefaultAsync(s => s.Nombre == serieNombre, cancellationToken);
 
-                string versionArchivo = hojaNombre.Cells["A9"].Value?.ToString() ?? "";
+            if (serie is null)
+                return NotFound($"Serie '{serieNombre}' no encontrada.");
 
-                // Extract series from B17: "REM A" → "A", "REM BM" → "BM"
-                string serieRaw = hojaNombre.Cells["B17"].Value?.ToString() ?? "";
-                string serieAux = serieRaw.Contains(' ')
-                    ? serieRaw.Substring(serieRaw.IndexOf(' ') + 1)
-                    : serieRaw;
-                string serie = serieAux.Split(' ')[0];
+            var result = serie.PuntosResumen
+                .OrderBy(p => p.Categoria)
+                .ThenBy(p => p.Nombre)
+                .Select(p => new { p.Id, p.Nombre, p.Categoria, p.Expresion })
+                .ToList();
 
-                if (!int.TryParse(mesRaw, out int mes))
-                    return BadRequest("No se pudo leer el mes del archivo.");
+            return Ok(result);
+        }
 
-                if (string.IsNullOrEmpty(versionArchivo))
-                    return BadRequest("No se encontró la versión en la celda A9.");
+        [HttpPost("ComputarResumen/")]
+        public async Task<IActionResult> ComputarResumen(
+            [FromBody] ComputarResumenRequest? request,
+            CancellationToken cancellationToken)
+        {
+            if (request is null || string.IsNullOrWhiteSpace(request.SerieNombre))
+                return BadRequest("SerieNombre es requerido.");
 
-                // --- Lookup Establecimiento (with Sector) ---
-                var establecimiento = _db.Establecimiento
-                    .Include(e => e.Sector)
-                    .FirstOrDefault(e => e.CodDeis == codDeis);
+            if (request.Mes is < 1 or > 12)
+                return BadRequest("Mes debe estar entre 1 y 12.");
 
-                if (establecimiento == null)
-                    return BadRequest($"No se encontró el establecimiento con CodDEIS '{codDeis}'.");
+            var serie = await _db.SerieRem
+                .Include(s => s.PuntosResumen)
+                .FirstOrDefaultAsync(s => s.Nombre == request.SerieNombre, cancellationToken);
 
-                // --- Lookup VersionRem to get year ---
-                var versionRem = _db.VersionRem
-                    .FirstOrDefault(v => v.Nombre == versionArchivo);
+            if (serie is null)
+                return NotFound($"Serie '{request.SerieNombre}' no encontrada.");
 
-                if (versionRem == null)
-                    return BadRequest($"No se encontró la versión '{versionArchivo}' en la base de datos.");
-
-                int año = versionRem.Fecha.Year;
-
-                // --- Run revision rules against raw Excel cells ---
-                var reglas = _db.Regla
-                    .Include(r => r.VersionREM)
-                    .Include(r => r.TipoRegla)
-                    .Where(r => r.VersionREM.Nombre == versionArchivo)
-                    .ToList();
-
-                var errores = new List<string>();
-                var advertencias = new List<string>();
-
-                foreach (var regla in reglas)
+            var entries = request.Entries ?? [];
+            var entriesConsideradas = entries.Where(e => e.IncluidoEnResumen).ToList();
+            var response = new ComputarResumenResponseDTO
+            {
+                Serie = serie.Nombre,
+                Mes = request.Mes,
+                Año = request.Año,
+                Cobertura = new ResumenCoberturaDTO
                 {
+                    PlanillasRecibidas = entries.Count,
+                    PlanillasConsideradas = entriesConsideradas.Count,
+                    PlanillasExcluidas = entries.Count(e => !e.IncluidoEnResumen),
+                    PlanillasConErrores = entries.Count(e => e.TieneErrores),
+                    PlanillasConAdvertencias = entries.Count(e => e.TieneAdvertencias)
+                }
+            };
+
+            var tokenRegex = new Regex(@"\[([^\]]+)\]\[(\d+)\]");
+            foreach (var punto in serie.PuntosResumen.OrderBy(p => p.Categoria).ThenBy(p => p.Nombre))
+            {
+                decimal total = 0m;
+                foreach (var entry in entriesConsideradas)
+                {
+                    var expression = tokenRegex.Replace(punto.Expresion, match =>
+                    {
+                        var prestacion = match.Groups[1].Value;
+                        if (!int.TryParse(match.Groups[2].Value, out var index) || index < 1)
+                            return "0";
+
+                        var dato = entry.Datos?.FirstOrDefault(d => d.Prestacion == prestacion);
+                        if (dato?.Valores is null || dato.Valores.Count < index)
+                            return "0";
+
+                        return ParseDecimal(dato.Valores[index - 1])
+                            .ToString(CultureInfo.InvariantCulture);
+                    });
+
                     try
                     {
-                        string expr = Regex.Replace(regla.Expresion, Utils.RegexHoja,
-                            x => Utils.ParseaHojas(x.Value, workbook));
-                        expr = expr.Replace("[", "").Replace("]", "");
-
-                        if (!(bool)new Expression(expr).Evaluate())
-                        {
-                            if (regla.TipoRegla.Nombre == "Advertencia")
-                                advertencias.Add(regla.Mensaje);
-                            else
-                                errores.Add(regla.Mensaje);
-                        }
+                        var evaluated = new Expression(expression).Evaluate();
+                        total += Convert.ToDecimal(evaluated, CultureInfo.InvariantCulture);
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // Skip malformed rule expressions silently
+                        response.ErroresCalculo.Add(
+                            $"No se pudo calcular el punto resumen '{punto.Nombre}' para {entry.CodDeis}: {ex.Message}");
                     }
                 }
 
-                // --- Extract prestacion data ---
-                var prestaciones = _db.Prestacion
-                    .Include(p => p.HojaRem)
-                    .Where(p => p.VersionRem.Nombre == versionArchivo && p.IsEnabled)
-                    .ToList();
-
-                var datos = new List<PrestacionDatosDTO>();
-
-                foreach (var prestacion in prestaciones)
+                response.Puntos.Add(new PuntoResumenResultadoDTO
                 {
-                    var hojaExcel = workbook.Workbook.Worksheets[prestacion.HojaRem.Nombre];
-                    if (hojaExcel == null) continue;
-
-                    var valores = new List<string>();
-                    bool tieneData = false;
-
-                    foreach (var coord in prestacion.Coordenada)
-                    {
-                        string valor = hojaExcel.Cells[coord].Value?.ToString() ?? "0";
-                        valores.Add(valor);
-                        if (valor != "0" && valor != "") tieneData = true;
-                    }
-
-                    if (tieneData)
-                        datos.Add(new PrestacionDatosDTO
-                        {
-                            Prestacion = prestacion.CodigoPrestacion,
-                            Valores = valores
-                        });
-                }
-
-                return Ok(new AnalisisRemDTO
-                {
-                    CodDeis = codDeis,
-                    NombreEstablecimiento = establecimiento.Nombre,
-                    IdSector = establecimiento.id_sector,
-                    NombreSector = establecimiento.Sector.Nombre,
-                    Serie = serie,
-                    Version = versionArchivo,
-                    Mes = mes,
-                    Año = año,
-                    Errores = errores,
-                    Advertencias = advertencias,
-                    Datos = datos
+                    Nombre = punto.Nombre,
+                    Categoria = punto.Categoria,
+                    Valor = total,
+                    PlanillasConsideradas = entriesConsideradas.Count
                 });
             }
-            catch (Exception ex)
-            {
-                return BadRequest("Error al procesar el archivo: " + ex.Message);
-            }
+
+            return Ok(response);
+        }
+
+        private static decimal ParseDecimal(string? raw)
+        {
+            if (decimal.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out var invariant))
+                return invariant;
+
+            return decimal.TryParse(raw, NumberStyles.Any, CultureInfo.GetCultureInfo("es-CL"), out var local)
+                ? local
+                : 0m;
         }
     }
 }

@@ -197,6 +197,12 @@ namespace RemTools
             editor.ShowDialog(this);
         }
 
+        private void puntoResumen_btn_Click(object sender, EventArgs e)
+        {
+            using var editor = new PuntoResumenEditorForm(BDD);
+            editor.ShowDialog(this);
+        }
+
         private void visor_btn_Click(object sender, EventArgs e)
         {
             using var visor = new VisorReportesForm(BDD);

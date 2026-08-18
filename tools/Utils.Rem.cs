@@ -29,10 +29,7 @@ namespace RemTools
 
             bool vVersion = VersionSerie.Exists(v => v.Nombre.Equals(VersionArchivo));
 
-            var TipoREM = hojaNombre.Cells["B17"].Value.ToString();
-            TipoREM = TipoREM.Substring(TipoREM.IndexOf(' ') + 1).Length < 2
-                ? TipoREM.Substring(TipoREM.IndexOf(' ') + 1)
-                : TipoREM.Substring(TipoREM.IndexOf(' ') + 1).Split(' ')[0];
+            var TipoREM = ExtraerSerieDesdeNombre(hojaNombre.Cells["B17"].Value?.ToString() ?? "");
 
             string CodigoREM = hojaNombre.Cells["C3"].Value.ToString() + hojaNombre.Cells["D3"].Value.ToString() + hojaNombre.Cells["E3"].Value.ToString() + hojaNombre.Cells["F3"].Value.ToString() + hojaNombre.Cells["G3"].Value.ToString() + hojaNombre.Cells["H3"].Value.ToString();
             string MesREM = hojaNombre.Cells["C6"].Value.ToString() + hojaNombre.Cells["D6"].Value.ToString();
@@ -327,10 +324,9 @@ namespace RemTools
                                          + (hojaNombre.Cells["G3"].Value?.ToString() ?? "")
                                          + (hojaNombre.Cells["H3"].Value?.ToString() ?? "");
 
-                    // Extraer serie desde celda B17 (mismo método que DeconstruyeREM)
+                    // Extraer serie desde celda B17.
                     string serieRaw = hojaNombre.Cells["B17"].Value?.ToString() ?? "";
-                    string aux      = serieRaw.Substring(serieRaw.IndexOf(' ') + 1);
-                    string serieHoja = aux.Length < 2 ? aux : aux.Split(' ')[0];
+                    string serieHoja = ExtraerSerieDesdeNombre(serieRaw);
 
                     // CHECK 1: serie del nombre de archivo == serie de la hoja NOMBRE
                     if (!serieNombre.Equals(serieHoja, StringComparison.OrdinalIgnoreCase))

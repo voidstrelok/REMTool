@@ -43,6 +43,7 @@ namespace RemTools
             reglas_btn = new Button();
             indicadores_btn = new Button();
             visor_btn = new Button();
+            puntoResumen_btn = new Button();
             grpRevisar.SuspendLayout();
             grpProcesamiento.SuspendLayout();
             grpConfig.SuspendLayout();
@@ -170,6 +171,7 @@ namespace RemTools
             grpConfig.Controls.Add(reglas_btn);
             grpConfig.Controls.Add(indicadores_btn);
             grpConfig.Controls.Add(visor_btn);
+            grpConfig.Controls.Add(puntoResumen_btn);
             grpConfig.Location = new Point(10, 289);
             grpConfig.Name = "grpConfig";
             grpConfig.Size = new Size(520, 110);
@@ -201,11 +203,21 @@ namespace RemTools
             //
             visor_btn.Location = new Point(8, 65);
             visor_btn.Name = "visor_btn";
-            visor_btn.Size = new Size(504, 35);
+            visor_btn.Size = new Size(249, 35);
             visor_btn.TabIndex = 2;
             visor_btn.Text = "Visor de Registros";
             visor_btn.UseVisualStyleBackColor = true;
             visor_btn.Click += visor_btn_Click;
+            //
+            // puntoResumen_btn
+            //
+            puntoResumen_btn.Location = new Point(263, 65);
+            puntoResumen_btn.Name = "puntoResumen_btn";
+            puntoResumen_btn.Size = new Size(249, 35);
+            puntoResumen_btn.TabIndex = 3;
+            puntoResumen_btn.Text = "Editor Puntos Resumen";
+            puntoResumen_btn.UseVisualStyleBackColor = true;
+            puntoResumen_btn.Click += puntoResumen_btn_Click;
             //
             // Main
             //
@@ -242,5 +254,6 @@ namespace RemTools
         private Button reglas_btn;
         private Button indicadores_btn;
         private Button visor_btn;
+        private Button puntoResumen_btn;
     }
 }
