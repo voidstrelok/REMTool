@@ -8,6 +8,7 @@ import Loading from "../../components/Loading";
 import ProgressBar from "../../components/ProgressBar";
 import { isTipoIndicador } from "../config";
 import { useIndicadorDetail } from "@/lib/hooks/useIndicadorDetail";
+import Breadcrumbs from "../../components/Breadcrumbs";
 
 interface Sector {
   id: number;
@@ -38,8 +39,8 @@ function DetalleIndicadorInner() {
     : tipo ? `/Indicadores?tipo=${tipo}` : "/Indicadores";
 
   const [showInfo, setShowInfo] = useState(false);
-  const [selectedSector, setSelectedSector] = useState<string>("");
-  const [selectedEstablecimiento, setSelectedEstablecimiento] = useState<string>("");
+  const [selectedSector, setSelectedSector] = useState<string>(() => searchParams.get("sectorId") ?? "");
+  const [selectedEstablecimiento, setSelectedEstablecimiento] = useState<string>(() => searchParams.get("establecimientoId") ?? "");
   const [sectores, setSectores] = useState<Sector[]>([]);
   const [filterEstablecimientos, setFilterEstablecimientos] = useState<EstablecimientoFilter[]>([]);
 
@@ -48,41 +49,55 @@ function DetalleIndicadorInner() {
       .then((res) => res.json())
       .then((data) => setSectores(Array.isArray(data) ? data : []))
       .catch(() => setSectores([]));
-    fetch(`${API_BASE}getEstablecimientos`)
+    fetch(`${API_BASE}getEstablecimientos?indicadorId=${id}`)
       .then((res) => res.json())
       .then((data) => {
         const parsed = Array.isArray(data)
           ? data.map((d: { id: number; codDeis: string; nombre: string }) => ({ id: d.id, cod: d.codDeis, nombre: d.nombre }))
           : [];
         setFilterEstablecimientos(parsed);
+        setSelectedEstablecimiento((current) =>
+          current && parsed.some((establecimiento) => String(establecimiento.id) === current)
+            ? current
+            : "",
+        );
       })
       .catch(() => setFilterEstablecimientos([]));
   }, []);
 
   useEffect(() => {
-    setSelectedEstablecimiento("");
     if (!selectedSector) {
-      fetch(`${API_BASE}getEstablecimientos`)
+      fetch(`${API_BASE}getEstablecimientos?indicadorId=${id}`)
         .then((res) => res.json())
         .then((data) => {
           const parsed = Array.isArray(data)
             ? data.map((d: { id: number; codDeis: string; nombre: string }) => ({ id: d.id, cod: d.codDeis, nombre: d.nombre }))
             : [];
           setFilterEstablecimientos(parsed);
+          setSelectedEstablecimiento((current) =>
+            current && parsed.some((establecimiento) => String(establecimiento.id) === current)
+              ? current
+              : "",
+          );
         })
         .catch(() => setFilterEstablecimientos([]));
       return;
     }
-    fetch(`${API_BASE}getEstablecimientos/${selectedSector}`)
+    fetch(`${API_BASE}getEstablecimientos/${selectedSector}?indicadorId=${id}`)
       .then((res) => res.json())
       .then((data) => {
         const parsed = Array.isArray(data)
           ? data.map((d: { id: number; codDeis: string; nombre: string }) => ({ id: d.id, cod: d.codDeis, nombre: d.nombre }))
           : [];
         setFilterEstablecimientos(parsed);
+        setSelectedEstablecimiento((current) =>
+          current && parsed.some((establecimiento) => String(establecimiento.id) === current)
+            ? current
+            : "",
+        );
       })
       .catch(() => setFilterEstablecimientos([]));
-  }, [selectedSector]);
+  }, [selectedSector, id]);
 
   const {
     data,
@@ -144,6 +159,7 @@ function DetalleIndicadorInner() {
 
   return (
     <div className="metas-page">
+      <Breadcrumbs items={[{ label: tipo ?? "Indicadores", href: backHref }, { label: data.nombre }]} />
       <div className="indicator-header">
         <div className="indicator-info">
           <h1 className="page-title" style={{ textAlign: "left" }}>
@@ -229,7 +245,10 @@ function DetalleIndicadorInner() {
               className="year-select"
               id="sector-select"
               value={selectedSector}
-              onChange={(e) => setSelectedSector(e.target.value)}
+              onChange={(e) => {
+                setSelectedSector(e.target.value);
+                setSelectedEstablecimiento("");
+              }}
             >
               <option value="">Todos</option>
               {sectores.map((s) => (

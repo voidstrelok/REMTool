@@ -15,6 +15,7 @@ namespace RemTools
         private bool _loading;
         private bool _denFijoHabilitado;
         private string _activeFormulaSource = "formula"; // "formula" | "denFijo"
+        private string? _formulaDenFijoOriginal;
 
         public IndicadorEditorForm(RemToolDataContext dbContext)
         {
@@ -121,6 +122,8 @@ namespace RemTools
 
             _formulaRoot = null;
             _formulaDenFijoRoot = null;
+            _formulaDenFijoOriginal = null;
+            _activeFormulaSource = "formula";
             formula_tv.Nodes.Clear();
             denFijo_tv.Nodes.Clear();
             formula_json_txt.Text = string.Empty;
@@ -162,9 +165,24 @@ namespace RemTools
 
             _denFijoHabilitado = ind.IsDenFijo;
             tab_den_fijo.Enabled = ind.IsDenFijo;
+            _activeFormulaSource = tabs_formula.SelectedTab == tab_den_fijo && ind.IsDenFijo
+                ? "denFijo"
+                : "formula";
 
-            _formulaRoot = ParseJsonSafe(ind.Formula);
-            _formulaDenFijoRoot = ParseJsonSafe(ind.FormulaDenFijo);
+            _formulaDenFijoOriginal = ind.FormulaDenFijo;
+            if (!TryParseFormulaJson(ind.Formula, out _formulaRoot, out var formulaError))
+            {
+                _formulaRoot = null;
+                MessageBox.Show(this,
+                    $"La fórmula del indicador #{ind.Id} no es válida y no se puede mostrar en el editor.\n\n{formulaError}",
+                    "Fórmula inválida", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+
+            // FormulaDenFijo contiene fórmulas antiguas en texto (por ejemplo,
+            // FONASA{edad<=9}); solo se carga como árbol cuando ya está en JSON.
+            _formulaDenFijoRoot = TryParseFormulaJson(ind.FormulaDenFijo, out var denFijoRoot, out _)
+                ? denFijoRoot
+                : null;
             PopularTreeView(formula_tv, _formulaRoot);
             PopularTreeView(denFijo_tv, _formulaDenFijoRoot);
             MostrarPanelNodo(null);
@@ -175,11 +193,87 @@ namespace RemTools
 
         // ── JSON sync ────────────────────────────────────────────────
 
-        private static JsonNode? ParseJsonSafe(string? json)
+        private static bool TryParseFormulaJson(string? json, out JsonNode? node, out string error)
         {
-            if (string.IsNullOrWhiteSpace(json)) return null;
-            try { return JsonNode.Parse(json); }
-            catch { return null; }
+            node = null;
+            error = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(json)) return true;
+
+            try
+            {
+                node = JsonNode.Parse(json);
+                ValidarFormulaNode(node, "raíz");
+                return true;
+            }
+            catch (JsonException ex)
+            {
+                error = ex.Message;
+            }
+            catch (InvalidOperationException ex)
+            {
+                error = ex.Message;
+            }
+            catch (FormatException ex)
+            {
+                error = ex.Message;
+            }
+
+            node = null;
+            return false;
+        }
+
+        private static void ValidarFormulaNode(JsonNode? node, string path)
+        {
+            if (node is not JsonObject obj)
+                throw new JsonException($"El nodo {path} debe ser un objeto JSON.");
+
+            var type = obj["type"]?.GetValue<string>();
+            if (string.IsNullOrWhiteSpace(type))
+                throw new JsonException($"Falta la propiedad 'type' en el nodo {path}.");
+
+            switch (type)
+            {
+                case "op":
+                    var op = obj["op"]?.GetValue<string>();
+                    if (op is not ("sum" or "sub" or "mul" or "div"))
+                        throw new JsonException($"Operador inválido en el nodo {path}.");
+
+                    if (obj["args"] is not JsonArray args)
+                        throw new JsonException($"Falta el arreglo 'args' en el nodo {path}.");
+
+                    if (op != "sum" && args.Count != 2)
+                        throw new JsonException($"El operador '{op}' requiere exactamente dos argumentos.");
+
+                    for (var i = 0; i < args.Count; i++)
+                        ValidarFormulaNode(args[i], $"{path}.args[{i}]");
+                    break;
+
+                case "number":
+                    if (obj["value"] is not JsonValue number
+                        || !number.TryGetValue<double>(out _))
+                        throw new JsonException($"El nodo {path} requiere un valor numérico.");
+                    break;
+
+                case "value":
+                    if (obj["prestacion"]?.GetValue<string>() is not { Length: > 0 })
+                        throw new JsonException($"El nodo {path} requiere 'prestacion'.");
+                    if (obj["columna"] is not JsonValue column
+                        || !column.TryGetValue<int>(out var columnValue)
+                        || columnValue < 1)
+                        throw new JsonException($"El nodo {path} requiere una 'columna' mayor o igual a 1.");
+                    break;
+
+                case "variable":
+                    if (obj["name"]?.GetValue<string>() is not { Length: > 0 })
+                        throw new JsonException($"El nodo {path} requiere 'name'.");
+                    if (obj["filters"] is not null && obj["filters"] is not JsonObject)
+                        throw new JsonException($"'filters' debe ser un objeto en el nodo {path}.");
+                    break;
+
+                default:
+                    throw new JsonException($"Tipo de nodo no soportado en {path}: {type}.");
+            }
         }
 
         private void SincronizarJsonText()
@@ -212,22 +306,25 @@ namespace RemTools
             if (string.IsNullOrWhiteSpace(text))
             {
                 ActiveFormulaRoot = null;
+                if (_activeFormulaSource == "denFijo")
+                    _formulaDenFijoOriginal = null;
                 PopularTreeView(ActiveTree, null);
                 tabs_formula.SelectedTab = _activeFormulaSource == "denFijo" ? tab_den_fijo : tab_formula;
                 return;
             }
 
-            try
+            if (!TryParseFormulaJson(text, out var node, out var error))
             {
-                var node = JsonNode.Parse(text);
-                ActiveFormulaRoot = node;
-                PopularTreeView(ActiveTree, node);
-                tabs_formula.SelectedTab = _activeFormulaSource == "denFijo" ? tab_den_fijo : tab_formula;
+                MessageBox.Show(this, $"JSON inválido:\n{error}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
-            catch (JsonException ex)
-            {
-                MessageBox.Show($"JSON inválido:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+
+            ActiveFormulaRoot = node;
+            if (_activeFormulaSource == "denFijo")
+                _formulaDenFijoOriginal = null;
+            PopularTreeView(ActiveTree, node);
+            tabs_formula.SelectedTab = _activeFormulaSource == "denFijo" ? tab_den_fijo : tab_formula;
         }
 
         // ── TreeView build ───────────────────────────────────────────
@@ -273,8 +370,10 @@ namespace RemTools
             tv.Nodes.Clear();
             if (root != null)
             {
-                tv.Nodes.Add(BuildTreeNode(root));
+                var rootNode = BuildTreeNode(root);
+                tv.Nodes.Add(rootNode);
                 tv.ExpandAll();
+                tv.SelectedNode = rootNode;
             }
         }
 
@@ -291,6 +390,21 @@ namespace RemTools
 
         private void denFijo_tv_AfterSelect(object sender, TreeViewEventArgs e)
             => MostrarPanelNodo(e.Node);
+
+        private void formula_tv_MouseDown(object sender, MouseEventArgs e)
+            => PrepararContextoArbol(formula_tv, e);
+
+        private void denFijo_tv_MouseDown(object sender, MouseEventArgs e)
+            => PrepararContextoArbol(denFijo_tv, e);
+
+        private void PrepararContextoArbol(TreeView tree, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Right) return;
+
+            _activeFormulaSource = ReferenceEquals(tree, denFijo_tv) ? "denFijo" : "formula";
+            tree.SelectedNode = tree.GetNodeAt(e.Location);
+            tree.Focus();
+        }
 
         private void MostrarPanelNodo(TreeNode? tn)
         {
@@ -434,9 +548,24 @@ namespace RemTools
         {
             var tn = ActiveTree.SelectedNode;
             bool isOp = tn?.Tag is JsonObject o && o["type"]?.GetValue<string>() == "op";
+            agregar_raiz_mni.Enabled = ActiveTree.Nodes.Count == 0;
             agregar_hijo_mni.Enabled = isOp;
             eliminar_nodo_mni.Enabled = tn?.Parent != null;
             cambiar_tipo_mni.Enabled = tn != null;
+        }
+
+        private void agregar_raiz_mni_Click(object sender, EventArgs e)
+        {
+            if (ActiveTree.Nodes.Count > 0) return;
+
+            using var dlg = new NodoTipoDialog();
+            if (dlg.ShowDialog(this) != DialogResult.OK || dlg.NodoCreado is not JsonNode nuevoNodo)
+                return;
+
+            ActiveFormulaRoot = nuevoNodo;
+            if (_activeFormulaSource == "denFijo")
+                _formulaDenFijoOriginal = null;
+            PopularTreeView(ActiveTree, nuevoNodo);
         }
 
         private void agregar_hijo_mni_Click(object sender, EventArgs e)
@@ -456,6 +585,8 @@ namespace RemTools
             }
 
             args.Add(nuevoNodo);
+            if (_activeFormulaSource == "denFijo")
+                _formulaDenFijoOriginal = null;
             var childTn = BuildTreeNode(nuevoNodo);
             tn.Nodes.Add(childTn);
             tn.Expand();
@@ -484,6 +615,8 @@ namespace RemTools
                 }
             }
 
+            if (_activeFormulaSource == "denFijo")
+                _formulaDenFijoOriginal = null;
             tn.Remove();
             MostrarPanelNodo(null);
         }
@@ -502,6 +635,8 @@ namespace RemTools
             if (isRoot)
             {
                 ActiveFormulaRoot = nuevoNodo;
+                if (_activeFormulaSource == "denFijo")
+                    _formulaDenFijoOriginal = null;
                 PopularTreeView(ActiveTree, nuevoNodo);
             }
             else
@@ -518,6 +653,8 @@ namespace RemTools
                         }
                     }
                 }
+                if (_activeFormulaSource == "denFijo")
+                    _formulaDenFijoOriginal = null;
                 var newTn = BuildTreeNode(nuevoNodo);
                 int idx = tn.Parent.Nodes.IndexOf(tn);
                 tn.Parent.Nodes.RemoveAt(idx);
@@ -614,7 +751,7 @@ namespace RemTools
             ind.IsColaborativo = colaborativo_chk.Checked;
             ind.Tipoindicador = tipo_cmb.SelectedItem is ComboItem { IntValue: int tv } ? tv : null;
             ind.Formula = _formulaRoot?.ToJsonString() ?? string.Empty;
-            ind.FormulaDenFijo = _formulaDenFijoRoot?.ToJsonString();
+            ind.FormulaDenFijo = _formulaDenFijoRoot?.ToJsonString() ?? _formulaDenFijoOriginal;
 
             if (_bdd.Indicador.Local.All(i => i.Id != ind.Id))
                 _bdd.Indicador.Update(ind);

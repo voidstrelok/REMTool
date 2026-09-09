@@ -23,11 +23,29 @@ namespace RemTool.Controllers
             _indicadorService = indicadorService;
         }
         [HttpGet("getEstablecimientos/")]
-        public async Task<IActionResult> GetEstablecimientos()
+        public async Task<IActionResult> GetEstablecimientos([FromQuery] int? indicadorId = null)
         {
-            var Establecimientos = await db.Establecimiento
-                .Where(e => !_indicadorService.EstablecimientosExcluidos.Contains(e.Id))
-                .Include(e=>e.Sector).OrderBy(e=>e.CodDeis).ToListAsync();
+            var filtro = indicadorId.HasValue
+                ? await _indicadorService.GetFiltroAsync(indicadorId.Value)
+                : null;
+            var establecimientosQuery = db.Establecimiento.AsQueryable();
+            if (filtro == null)
+                establecimientosQuery = establecimientosQuery
+                    .Where(e => !_indicadorService.EstablecimientosExcluidos.Contains(e.Id));
+            else if (filtro.EsWhitelist)
+            {
+                var incluidos = filtro.Ids.ToArray();
+                establecimientosQuery = establecimientosQuery.Where(e => incluidos.Contains(e.Id));
+            }
+            else
+            {
+                var excluidos = filtro.Ids.ToArray();
+                establecimientosQuery = establecimientosQuery.Where(e => !excluidos.Contains(e.Id));
+            }
+            establecimientosQuery = establecimientosQuery
+                .Include(e => e.Sector)
+                .OrderBy(e => e.CodDeis);
+            var Establecimientos = await establecimientosQuery.ToListAsync();
             return Ok(Establecimientos);
         }
 
@@ -42,10 +60,28 @@ namespace RemTool.Controllers
         }
 
         [HttpGet("getEstablecimientos/{sectorId:long}")]
-        public async Task<IActionResult> GetEstablecimientosBySector(long sectorId)
+        public async Task<IActionResult> GetEstablecimientosBySector(
+            long sectorId,
+            [FromQuery] int? indicadorId = null)
         {
-            var establecimientosdb = await db.Establecimiento
-                    .Where(e => !_indicadorService.EstablecimientosExcluidos.Contains(e.Id))                    
+            var filtro = indicadorId.HasValue
+                ? await _indicadorService.GetFiltroAsync(indicadorId.Value)
+                : null;
+            var establecimientosQuery = db.Establecimiento.AsQueryable();
+            if (filtro == null)
+                establecimientosQuery = establecimientosQuery
+                    .Where(e => !_indicadorService.EstablecimientosExcluidos.Contains(e.Id));
+            else if (filtro.EsWhitelist)
+            {
+                var incluidos = filtro.Ids.ToArray();
+                establecimientosQuery = establecimientosQuery.Where(e => incluidos.Contains(e.Id));
+            }
+            else
+            {
+                var excluidos = filtro.Ids.ToArray();
+                establecimientosQuery = establecimientosQuery.Where(e => !excluidos.Contains(e.Id));
+            }
+            var establecimientosdb = await establecimientosQuery
                     .OrderBy(e => e.Nombre)
                     .ToListAsync();
             if (sectorId != 0)

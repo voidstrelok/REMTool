@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, ChangeEvent } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Breadcrumbs from "../components/Breadcrumbs";
 import { Upload, RotateCcw, ArrowLeft, FileText, CheckCircle2, XCircle } from "lucide-react";
 import "./RevisarREM.css";
 
@@ -14,7 +15,6 @@ interface FileResult {
 }
 
 const RevisarREM: React.FC = () => {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [uploaded, setUploaded] = useState(false);
   const [results, setResults] = useState<FileResult[]>([]);
@@ -87,6 +87,7 @@ const RevisarREM: React.FC = () => {
   return (
     <main className="flex-1 flex items-center justify-center p-6 sm:p-10">
       <div style={{ width: "100%", maxWidth: 560 }}>
+        <Breadcrumbs items={[{ label: "Operación REM" }, { label: "Revisar REM" }]} />
         <h1
           className="text-2xl font-bold mb-1"
           style={{ color: "var(--text)" }}
@@ -199,8 +200,8 @@ const RevisarREM: React.FC = () => {
               Revisar más archivos
             </button>
           )}
-          <button
-            onClick={() => router.back()}
+          <Link
+            href="/"
             className="flex items-center gap-2 flex-1 justify-center px-4 py-2 rounded-lg text-sm font-semibold transition"
             style={{
               background: "var(--surface)",
@@ -211,7 +212,7 @@ const RevisarREM: React.FC = () => {
           >
             <ArrowLeft size={15} aria-hidden />
             Volver
-          </button>
+          </Link>
         </div>
       </div>
     </main>

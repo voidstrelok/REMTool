@@ -12,20 +12,31 @@ export interface ConvenioDetalle {
 
 export function useConvenioDetail(
   convenioId: number | string | undefined,
-  year: number
+  year: number,
+  sectorId?: string,
+  establecimientoId?: string
 ) {
   const [data, setData] = useState<ConvenioDetalle | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!convenioId) return;
+    if (!convenioId) {
+      setLoading(false);
+      setData(null);
+      setError("Convenio no encontrado.");
+      return;
+    }
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
         if (!API) throw new Error("NO_API");
-        const res = await fetch(`${API}getConvenioIndicadores/${convenioId}/${year}`);
+         const params = new URLSearchParams();
+         if (sectorId && sectorId !== "0") params.set("sectorId", sectorId);
+         if (establecimientoId) params.set("establecimientoId", establecimientoId);
+         const query = params.toString() ? `?${params.toString()}` : "";
+         const res = await fetch(`${API}getConvenioIndicadores/${convenioId}/${year}${query}`);
         if (!res.ok) throw new Error("Fetch failed");
         const json = await res.json();
         setData({
@@ -42,12 +53,15 @@ export function useConvenioDetail(
       }
     };
     fetchData();
-  }, [convenioId, year]);
+  }, [convenioId, year, sectorId, establecimientoId]);
 
   const avanceGeneral = useMemo(() => {
     if (!data?.indicadores?.length) return 0;
-    const total = data.indicadores.reduce((acc, item) => acc + (item.aporte ?? 0), 0);
-    return total > 1 ? 100 : total * 100;
+    const promedio = data.indicadores.reduce(
+      (acc, item) => acc + (item.avance ?? 0),
+      0
+    ) / data.indicadores.length;
+    return Math.max(0, Math.min(promedio * 100, 100));
   }, [data]);
 
   return { data, loading, error, avanceGeneral };

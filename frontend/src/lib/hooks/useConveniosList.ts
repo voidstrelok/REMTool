@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 const API = process.env.NEXT_PUBLIC_API;
 
@@ -10,7 +10,11 @@ export interface ConvenioItem {
   indicadorCount: number;
 }
 
-export function useConveniosList(year: number) {
+export function useConveniosList(
+  year: number,
+  sectorId?: string,
+  establecimientoId?: string
+) {
   const [items, setItems] = useState<ConvenioItem[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +25,11 @@ export function useConveniosList(year: number) {
         setLoading(true);
         setError(null);
         if (!API) throw new Error("NO_API");
-        const res = await fetch(`${API}getConvenios/${year}`);
+         const params = new URLSearchParams();
+         if (sectorId && sectorId !== "0") params.set("sectorId", sectorId);
+         if (establecimientoId) params.set("establecimientoId", establecimientoId);
+         const query = params.toString() ? `?${params.toString()}` : "";
+         const res = await fetch(`${API}getConvenios/${year}${query}`);
         if (!res.ok) throw new Error("Fetch failed");
         const data = await res.json();
         setItems(Array.isArray(data) ? data : []);
@@ -33,7 +41,13 @@ export function useConveniosList(year: number) {
       }
     };
     fetchData();
-  }, [year]);
+  }, [year, sectorId, establecimientoId]);
 
-  return { items, loading, error };
+  const avanceGeneral = useMemo(() => {
+    if (!items?.length) return 0;
+    const promedio = items.reduce((acc, item) => acc + (item.avance ?? 0), 0) / items.length;
+    return Math.max(0, Math.min(promedio * 100, 100));
+  }, [items]);
+
+  return { items, loading, error, avanceGeneral };
 }

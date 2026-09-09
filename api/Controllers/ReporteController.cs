@@ -3,8 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using RemTool.Services;
 using RemTool.Shared;
-using RemTool.Shared.Enum;
 
 namespace RemTool.Controllers
 {
@@ -13,11 +13,29 @@ namespace RemTool.Controllers
     public class ReporteController : ControllerBase
     {
         private readonly RemToolDataContext _db;
-        private List<long> EstablecimientosExcluidos = new List<long> { (long)EnumEstablecimiento.ClinicaDentalMovilMontePatria, (long)EnumEstablecimiento.SARMontePatria, (long)EnumEstablecimiento.SURElPalqui };
+        private readonly IIndicadorService _indicadorService;
 
-        public ReporteController(RemToolDataContext db)
+        public ReporteController(RemToolDataContext db, IIndicadorService indicadorService)
         {
             _db = db;
+            _indicadorService = indicadorService;
+        }
+
+        private static IEnumerable<ResultadoIndicador> FiltrarResultados(
+            Indicador indicador,
+            ResultadoFiltroEstablecimiento filtro,
+            long? sectorId = null,
+            long? establecimientoId = null)
+        {
+            var resultados = indicador.ResultadoIndicadors
+                .Where(r => filtro.Incluye(r.id_establecimiento));
+
+            if (sectorId.HasValue && sectorId.Value != 0)
+                resultados = resultados.Where(r => r.Establecimiento?.id_sector == sectorId.Value);
+            if (establecimientoId.HasValue && establecimientoId.Value != 0)
+                resultados = resultados.Where(r => r.id_establecimiento == establecimientoId.Value);
+
+            return resultados;
         }
 
         // ── DTOs internos ────────────────────────────────────────────────────
@@ -38,21 +56,48 @@ namespace RemTool.Controllers
 
         // ── Lógica de cálculo ────────────────────────────────────────────────
 
+        private static decimal CalcularDenominador(
+            Indicador indicador,
+            IEnumerable<ResultadoIndicador> resultados,
+            int mes,
+            decimal denPrevAnoOctDic = 0m)
+        {
+            var hastaCorte = resultados.Where(r => r.Mes <= mes).ToList();
+            Func<ResultadoIndicador, decimal> denSelector = r =>
+                IndicadorService.ObtenerDenominadorFila(indicador, r);
+            var denominadoresCorte = indicador.EsPeriodoOctubreSep
+                ? hastaCorte.Where(r => r.Mes < 10).ToList()
+                : hastaCorte;
+            decimal denActual;
+
+            // El denominador colaborativo es comunal y se repite en las filas.
+            // No debe acumularse por establecimiento ni por mes.
+            if (indicador.IsColaborativo && denominadoresCorte.Any())
+                denActual = decimal.Round(denominadoresCorte.Max(denSelector));
+            else if (indicador.EsPeriodoOctubreSep)
+                denActual = decimal.Round(denominadoresCorte.Sum(denSelector));
+            else
+                denActual = decimal.Round(hastaCorte.Sum(denSelector));
+
+            return indicador.EsPeriodoOctubreSep
+                ? denActual + denPrevAnoOctDic
+                : denActual;
+        }
+
         private static FilaInforme BuildFila(Indicador ind, int ano, int mes,
             IEnumerable<ResultadoIndicador>? resultadosSource = null,
             decimal denPrevAnoOctDic = 0m)
         {
             var resultados = resultadosSource ?? ind.ResultadoIndicadors;
+            int mesEvaluacion = MesEvaluacion(ind, mes);
 
-            var hastaCorte = resultados.Where(r => r.Mes <= mes).ToList();
+            var hastaCorte = resultados.Where(r => r.Mes <= mesEvaluacion).ToList();
 
             // Numerador acumulado al mes de corte
             decimal num = decimal.Round(hastaCorte.Sum(r => r.Numerador + r.NumeradorP));
 
             // Denominador: período estándar (ene–mes) o período oct(año-1)–sep(año actual)
-            decimal den = ind.EsPeriodoOctubreSep
-                ? decimal.Round(hastaCorte.Where(r => r.Mes < 10).Sum(r => r.Denominador + r.DenominadorP)) + denPrevAnoOctDic
-                : decimal.Round(hastaCorte.Sum(r => r.Denominador + r.DenominadorP));
+            decimal den = CalcularDenominador(ind, hastaCorte, mesEvaluacion, denPrevAnoOctDic);
 
             // Ajuste para denominador fijo: mostrar target (den * meta) con meta al 100%
             if (ind.IsDenFijo && den != 0)
@@ -67,8 +112,8 @@ namespace RemTool.Controllers
             //   del semestre ya se evalúa contra la meta completa del semestre:
             //   S1 (ene–jun) → meta × 0.5   |   S2 (jul–dic) → meta × 1.0
             float esperadoAlMes = ind.Mensual
-                ? MathF.Round(metaEfectiva * (mes / 12f), 4)
-                : MathF.Round(metaEfectiva * (mes <= 6 ? 0.5f : 1.0f), 4);
+                ? MathF.Round(metaEfectiva * (mesEvaluacion / 12f), 4)
+                : MathF.Round(metaEfectiva * (mesEvaluacion <= 6 ? 0.5f : 1.0f), 4);
 
             // Brecha: diferencia entre lo logrado y lo esperado a esta altura del año.
             // Positivo → adelantado; negativo → atrasado respecto al ritmo necesario.
@@ -93,38 +138,47 @@ namespace RemTool.Controllers
 
         private static string FormatTasa(float valor, bool isTasa) =>
             isTasa
-                ? $"{valor:F1} "
+                ? $"{valor:F1}"
                 : $"{valor * 100f:F1} %";
 
         private static string FormatVariacion(float variacion, bool isTasa)
         {
             string flecha = variacion >= 0 ? "▲" : "▼";
             float abs = MathF.Abs(variacion);
-            string valor = isTasa ? $"{abs:F1} " : $"{abs * 100f:F1} %";
+            string valor = isTasa ? $"{abs:F1}" : $"{abs * 100f:F1} pp";
             return $"{flecha} {valor}";
         }
 
         // Esperado expresado en unidades de producción (num esperado)
-        private static string FormatEsperado(float esperado, float den, bool isTasa) =>
-            isTasa
-                ? $"{esperado:F1}"
-                : $"{MathF.Round(esperado * den):N0}";
+        private static string FormatEsperado(float esperado, bool isTasa) =>
+            FormatTasa(esperado, isTasa);
+
+        private static string FormatEsperadoConConteo(float esperado, float den, bool isTasa)
+        {
+            if (isTasa)
+                return FormatTasa(esperado, true);
+
+            return $"{FormatTasa(esperado, false)}\n({MathF.Round(esperado * den):N0} de {MathF.Round(den):N0})";
+        }
 
         // Brecha expresada en unidades de producción (diferencia de num)
-        private static string FormatBrechaVsMeta(float brecha, float den, bool isTasa)
+        private static string FormatBrechaVsMeta(float brecha, bool isTasa)
         {
             string flecha = brecha >= 0 ? "▲" : "▼";
             return isTasa
                 ? $"{flecha} {MathF.Abs(brecha):F1}"
-                : $"{flecha} {MathF.Round(MathF.Abs(brecha * den)):N0}";
+                : $"{flecha} {MathF.Abs(brecha) * 100f:F1} pp";
         }
+
+        private static int MesEvaluacion(Indicador indicador, int mes) =>
+            indicador.Mensual ? mes : mes >= 12 ? 12 : mes >= 6 ? 6 : mes;
 
         private static (string label, string hex) EstadoStyle(EstadoIndicador estado) => estado switch
         {
-            EstadoIndicador.Cumplida  => ("Cumplida",  "#1A9E5C"),
+            EstadoIndicador.Cumplida  => ("Cumplida",  "#157347"),
             EstadoIndicador.EnCurso   => ("En Curso",  "#1565C0"),
-            EstadoIndicador.EnRiesgo  => ("En Riesgo", "#E67E22"),
-            EstadoIndicador.Critico   => ("Crítico",   "#CB4335"),
+            EstadoIndicador.EnRiesgo  => ("En Riesgo", "#B45309"),
+            EstadoIndicador.Critico   => ("Crítico",   "#B42318"),
             _                         => ("—",         "#95A5A6")
         };
 
@@ -136,19 +190,68 @@ namespace RemTool.Controllers
         /// (mismo Tipoindicador y mismo Orden). Devuelve 0 si no existe o el indicador
         /// no usa ese período.
         /// </summary>
-        private async Task<decimal> GetDenOctDicPrevAnoAsync(Indicador ind)
+        private async Task<decimal> GetDenOctDicPrevAnoAsync(
+            Indicador ind,
+            long? sectorId = null,
+            long? establecimientoId = null)
         {
             if (!ind.EsPeriodoOctubreSep) return 0m;
+
+            var filtro = await _indicadorService.GetFiltroAsync(ind.Id);
 
             var prevResultados = await _db.Indicador
                 .Where(i => i.Año == ind.Año - 1
                          && i.Tipoindicador == ind.Tipoindicador
                          && i.Orden == ind.Orden)
                 .SelectMany(i => i.ResultadoIndicadors)
-                .Where(r => r.Mes >= 10)
+                .Where(r => r.Mes >= 10
+                         && (!sectorId.HasValue || r.Establecimiento!.id_sector == sectorId.Value)
+                         && (!establecimientoId.HasValue || r.id_establecimiento == establecimientoId.Value))
                 .ToListAsync();
 
-            return decimal.Round(prevResultados.Sum(r => r.Denominador + r.DenominadorP));
+            prevResultados = prevResultados
+                .Where(r => filtro.Incluye(r.id_establecimiento))
+                .ToList();
+
+            if (ind.IsColaborativo && prevResultados.Any())
+                return decimal.Round(prevResultados.Max(r => IndicadorService.ObtenerDenominadorFila(ind, r)));
+
+            return decimal.Round(prevResultados.Sum(r => IndicadorService.ObtenerDenominadorFila(ind, r)));
+        }
+
+        private async Task<Dictionary<long, decimal>> GetDenOctDicPrevAnoPorEstablecimientoAsync(
+            Indicador ind,
+            long? sectorId = null,
+            long? establecimientoId = null)
+        {
+            if (!ind.EsPeriodoOctubreSep)
+                return new Dictionary<long, decimal>();
+
+            var filtro = await _indicadorService.GetFiltroAsync(ind.Id);
+
+            var prevResultados = await _db.Indicador
+                .Where(i => i.Año == ind.Año - 1
+                         && i.Tipoindicador == ind.Tipoindicador
+                         && i.Orden == ind.Orden)
+                .SelectMany(i => i.ResultadoIndicadors)
+                .Where(r => r.Mes >= 10
+                         && (!sectorId.HasValue || r.Establecimiento!.id_sector == sectorId.Value)
+                         && (!establecimientoId.HasValue || r.id_establecimiento == establecimientoId.Value))
+                .Where(r => filtro.Incluye(r.id_establecimiento))
+                .Select(r => new { r.id_establecimiento, r.Denominador, r.DenominadorP })
+                .ToListAsync();
+
+            return prevResultados
+                .GroupBy(r => r.id_establecimiento)
+                .ToDictionary(
+                    g => g.Key,
+                    g => decimal.Round(ind.IsColaborativo
+                        ? g.Max(r => ind.IsDenFijo || ind.IsColaborativo
+                            ? r.Denominador
+                            : r.Denominador + r.DenominadorP)
+                        : g.Sum(r => ind.IsDenFijo
+                            ? r.Denominador
+                            : r.Denominador + r.DenominadorP)));
         }
 
         // ── Helper: página de detalle de un indicador ────────────────────────
@@ -160,17 +263,17 @@ namespace RemTool.Controllers
             int ano,
             IEnumerable<ResultadoIndicador> resultadosSrc,
             decimal denPrevAnoOctDic,
-            string ubicacion)
+            string ubicacion,
+            IReadOnlyDictionary<long, decimal>? denPrevAnoPorEstablecimiento = null)
         {
             float metaEfectiva = indicador.IsDenFijo ? 1.0f : indicador.Meta;
+            int mesEvaluacion = MesEvaluacion(indicador, mes);
 
-            var mesesData = Enumerable.Range(1, mes).Select(m =>
+            var mesesData = Enumerable.Range(1, mesEvaluacion).Select(m =>
             {
                 var hastaM = resultadosSrc.Where(r => r.Mes <= m).ToList();
                 decimal num = decimal.Round(hastaM.Sum(r => r.Numerador + r.NumeradorP));
-                decimal den = indicador.EsPeriodoOctubreSep
-                    ? decimal.Round(hastaM.Where(r => r.Mes < 10).Sum(r => r.Denominador + r.DenominadorP)) + denPrevAnoOctDic
-                    : decimal.Round(hastaM.Sum(r => r.Denominador + r.DenominadorP));
+                decimal den = CalcularDenominador(indicador, hastaM, m, denPrevAnoOctDic);
 
                 if (indicador.IsDenFijo && den != 0)
                     den = decimal.Round(den * (decimal)indicador.Meta);
@@ -187,21 +290,33 @@ namespace RemTool.Controllers
             var currentMesEntry = mesesData[^1];
 
             if (!indicador.Mensual)
-                mesesData = mesesData.Where(m => m.Mes == 6 || m.Mes == 12).ToList();
+            {
+                var cierres = mesesData.Where(m => m.Mes == 6 || m.Mes == 12).ToList();
+                mesesData = cierres.Count > 0 ? cierres : new List<(int Mes, decimal Num, decimal Den, float Actual, float Esperado, float Brecha)> { currentMesEntry };
+            }
+            bool tieneCierreSemestral = indicador.Mensual || mesesData.Any(m => m.Mes == 6 || m.Mes == 12);
 
             var establecimientos = resultadosSrc
-                .Where(r => r.Mes <= mes)
+                .Where(r => r.Mes <= mesEvaluacion)
                 .GroupBy(r => r.id_establecimiento)
                 .Select(g =>
                 {
                     var first = g.First();
                     decimal num = decimal.Round(g.Sum(r => r.Numerador + r.NumeradorP));
-                    decimal den = decimal.Round(g.Sum(r => r.Denominador + r.DenominadorP));
+                    decimal den = decimal.Round(g.Sum(r =>
+                        IndicadorService.ObtenerDenominadorFila(indicador, r)));
+                    if (indicador.EsPeriodoOctubreSep)
+                        den += denPrevAnoPorEstablecimiento?.GetValueOrDefault(g.Key, 0m) ?? 0m;
+
+                    if (indicador.IsColaborativo)
+                        den = 0m;
 
                     if (indicador.IsDenFijo && den != 0)
                         den = decimal.Round(den * (decimal)indicador.Meta);
 
-                    float val = den != 0 ? MathF.Round((float)(num / den), 4) : 0f;
+                    float val = indicador.IsColaborativo
+                        ? (float)num
+                        : den != 0 ? MathF.Round((float)(num / den), 4) : 0f;
                     return (
                         Nombre: first.Establecimiento?.Nombre ?? "—",
                         Sector: first.Establecimiento?.Sector?.Nombre ?? "—",
@@ -218,6 +333,8 @@ namespace RemTool.Controllers
             var dfi = new System.Globalization.CultureInfo("es-CL").DateTimeFormat;
             string NombreMes(int m) { var s = dfi.GetMonthName(m); return char.ToUpper(s[0]) + s[1..]; }
             string nombreMes = NombreMes(mes);
+            string nombreMesEvaluacion = NombreMes(mesEvaluacion);
+            string nombreMesEsperado = indicador.Mensual ? nombreMes : nombreMesEvaluacion;
 
             float[] chartActual   = mesesData.Select(m => m.Actual).ToArray();
             float[] chartEsperado = mesesData.Select(m => m.Esperado).ToArray();
@@ -238,7 +355,7 @@ namespace RemTool.Controllers
             {
                 page.Size(PageSizes.A4);
                 page.Margin(28);
-                page.DefaultTextStyle(ts => ts.FontFamily("DejaVu Sans").FontSize(8));
+                page.DefaultTextStyle(ts => ts.FontFamily("DejaVu Sans").FontSize(8.5f));
 
                 page.Header().Column(col =>
                 {
@@ -258,6 +375,10 @@ namespace RemTool.Controllers
                             inner.Item()
                                 .Text($"Corte: {nombreMes} {ano}")
                                 .FontSize(8.5f).FontColor("#3D5A80");
+                            if (!indicador.Mensual && mesEvaluacion != mes)
+                                inner.Item()
+                                    .Text($"Evaluación: {nombreMesEvaluacion} {ano}")
+                                    .FontSize(8f).FontColor("#3D5A80");
                             inner.Item()
                                 .Text($"Generado: {DateTime.Now:dd/MM/yyyy HH:mm}")
                                 .FontSize(7f).FontColor("#607B96");
@@ -272,9 +393,9 @@ namespace RemTool.Controllers
                     row.RelativeItem().AlignLeft().Column(c =>
                     {
                         c.Item().Text("Área de Estadísticas · Departamento de Salud Monte Patria")
-                            .FontSize(6.5f).FontColor("#607B96");
-                        c.Item().Text("ricardocontreras@mpatria.cl")
-                            .FontSize(6f).FontColor("#95A5A6");
+                            .FontSize(7f).FontColor("#607B96");
+                        c.Item().Text("Fuente: REMTool")
+                            .FontSize(7f).FontColor("#607B96");
                     });
                     row.ConstantItem(100).AlignCenter().AlignMiddle().Text(txt =>
                     {
@@ -284,8 +405,8 @@ namespace RemTool.Controllers
                         txt.TotalPages().FontColor("#607B96").FontSize(7.5f);
                     });
                     row.RelativeItem().AlignRight().AlignMiddle()
-                        .Text("Comentarios o sugerencias: ricardocontreras@mpatria.cl")
-                        .FontSize(6f).FontColor("#95A5A6");
+                        .Text("Contacto: ricardocontreras@mpatria.cl")
+                        .FontSize(7f).FontColor("#607B96");
                 });
 
                 page.Content().Column(col =>
@@ -313,15 +434,17 @@ namespace RemTool.Controllers
                         var cur = currentMesEntry;
                         AddCard(kpiRow, "Avance Actual",
                             FormatTasa(fila.Actual, indicador.IsTasa), "#1565C0",
-                            $"Num: {cur.Num:N0}  ·  Den: {cur.Den:N0}");
+                            indicador.IsColaborativo
+                                ? $"Numerador: {cur.Num:N0}  ·  Objetivo comunal: {cur.Den:N0}"
+                                : $"Num: {cur.Num:N0}  ·  Den: {cur.Den:N0}");
                         AddCard(kpiRow, "Meta Anual",
                             FormatTasa(metaEfectiva, indicador.IsTasa), "#1A9E5C",
                             indicador.Mensual ? "Progresión lineal" : "Evaluación semestral");
-                        AddCard(kpiRow, $"Esp. {nombreMes}",
-                            FormatEsperado(fila.EsperadoAlMes, fila.Den, indicador.IsTasa), "#0277BD",
-                            "Avance esperado a este mes");
+                        AddCard(kpiRow, $"Esp. {nombreMesEsperado}",
+                            FormatEsperadoConConteo(fila.EsperadoAlMes, fila.Den, indicador.IsTasa), "#0277BD",
+                            indicador.IsTasa ? "Valor esperado al corte" : "Porcentaje y numerador esperado");
                         AddCard(kpiRow, "Brecha",
-                            FormatBrechaVsMeta(fila.Brecha, fila.Den, indicador.IsTasa),
+                            FormatBrechaVsMeta(fila.Brecha, indicador.IsTasa),
                             fila.Brecha >= 0 ? "#1A9E5C" : "#CB4335",
                             fila.Brecha >= 0 ? "Adelantado" : "Atrasado",
                             bgColor: fila.Brecha >= 0 ? "#E8F8EE" : "#FDECEA");
@@ -345,7 +468,9 @@ namespace RemTool.Controllers
 
                     // ── Gráfico de evolución mensual ───────────────────────
                     col.Item()
-                        .Text("Evolución Mensual (valores acumulados)")
+                        .Text(indicador.Mensual
+                            ? "Evolución mensual (valores acumulados)"
+                            : "Evolución por semestre (valores acumulados)")
                         .Bold().FontSize(9).FontColor("#0D3B6E");
                     col.Item().Height(4);
 
@@ -430,7 +555,11 @@ namespace RemTool.Controllers
 
                     // ── Tabla evolución mensual ────────────────────────────
                     col.Item()
-                        .Text(indicador.Mensual ? "Detalle Mensual" : "Evaluación Semestral (Jun / Dic)")
+                        .Text(indicador.Mensual
+                            ? "Detalle mensual"
+                            : tieneCierreSemestral
+                                ? "Evaluación semestral (Jun / Dic)"
+                                : "Seguimiento provisional (sin cierre semestral)")
                         .Bold().FontSize(9).FontColor("#0D3B6E");
                     col.Item().Height(4);
 
@@ -440,7 +569,8 @@ namespace RemTool.Controllers
                         {
                             c.ConstantColumn(52);
                             c.RelativeColumn();
-                            c.RelativeColumn();
+                            if (!indicador.IsColaborativo)
+                                c.RelativeColumn();
                             c.RelativeColumn();
                             c.RelativeColumn();
                             c.RelativeColumn();
@@ -454,8 +584,10 @@ namespace RemTool.Controllers
 
                         tbl.Header(h =>
                         {
-                            foreach (var t in new[] { "Mes", "Numerador", "Denominador",
-                                "Avance", "Esperado", "Brecha", "Estado" })
+                            var columnas = indicador.IsColaborativo
+                                ? new[] { "Mes", "Numerador", "Avance", "Esperado", "Brecha", "Estado" }
+                                : new[] { "Mes", "Numerador", "Denominador", "Avance", "Esperado", "Brecha", "Estado" };
+                            foreach (var t in columnas)
                                 h.Cell().Element(TH)
                                     .Text(t).Bold().FontColor(Colors.White).FontSize(7.5f);
                         });
@@ -477,20 +609,21 @@ namespace RemTool.Controllers
 
                             tbl.Cell().Background(bg).Element(TD).Text(mn);
                             tbl.Cell().Background(bg).Element(TD).Text($"{m.Num:N0}");
-                            tbl.Cell().Background(bg).Element(TD).Text($"{m.Den:N0}");
+                            if (!indicador.IsColaborativo)
+                                tbl.Cell().Background(bg).Element(TD).Text($"{m.Den:N0}");
                             tbl.Cell().Background(bg).Element(TD)
                                 .Text(FormatTasa(m.Actual, indicador.IsTasa)).Bold();
                             tbl.Cell().Background(bg).Element(TD)
-                                .Text(FormatEsperado(m.Esperado, (float)m.Den, indicador.IsTasa)).FontColor("#3D5A80");
+                                .Text(FormatEsperado(m.Esperado, indicador.IsTasa)).FontColor("#3D5A80");
                             tbl.Cell().Background(bg).Element(TD)
-                                .Text(FormatBrechaVsMeta(m.Brecha, (float)m.Den, indicador.IsTasa))
+                                .Text(FormatBrechaVsMeta(m.Brecha, indicador.IsTasa))
                                 .FontColor(m.Brecha >= 0 ? "#1A9E5C" : "#CB4335");
                             tbl.Cell().Background(rh).Padding(4).AlignCenter().AlignMiddle()
                                 .Text(rl).Bold().FontColor(Colors.White).FontSize(7f);
                         }
                     });
 
-                    col.Item().Height(12);
+                    col.Item().PageBreak();
 
                     // ── Tabla de establecimientos ──────────────────────────
                     col.Item().Text("Desglose por Establecimiento")
@@ -504,8 +637,11 @@ namespace RemTool.Controllers
                             c.RelativeColumn(3.5f);
                             c.RelativeColumn(1.5f);
                             c.ConstantColumn(55);
-                            c.ConstantColumn(60);
-                            c.ConstantColumn(65);
+                            if (!indicador.IsColaborativo)
+                            {
+                                c.ConstantColumn(60);
+                                c.ConstantColumn(65);
+                            }
                         });
 
                         static IContainer TH2(IContainer c) =>
@@ -513,8 +649,10 @@ namespace RemTool.Controllers
 
                         tbl2.Header(h =>
                         {
-                            foreach (var t in new[] { "Establecimiento", "Sector",
-                                "Numerador", "Denominador", "Avance" })
+                            var columnas = indicador.IsColaborativo
+                                ? new[] { "Establecimiento", "Sector", "Numerador" }
+                                : new[] { "Establecimiento", "Sector", "Numerador", "Denominador", "Avance" };
+                            foreach (var t in columnas)
                                 h.Cell().Element(TH2)
                                     .Text(t).Bold().FontColor(Colors.White).FontSize(7.5f);
                         });
@@ -534,10 +672,13 @@ namespace RemTool.Controllers
                                 .Text(e.Sector).FontSize(7.5f);
                             tbl2.Cell().Background(bg).Padding(4).AlignCenter().AlignMiddle()
                                 .Text($"{e.Num:N0}");
-                            tbl2.Cell().Background(bg).Padding(4).AlignCenter().AlignMiddle()
-                                .Text($"{e.Den:N0}");
-                            tbl2.Cell().Background(valBg).Padding(4).AlignCenter().AlignMiddle()
-                                .Text(FormatTasa(e.Valor, indicador.IsTasa)).Bold();
+                            if (!indicador.IsColaborativo)
+                            {
+                                tbl2.Cell().Background(bg).Padding(4).AlignCenter().AlignMiddle()
+                                    .Text($"{e.Den:N0}");
+                                tbl2.Cell().Background(valBg).Padding(4).AlignCenter().AlignMiddle()
+                                    .Text(FormatTasa(e.Valor, indicador.IsTasa)).Bold();
+                            }
                         }
                     });
 
@@ -575,8 +716,8 @@ namespace RemTool.Controllers
                             if (tendencia != 0f)
                             {
                                 string tendTxt = tendencia >= 0
-                                    ? $"Tendencia positiva respecto al mes anterior: {FormatBrechaVsMeta(tendencia, fila.Den, indicador.IsTasa)}."
-                                    : $"Tendencia negativa respecto al mes anterior: {FormatBrechaVsMeta(tendencia, fila.Den, indicador.IsTasa)}.";
+                                    ? $"Tendencia positiva respecto al mes anterior: {FormatBrechaVsMeta(tendencia, indicador.IsTasa)}."
+                                    : $"Tendencia negativa respecto al mes anterior: {FormatBrechaVsMeta(tendencia, indicador.IsTasa)}.";
                                 Insight(ins, tendencia >= 0 ? "↑" : "↓", tendTxt,
                                     tendencia >= 0 ? "#1A9E5C" : "#CB4335");
                             }
@@ -592,18 +733,18 @@ namespace RemTool.Controllers
                                     $"({FormatTasa(peorMes.Actual, indicador.IsTasa)}).",
                                     "#CB4335");
 
-                            if (mejorEstab.Nombre is not null && mejorEstab.Nombre != "—")
+                            if (!indicador.IsColaborativo && mejorEstab.Nombre is not null && mejorEstab.Nombre != "—")
                                 Insight(ins, "⊕",
                                     $"Establecimiento destacado: {mejorEstab.Nombre} " +
                                     $"({FormatTasa(mejorEstab.Valor, indicador.IsTasa)}).",
                                     "#1565C0");
 
-                            if (establsBajoMeta.Count > 0)
+                            if (!indicador.IsColaborativo && establsBajoMeta.Count > 0)
                                 Insight(ins, "⚠",
                                     $"Establecimientos bajo 90% de meta: " +
                                     $"{string.Join(", ", establsBajoMeta.Select(e => e.Nombre))}.",
                                     "#CB4335");
-                            else if (establecimientos.Count > 0)
+                            else if (!indicador.IsColaborativo && establecimientos.Count > 0)
                                 Insight(ins, "✓",
                                     "Todos los establecimientos superan el 90% de la meta.",
                                     "#1A9E5C");
@@ -625,7 +766,8 @@ namespace RemTool.Controllers
             int tipoIndicador, int ano,
             [FromQuery] long? sectorId,
             [FromQuery] long? establecimientoId,
-            [FromQuery] int? mesCorte = null)
+            [FromQuery] int? mesCorte = null,
+            [FromQuery] int? convenioId = null)
         {
             if (mesCorte.HasValue && (mesCorte.Value < 1 || mesCorte.Value > 12))
                 return BadRequest("mesCorte debe estar entre 1 y 12.");
@@ -633,7 +775,10 @@ namespace RemTool.Controllers
             var sector = sectorId.HasValue ? _db.Sector.FirstOrDefault(s => s.Id == sectorId.Value):null;
 
             var indicadores = await _db.Indicador
-                .Where(i => i.Año == ano && i.Tipoindicador == tipoIndicador)
+                .Where(i => i.Año == ano
+                         && i.Tipoindicador == tipoIndicador
+                         && (!convenioId.HasValue || convenioId.Value == 0
+                             || i.IndicadorConvenios.Any(ic => ic.id_convenio == convenioId.Value)))
                 .Include(i => i.ResultadoIndicadors)
                     .ThenInclude(r => r.Establecimiento)
                         .ThenInclude(e => e.Sector)
@@ -643,11 +788,10 @@ namespace RemTool.Controllers
             if (!indicadores.Any())
                 return NotFound($"No se encontraron indicadores para el año {ano}.");
 
+            var filtros = await _indicadorService.GetFiltrosAsync(indicadores.Select(i => i.Id));
+
             int mesMaxDatos = indicadores
-                .SelectMany(i => i.ResultadoIndicadors)
-                .Where(r => !EstablecimientosExcluidos.Contains(r.id_establecimiento))
-                .Where(r => !sectorId.HasValue || r.Establecimiento?.id_sector == sectorId.Value)
-                .Where(r => !establecimientoId.HasValue || r.id_establecimiento == establecimientoId.Value)
+                .SelectMany(i => FiltrarResultados(i, filtros[i.Id], sectorId, establecimientoId))
                 .Select(r => r.Mes)
                 .DefaultIfEmpty(0)
                 .Max();
@@ -657,56 +801,17 @@ namespace RemTool.Controllers
 
             int mes = mesCorte.HasValue ? Math.Min(mesCorte.Value, mesMaxDatos) : mesMaxDatos;
 
-            // Pre-fetch denominadores oct–dic del año anterior para indicadores con período oct–sep
-            var octSepOrden = indicadores
-                .Where(i => i.EsPeriodoOctubreSep)
-                .Select(i => i.Orden)
-                .Distinct()
-                .ToList();
-
             Dictionary<int, decimal> denPrevAnoMap = new();
-            if (octSepOrden.Count > 0)
+            foreach (var indicador in indicadores.Where(i => i.EsPeriodoOctubreSep))
             {
-                var prevResultados = await _db.Indicador
-                    .Where(i => i.Año == ano - 1
-                             && i.Tipoindicador == indicadores[0].Tipoindicador
-                             && octSepOrden.Contains(i.Orden))
-                    .Select(i => new
-                    {
-                        i.Orden,
-                        Resultados = i.ResultadoIndicadors
-                            .Where(r => r.Mes >= 10 && !EstablecimientosExcluidos.Contains(r.id_establecimiento))
-                            .Select(r => new
-                            {
-                                r.id_establecimiento,
-                                SectorId = r.Establecimiento != null ? r.Establecimiento.id_sector : (long?)null,
-                                Denominador = r.Denominador + r.DenominadorP
-                            })
-                    })
-                    .ToListAsync();
-
-                denPrevAnoMap = prevResultados.ToDictionary(
-                    x => x.Orden,
-                    x =>
-                    {
-                        var res = x.Resultados.AsEnumerable();
-                        if (sectorId.HasValue)
-                            res = res.Where(r => r.SectorId == sectorId.Value);
-                        if (establecimientoId.HasValue)
-                            res = res.Where(r => r.id_establecimiento == establecimientoId.Value);
-                        return decimal.Round(res.Sum(r => r.Denominador));
-                    });
+                denPrevAnoMap[indicador.Orden] = await GetDenOctDicPrevAnoAsync(
+                    indicador, sectorId, establecimientoId);
             }
 
             var filas = indicadores
                 .Select(i =>
                 {
-                    var src = i.ResultadoIndicadors.AsEnumerable()
-                        .Where(r => !EstablecimientosExcluidos.Contains(r.id_establecimiento));
-                    if (sectorId.HasValue)
-                        src = src.Where(r => r.Establecimiento?.id_sector == sectorId.Value);
-                    if (establecimientoId.HasValue)
-                        src = src.Where(r => r.id_establecimiento == establecimientoId.Value);
+                    var src = FiltrarResultados(i, filtros[i.Id], sectorId, establecimientoId);
                     decimal denPrev = denPrevAnoMap.GetValueOrDefault(i.Orden, 0m);
                     return BuildFila(i, ano, mes, src, denPrev);
                 })
@@ -729,8 +834,13 @@ namespace RemTool.Controllers
             {
                 titulo = "Establecimiento: " + establecimiento.Nombre;
             }
-            
-           
+
+            var denPrevPorEstablecimientoMap = new Dictionary<int, Dictionary<long, decimal>>();
+            foreach (var ind in indicadores.Where(i => i.EsPeriodoOctubreSep))
+            {
+                denPrevPorEstablecimientoMap[ind.Orden] =
+                    await GetDenOctDicPrevAnoPorEstablecimientoAsync(ind, sectorId, establecimientoId);
+            }
 
             var pdf = Document.Create(container =>
             {
@@ -738,7 +848,7 @@ namespace RemTool.Controllers
                 {
                     page.Size(PageSizes.A4.Landscape());
                     page.Margin(28);
-                    page.DefaultTextStyle(ts => ts.FontFamily("DejaVu Sans").FontSize(8));
+                    page.DefaultTextStyle(ts => ts.FontFamily("DejaVu Sans").FontSize(8.5f));
 
                     // ── Encabezado ─────────────────────────────────────────
                     page.Header().Column(col =>
@@ -775,9 +885,9 @@ namespace RemTool.Controllers
                         row.RelativeItem().AlignLeft().Column(c =>
                         {
                             c.Item().Text("Área de Estadísticas · Departamento de Salud Monte Patria")
-                                .FontSize(6.5f).FontColor("#607B96");
-                            c.Item().Text("ricardocontreras@mpatria.cl")
-                                .FontSize(6f).FontColor("#95A5A6");
+                                .FontSize(7f).FontColor("#607B96");
+                            c.Item().Text("Fuente: REMTool")
+                                .FontSize(7f).FontColor("#607B96");
                         });
                         row.ConstantItem(100).AlignCenter().AlignMiddle().Text(txt =>
                         {
@@ -787,8 +897,8 @@ namespace RemTool.Controllers
                             txt.TotalPages().FontColor("#607B96").FontSize(7.5f);
                         });
                         row.RelativeItem().AlignRight().AlignMiddle()
-                            .Text("Comentarios o sugerencias: ricardocontreras@mpatria.cl")
-                            .FontSize(6f).FontColor("#95A5A6");
+                            .Text("Contacto: ricardocontreras@mpatria.cl")
+                            .FontSize(7f).FontColor("#607B96");
                     });
 
                     // ── Contenido ──────────────────────────────────────────
@@ -804,6 +914,8 @@ namespace RemTool.Controllers
                                 cols.RelativeColumn(3.5f); // Indicador
                                 cols.ConstantColumn(52);   // Meta
                                 cols.ConstantColumn(62);   // Avance actual
+                                cols.ConstantColumn(62);   // Esperado
+                                cols.ConstantColumn(62);   // Brecha
                                 cols.ConstantColumn(65);   // Estado
                             });
 
@@ -817,7 +929,7 @@ namespace RemTool.Controllers
                             table.Header(h =>
                             {
                                 foreach (var titulo in new[] { "N°", "Indicador", "Meta",
-                                    "Avance actual", "Estado" })
+                                    "Avance", "Esperado", "Brecha", "Estado" })
                                 {
                                     h.Cell().Element(HeaderCell)
                                         .Text(titulo).FontColor(Colors.White).Bold().FontSize(7.5f);
@@ -835,13 +947,11 @@ namespace RemTool.Controllers
                                     c.Background(bg).Padding(4).AlignMiddle();
 
                                 var (estadoLabel, estadoHex) = EstadoStyle(fila.Estado);
-                                string brechaHex = fila.Brecha >= 0 ? "#1A9E5C" : "#CB4335";
-
                                 table.Cell().Element(c => DataCell(c, rowBg))
                                     .AlignCenter().Text($"{fila.Orden}").FontColor("#555555");
 
                                 table.Cell().Element(c => DataCell(c, rowBg))
-                                    .Text(fila.Nombre).FontSize(7.5f);
+                                    .Text(fila.Nombre).FontSize(8f);
 
                                 table.Cell().Element(c => DataCell(c, rowBg))
                                     .AlignCenter()
@@ -850,6 +960,16 @@ namespace RemTool.Controllers
                                 table.Cell().Element(c => DataCell(c, rowBg))
                                     .AlignCenter()
                                     .Text(FormatTasa(fila.Actual, fila.IsTasa));
+
+                                table.Cell().Element(c => DataCell(c, rowBg))
+                                    .AlignCenter()
+                                    .Text(FormatEsperado(fila.EsperadoAlMes, fila.IsTasa))
+                                    .FontColor("#3D5A80");
+
+                                table.Cell().Element(c => DataCell(c, rowBg))
+                                    .AlignCenter()
+                                    .Text(FormatBrechaVsMeta(fila.Brecha, fila.IsTasa))
+                                    .FontColor(fila.Brecha >= 0 ? "#1A9E5C" : "#CB4335");
 
                                 table.Cell()
                                     .Background(estadoHex)
@@ -863,7 +983,7 @@ namespace RemTool.Controllers
                         var alertas = filas
                             .Where(f => f.Estado == EstadoIndicador.Critico
                                      || f.Estado == EstadoIndicador.EnRiesgo)
-                            .OrderBy(f => f.Estado)
+                            .OrderByDescending(f => f.Estado)
                             .ThenBy(f => f.Orden)
                             .ToList();
 
@@ -894,30 +1014,44 @@ namespace RemTool.Controllers
                                             row.RelativeItem().PaddingLeft(6).AlignMiddle()
                                                 .Text(txt =>
                                                 {
-                                                    txt.Span($"{a.Nombre}  ").Bold().FontSize(7.5f);
-                                                    txt.Span($"Avance: {FormatTasa(a.Actual, a.IsTasa)}")
-                                                                       .FontColor("#3D5A80").FontSize(7.5f);
+                                                    txt.Span($"{a.Nombre}  ").Bold().FontSize(8f);
+                                                    txt.Span($"Avance: {FormatTasa(a.Actual, a.IsTasa)}  ")
+                                                       .FontColor("#3D5A80").FontSize(8f);
+                                                    txt.Span($"Esperado: {FormatEsperado(a.EsperadoAlMes, a.IsTasa)}  ")
+                                                       .FontColor("#3D5A80").FontSize(8f);
+                                                    txt.Span($"Brecha: {FormatBrechaVsMeta(a.Brecha, a.IsTasa)}")
+                                                       .FontColor(a.Brecha >= 0 ? "#1A9E5C" : "#CB4335")
+                                                       .FontSize(8f);
                                                 });
                                         });
                                         alertCol.Item().Height(3);
                                     }
                                                      });
                                             }
+
+                                    col.Item().PaddingTop(10)
+                                        .Background("#F8FAFC")
+                                        .Border(1).BorderColor("#C5D9F2")
+                                        .Padding(7)
+                                        .Column(note =>
+                                        {
+                                            note.Item().Text("Cómo leer este informe")
+                                                .Bold().FontSize(8.5f).FontColor("#0D3B6E");
+                                            note.Item().Text("Avance y esperado usan la misma unidad. La brecha se expresa en puntos porcentuales (pp) para porcentajes y en unidades para tasas. En indicadores semestrales se utiliza el último cierre disponible: junio o diciembre.")
+                                                .FontSize(7.5f).FontColor("#3D5A80");
+                                        });
                                         });
                                     });
 
                                     // ── Páginas de detalle por indicador ─────────────────────────
                                     foreach (var ind in indicadores)
                                     {
-                                        var src = ind.ResultadoIndicadors.AsEnumerable()
-                                            .Where(r => !EstablecimientosExcluidos.Contains(r.id_establecimiento));
-                                        if (sectorId.HasValue)
-                                            src = src.Where(r => r.Establecimiento?.id_sector == sectorId.Value);
-                                        if (establecimientoId.HasValue)
-                                            src = src.Where(r => r.id_establecimiento == establecimientoId.Value);
+                                        var src = FiltrarResultados(ind, filtros[ind.Id], sectorId, establecimientoId);
 
                                         decimal denPrev = denPrevAnoMap.GetValueOrDefault(ind.Orden, 0m);
-                                        AddDetalleIndicadorPage(container, ind, mes, ano, src, denPrev, titulo);
+                                        var denPrevPorEst = denPrevPorEstablecimientoMap.GetValueOrDefault(
+                                            ind.Orden, new Dictionary<long, decimal>());
+                                        AddDetalleIndicadorPage(container, ind, mes, ano, src, denPrev, titulo, denPrevPorEst);
                                     }
                                 });
 
@@ -947,7 +1081,7 @@ namespace RemTool.Controllers
                 return BadRequest("mesCorte debe estar entre 1 y 12.");
             var indicador = await _db.Indicador
                 .Where(i => i.Id == id)
-                .Include(i => i.ResultadoIndicadors.Where(e => !EstablecimientosExcluidos.Contains(e.id_establecimiento)))
+                .Include(i => i.ResultadoIndicadors)
                     .ThenInclude(r => r.Establecimiento)
                         .ThenInclude(e => e.Sector)
                 .FirstOrDefaultAsync();
@@ -955,15 +1089,10 @@ namespace RemTool.Controllers
             if (indicador is null)
                 return NotFound($"No se encontró el indicador con ID {id}.");
 
-            var resultadosSrc = indicador.ResultadoIndicadors.AsEnumerable();
-            if (establecimientoId.HasValue)
-                resultadosSrc = resultadosSrc.Where(r => r.id_establecimiento == establecimientoId.Value);
-            else if (sectorId.HasValue)
-                resultadosSrc = resultadosSrc.Where(r => r.Establecimiento?.id_sector == sectorId.Value);
+            var filtro = await _indicadorService.GetFiltroAsync(indicador.Id);
+            var resultadosSrc = FiltrarResultados(indicador, filtro, sectorId, establecimientoId).ToList();
 
-            // Mes de corte = máximo mes reportado en el año, independiente del filtro aplicado.
-            // EstablecimientosExcluidos ya están excluidos por el filtro del Include.
-            int mesMaxDatos = indicador.ResultadoIndicadors
+            int mesMaxDatos = resultadosSrc
                 .Select(r => r.Mes)
                 .DefaultIfEmpty(0)
                 .Max();
@@ -976,7 +1105,9 @@ namespace RemTool.Controllers
             int ano = indicador.Año;
 
             // Denominador oct–dic del año anterior (sólo para indicadores con período oct–sep)
-            decimal denPrevAnoOctDic = await GetDenOctDicPrevAnoAsync(indicador);
+            decimal denPrevAnoOctDic = await GetDenOctDicPrevAnoAsync(indicador, sectorId, establecimientoId);
+            var denPrevAnoPorEstablecimiento = await GetDenOctDicPrevAnoPorEstablecimientoAsync(
+                indicador, sectorId, establecimientoId);
             float metaEfectiva = indicador.IsDenFijo ? 1.0f : indicador.Meta;
 
             // ── Datos acumulados por mes
@@ -984,9 +1115,7 @@ namespace RemTool.Controllers
             {
                 var hastaM = resultadosSrc.Where(r => r.Mes <= m).ToList();
                 decimal num = decimal.Round(hastaM.Sum(r => r.Numerador + r.NumeradorP));
-                decimal den = indicador.EsPeriodoOctubreSep
-                    ? decimal.Round(hastaM.Where(r => r.Mes < 10).Sum(r => r.Denominador + r.DenominadorP)) + denPrevAnoOctDic
-                    : decimal.Round(hastaM.Sum(r => r.Denominador + r.DenominadorP));
+                decimal den = CalcularDenominador(indicador, hastaM, m, denPrevAnoOctDic);
 
                 if (indicador.IsDenFijo && den != 0)
                     den = decimal.Round(den * (decimal)indicador.Meta);
@@ -1016,7 +1145,8 @@ namespace RemTool.Controllers
                 {
                     var first = g.First();
                     decimal num = decimal.Round(g.Sum(r => r.Numerador + r.NumeradorP));
-                    decimal den = decimal.Round(g.Sum(r => r.Denominador + r.DenominadorP));
+                    decimal den = decimal.Round(g.Sum(r =>
+                        IndicadorService.ObtenerDenominadorFila(indicador, r)));
 
                     if (indicador.IsDenFijo && den != 0)
                         den = decimal.Round(den * (decimal)indicador.Meta);
@@ -1074,7 +1204,8 @@ namespace RemTool.Controllers
             // ── PDF ───────────────────────────────────────────────────────────
             var pdf = Document.Create(container =>
             {
-                AddDetalleIndicadorPage(container, indicador, mes, ano, resultadosSrc, denPrevAnoOctDic, ubicacion);
+                AddDetalleIndicadorPage(container, indicador, mes, ano, resultadosSrc,
+                    denPrevAnoOctDic, ubicacion, denPrevAnoPorEstablecimiento);
             });
 
             var pdfBytes2 = pdf.GeneratePdf();

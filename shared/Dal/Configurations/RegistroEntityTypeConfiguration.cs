@@ -10,6 +10,10 @@ namespace RemTool.Shared
             builder
                 .HasKey(x => x.Id);
 
+            // The extractor searches and deletes registrations by report. The
+            // second column also supports the version lookup used during reloads.
+            builder.HasIndex(x => new { x.id_reporte, x.id_prestacion });
+
             builder
                 .HasOne(x => x.Prestacion)
                 .WithMany(x => x.Registros)

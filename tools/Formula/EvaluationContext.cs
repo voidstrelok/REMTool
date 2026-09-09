@@ -7,7 +7,7 @@ namespace RemTools
         public int Mes { get; set; }
         public int? EstablecimientoId { get; set; }
         public IDataProvider DataProvider { get; set; }
-        /// <summary>Filtra la evaluación a una única serie ("A" o "P"). Null = ambas.</summary>
-        public string SoloSerie { get; set; }
+        /// <summary>Series que pueden participar en la evaluación. Null = todas.</summary>
+        public IReadOnlySet<string>? SeriesIncluidas { get; set; }
     }
 }

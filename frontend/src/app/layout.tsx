@@ -4,7 +4,7 @@ import "./globals.css";
 import Navbar from "./components/Navbar";
 
 export const metadata: Metadata = {
-  title: "REMTool - DESAM Monte Patria",
+  title: "Estadísticas DESAM Monte Patria",
   description: "Herramientas REM DESAM Monte Patria",
   icons: { icon: "/favicon.svg" },
 };

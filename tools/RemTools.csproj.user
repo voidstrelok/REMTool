@@ -1,7 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Compile Update="FiltroEstablecimientoEditorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="GenerarConsolidadosForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="IndicadorEditorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="InformativoEditorForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Update="Main.cs">

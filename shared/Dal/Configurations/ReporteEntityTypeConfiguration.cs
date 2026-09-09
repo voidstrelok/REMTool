@@ -35,6 +35,13 @@ namespace RemTool.Shared
                 .HasPrecision(32, 0);
 
             builder
+                .Property(x => x.Año)
+                .HasColumnName("año")
+                .HasPrecision(32, 0);
+
+            builder.HasIndex(x => new { x.Año, x.Mes, x.id_establecimiento });
+
+            builder
                 .ToTable("reporte", "REMTool");
         }
     }

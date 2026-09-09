@@ -11,6 +11,7 @@ export interface MetaItem {
   denominador: number;
   meta: number;
   aporte: number;
+  avance?: number;
   actual: number;
   mensual: boolean;
   isTasa?: boolean;

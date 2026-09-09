@@ -22,3 +22,9 @@ shared/bin/*
 shared/obj/*
 tools/bin/*
 tools/obj/*
+
+# Local consolidated publications and test build output
+publicaciones/consolidados/*
+!publicaciones/consolidados/.gitkeep
+tests/**/bin/
+tests/**/obj/

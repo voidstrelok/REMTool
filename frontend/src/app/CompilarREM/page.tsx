@@ -1,5 +1,6 @@
 "use client";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Breadcrumbs from "../components/Breadcrumbs";
 import React, { useEffect, useState } from "react";
 import { Upload, Settings, RotateCcw, ArrowLeft, CheckCircle2, Loader2, X, AlertCircle } from "lucide-react";
 
@@ -36,7 +37,6 @@ export default function CompilarRemPage() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [customName, setCustomName] = useState("");
 
-  const router = useRouter();
 
   useEffect(() => {
     localStorage.clear();
@@ -192,6 +192,7 @@ export default function CompilarRemPage() {
   return (
     <main className="flex-1 p-6 sm:p-10">
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
+        <Breadcrumbs items={[{ label: "Operación REM" }, { label: "Compilar REM Serie A" }]} />
         <h1 className="text-2xl font-bold mb-1" style={{ color: "var(--text)" }}>
           Compilar REM Serie A
         </h1>
@@ -400,8 +401,8 @@ export default function CompilarRemPage() {
 
         {/* Secondary actions */}
         <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => router.back()}
+          <Link
+            href="/"
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition"
             style={{
               background: "var(--surface)",
@@ -411,7 +412,7 @@ export default function CompilarRemPage() {
           >
             <ArrowLeft size={15} aria-hidden />
             Volver
-          </button>
+          </Link>
           <button
             type="button"
             onClick={handleReset}

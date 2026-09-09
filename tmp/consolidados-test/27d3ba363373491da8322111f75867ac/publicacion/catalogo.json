@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "files": [
+    {
+      "series": "A",
+      "year": 2026,
+      "file": "2026/A/consolidado-rem-a-2026-20260909T123319-6eb51c0cac2f4c24aaceba12e9211d33.xlsx",
+      "generatedAt": "2026-09-09T12:33:19.5296947+00:00",
+      "months": [
+        1,
+        2
+      ],
+      "templateVersion": "Versi\u00F3n prueba",
+      "bytes": 19619,
+      "sha256": "8efde918a3fe85595cb52a8362f5dd26c0102266b7fbb611cffe1bb3d3f74079",
+      "warnings": []
+    }
+  ]
+}

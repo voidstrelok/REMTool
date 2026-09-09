@@ -29,6 +29,7 @@ builder.Services.AddScoped<DataController>();
 builder.Services.AddScoped<REMController>();
 builder.Services.AddScoped<IIndicadorService, IndicadorService>();
 builder.Services.AddScoped<IRemAnalyzer, RemAnalyzerService>();
+builder.Services.AddScoped<ConstruirRemService>();
 
 QuestPDF.Settings.License = LicenseType.Community;
 
@@ -39,10 +40,10 @@ builder.Services.AddCors(options =>
                           .AllowAnyHeader()
                           .AllowAnyMethod());
     options.AddPolicy("CorsPolicy",
-        builder => builder.WithOrigins("https://remtools.thepit.cl") // Replace with your frontend origins
+        builder => builder.WithOrigins("https://remtools.thepit.cl","https://estadisticas.apsmontepatria.cl/")
                           .AllowAnyHeader()
                           .AllowAnyMethod()
-                          .AllowCredentials());// If your frontend sends credentials (e.g., cookies, authorization headers)
+                          .AllowCredentials());                  
 });
 
 

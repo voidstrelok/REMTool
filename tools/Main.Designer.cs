@@ -44,6 +44,8 @@ namespace RemTools
             indicadores_btn = new Button();
             visor_btn = new Button();
             puntoResumen_btn = new Button();
+            informativos_btn = new Button();
+            filtrosEstablecimiento_btn = new Button();
             grpRevisar.SuspendLayout();
             grpProcesamiento.SuspendLayout();
             grpConfig.SuspendLayout();
@@ -172,9 +174,11 @@ namespace RemTools
             grpConfig.Controls.Add(indicadores_btn);
             grpConfig.Controls.Add(visor_btn);
             grpConfig.Controls.Add(puntoResumen_btn);
+            grpConfig.Controls.Add(informativos_btn);
+            grpConfig.Controls.Add(filtrosEstablecimiento_btn);
             grpConfig.Location = new Point(10, 289);
             grpConfig.Name = "grpConfig";
-            grpConfig.Size = new Size(520, 110);
+            grpConfig.Size = new Size(520, 196);
             grpConfig.TabIndex = 2;
             grpConfig.TabStop = false;
             grpConfig.Text = "Configuración";
@@ -219,11 +223,31 @@ namespace RemTools
             puntoResumen_btn.UseVisualStyleBackColor = true;
             puntoResumen_btn.Click += puntoResumen_btn_Click;
             //
+            // informativos_btn
+            //
+            informativos_btn.Location = new Point(8, 108);
+            informativos_btn.Name = "informativos_btn";
+            informativos_btn.Size = new Size(504, 35);
+            informativos_btn.TabIndex = 4;
+            informativos_btn.Text = "Gestor de informativos";
+            informativos_btn.UseVisualStyleBackColor = true;
+            informativos_btn.Click += informativos_btn_Click;
+            //
+            // filtrosEstablecimiento_btn
+            //
+            filtrosEstablecimiento_btn.Location = new Point(8, 151);
+            filtrosEstablecimiento_btn.Name = "filtrosEstablecimiento_btn";
+            filtrosEstablecimiento_btn.Size = new Size(504, 35);
+            filtrosEstablecimiento_btn.TabIndex = 5;
+            filtrosEstablecimiento_btn.Text = "Filtros por establecimiento";
+            filtrosEstablecimiento_btn.UseVisualStyleBackColor = true;
+            filtrosEstablecimiento_btn.Click += filtrosEstablecimiento_btn_Click;
+            //
             // Main
             //
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(540, 409);
+            ClientSize = new Size(540, 495);
             Controls.Add(grpRevisar);
             Controls.Add(grpProcesamiento);
             Controls.Add(grpConfig);
@@ -255,5 +279,7 @@ namespace RemTools
         private Button indicadores_btn;
         private Button visor_btn;
         private Button puntoResumen_btn;
+        private Button informativos_btn;
+        private Button filtrosEstablecimiento_btn;
     }
 }

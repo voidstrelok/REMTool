@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Breadcrumbs from "../components/Breadcrumbs";
 import {
   ArrowLeft,
   Upload,
@@ -114,7 +115,6 @@ async function buildRasterizedPdf(
 
 // ── Page component ─────────────────────────────────────────────────────────────
 export default function RasterizarPDFPage() {
-  const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [file, setFile] = useState<File | null>(null);
@@ -225,15 +225,16 @@ export default function RasterizarPDFPage() {
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-2xl mx-auto py-8 px-4">
+      <Breadcrumbs items={[{ label: "Utilidades" }, { label: "Rasterizar PDF" }]} />
       {/* Page header */}
       <div className="flex items-center gap-3 mb-8">
-        <button
-          onClick={() => router.back()}
+        <Link
+          href="/"
           className="p-2 rounded-lg transition-colors hover:bg-gray-100"
           style={{ color: "var(--text-light)" }}
         >
           <ArrowLeft size={20} />
-        </button>
+        </Link>
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>
             Rasterizar PDF

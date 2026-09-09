@@ -1,6 +1,6 @@
 "use client";
 import React, { Suspense, useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FileDown } from "lucide-react";
 import "./style.css";
@@ -12,6 +12,7 @@ import {
   TIPOS_INDICADOR,
 } from "./config";
 import { useIndicadoresList, MetaItem } from "@/lib/hooks/useIndicadoresList";
+import Breadcrumbs from "../components/Breadcrumbs";
 
 interface Sector {
   id: number;
@@ -28,14 +29,16 @@ const API_BASE = process.env.NEXT_PUBLIC_API ?? "";
 
 function IndicadoresInner() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
   const tipoParam = searchParams.get("tipo");
   const tipo = tipoParam && isTipoIndicador(tipoParam) ? tipoParam : null;
 
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 2 }, (_, i) => currentYear - 1 + i);
-  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [selectedSector, setSelectedSector] = useState<string>("");
-  const [selectedEstablecimiento, setSelectedEstablecimiento] = useState<string>("");
+  const [selectedYear, setSelectedYear] = useState<number>(() => Number(searchParams.get("ano")) || currentYear);
+  const [selectedSector, setSelectedSector] = useState<string>(() => searchParams.get("sectorId") ?? "");
+  const [selectedEstablecimiento, setSelectedEstablecimiento] = useState<string>(() => searchParams.get("establecimientoId") ?? "");
   const [sectores, setSectores] = useState<Sector[]>([]);
   const [establecimientos, setEstablecimientos] = useState<EstablecimientoFilter[]>([]);
 
@@ -56,7 +59,6 @@ function IndicadoresInner() {
   }, []);
 
   useEffect(() => {
-    setSelectedEstablecimiento("");
     if (!selectedSector) return;
     fetch(`${API_BASE}getEstablecimientos/${selectedSector}`)
       .then((res) => res.json())
@@ -69,6 +71,18 @@ function IndicadoresInner() {
       .catch(() => setEstablecimientos([]));
   }, [selectedSector]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (selectedYear === currentYear) params.delete("ano");
+    else params.set("ano", String(selectedYear));
+    if (selectedSector) params.set("sectorId", selectedSector);
+    else params.delete("sectorId");
+    if (selectedEstablecimiento) params.set("establecimientoId", selectedEstablecimiento);
+    else params.delete("establecimientoId");
+    const query = params.toString();
+    router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
+  }, [pathname, router, searchParams, selectedYear, selectedSector, selectedEstablecimiento]);
+
   const config = tipo ? indicadoresConfig[tipo] : null;
   const { items, loading, error, avanceGeneral } = useIndicadoresList(
     tipo ?? TIPOS_INDICADOR[0],
@@ -77,9 +91,22 @@ function IndicadoresInner() {
     selectedEstablecimiento || undefined
   );
 
+  useEffect(() => {
+    if (tipo !== "Convenios") return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("tipo");
+    const query = params.toString();
+    router.replace(`/Convenios${query ? `?${query}` : ""}`, { scroll: false });
+  }, [router, searchParams, tipo]);
+
+  if (tipo === "Convenios") {
+    return <div className="metas-page"><Loading message="Cargando convenios..." /></div>;
+  }
+
   if (!tipo) {
     return (
       <div className="metas-page">
+        <Breadcrumbs items={[{ label: "Indicadores" }]} />
         <h1 className="page-title">Indicadores</h1>
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
           {TIPOS_INDICADOR.map((t) => (
@@ -133,7 +160,15 @@ function IndicadoresInner() {
               <span className={`status-badge ${statusClass}`}>{statusLabel}</span>
             </div>
             <Link
-              href={`/Indicadores/DetalleIndicador?tipo=${tipo}&id=${item.id}`}
+              href={(() => {
+                const params = new URLSearchParams({ tipo, id: String(item.id) });
+                if (selectedYear !== currentYear) params.set("ano", String(selectedYear));
+                if (selectedSector) params.set("sectorId", selectedSector);
+                if (selectedEstablecimiento) params.set("establecimientoId", selectedEstablecimiento);
+                const currentQuery = new URLSearchParams(searchParams.toString());
+                params.set("back", encodeURIComponent(`${pathname}${currentQuery.toString() ? `?${currentQuery.toString()}` : ""}`));
+                return `/Indicadores/DetalleIndicador?${params.toString()}`;
+              })()}
               className="detail-link"
             >
               Ver detalle
@@ -172,7 +207,11 @@ function IndicadoresInner() {
 
   return (
     <div className="metas-page">
-      <h1 className="page-title">{config!.titulo}</h1>
+      <Breadcrumbs items={[{ label: config!.titulo }]} />
+      <div className="page-intro">
+        <h1 className="page-title" style={{ textAlign: "left", marginBottom: 4 }}>{config!.titulo}</h1>
+        <p>Consulta el avance por año, sector y establecimiento.</p>
+      </div>
       <div className="filters-bar">
         <div className="filter-item">
           <label htmlFor="year-select">
@@ -198,7 +237,10 @@ function IndicadoresInner() {
               className="year-select"
               id="sector-select"
               value={selectedSector}
-              onChange={(e) => setSelectedSector(e.target.value)}
+              onChange={(e) => {
+                setSelectedSector(e.target.value);
+                setSelectedEstablecimiento("");
+              }}
             >
               <option value="0">Todos</option>
               {sectores.map((s) => (

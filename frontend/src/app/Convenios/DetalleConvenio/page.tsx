@@ -1,23 +1,92 @@
 "use client";
-import React, { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import React, { Suspense, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { FileDown } from "lucide-react";
 import Loading from "../../components/Loading";
 import ProgressBar from "../../components/ProgressBar";
 import "../../Indicadores/style.css";
 import { useConvenioDetail } from "@/lib/hooks/useConvenioDetail";
 import { MetaItem } from "@/lib/hooks/useIndicadoresList";
+import Breadcrumbs from "../../components/Breadcrumbs";
 
 const currentYear = new Date().getFullYear();
+const API_BASE = process.env.NEXT_PUBLIC_API ?? "";
+
+interface Sector {
+  id: number;
+  nombre: string;
+}
+
+interface EstablecimientoFilter {
+  id: number;
+  cod: string;
+  nombre: string;
+}
 
 function ConvenioDetalleInner() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
   const id = searchParams.get("id") ?? undefined;
   const initialYear = Number(searchParams.get("ano") || currentYear);
   const [selectedYear, setSelectedYear] = useState<number>(initialYear);
+  const [selectedSector, setSelectedSector] = useState<string>(() => searchParams.get("sectorId") ?? "");
+  const [selectedEstablecimiento, setSelectedEstablecimiento] = useState<string>(() => searchParams.get("establecimientoId") ?? "");
+  const [sectores, setSectores] = useState<Sector[]>([]);
+  const [establecimientos, setEstablecimientos] = useState<EstablecimientoFilter[]>([]);
   const yearOptions = Array.from({ length: 2 }, (_, i) => currentYear - 1 + i);
 
-  const { data, loading, error, avanceGeneral } = useConvenioDetail(id, selectedYear);
+  useEffect(() => {
+    fetch(`${API_BASE}getSectores`)
+      .then((res) => res.json())
+      .then((data) => setSectores(Array.isArray(data) ? data : []))
+      .catch(() => setSectores([]));
+    fetch(`${API_BASE}getEstablecimientos`)
+      .then((res) => res.json())
+      .then((data) => {
+        const parsed = Array.isArray(data)
+          ? data.map((d: { id: number; codDeis: string; nombre: string }) => ({
+              id: d.id,
+              cod: d.codDeis,
+              nombre: d.nombre,
+            }))
+          : [];
+        setEstablecimientos(parsed);
+      })
+      .catch(() => setEstablecimientos([]));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedSector || selectedSector === "0") return;
+    fetch(`${API_BASE}getEstablecimientos/${selectedSector}`)
+      .then((res) => res.json())
+      .then((data) => {
+        const parsed = Array.isArray(data)
+          ? data.map((d: { id: number; codDeis: string; nombre: string }) => ({
+              id: d.id,
+              cod: d.codDeis,
+              nombre: d.nombre,
+            }))
+          : [];
+        setEstablecimientos(parsed);
+      })
+      .catch(() => setEstablecimientos([]));
+  }, [selectedSector]);
+
+  useEffect(() => {
+    const params = new URLSearchParams({ id: id ?? "", ano: String(selectedYear) });
+    if (selectedSector && selectedSector !== "0") params.set("sectorId", selectedSector);
+    if (selectedEstablecimiento) params.set("establecimientoId", selectedEstablecimiento);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [id, pathname, router, selectedYear, selectedSector, selectedEstablecimiento]);
+
+  const { data, loading, error, avanceGeneral } = useConvenioDetail(
+    id,
+    selectedYear,
+    selectedSector,
+    selectedEstablecimiento
+  );
 
   const renderProgress = (item: MetaItem) => {
     const isTasa = item.isTasa === true;
@@ -35,9 +104,10 @@ function ConvenioDetalleInner() {
     const actualLabel = isTasa ? String(item.actual) : `${Math.round(percent)}%`;
     const metaLabel = isTasa ? String(item.meta) : `${Math.round(targetPercent)}%`;
 
-    const backParam = encodeURIComponent(
-      `/Convenios/DetalleConvenio?id=${data!.id}&ano=${selectedYear}`
-    );
+    const backParams = new URLSearchParams({ id: String(data!.id), ano: String(selectedYear) });
+    if (selectedSector && selectedSector !== "0") backParams.set("sectorId", selectedSector);
+    if (selectedEstablecimiento) backParams.set("establecimientoId", selectedEstablecimiento);
+    const backParam = encodeURIComponent(`/Convenios/DetalleConvenio?${backParams.toString()}`);
 
     return (
       <div className="progress-wrapper" key={item.id}>
@@ -103,7 +173,7 @@ function ConvenioDetalleInner() {
         <div style={{ background: "var(--error-bg)", color: "var(--error-dark)", padding: 16, borderRadius: 8 }}>
           {error ?? "Convenio no encontrado."}
         </div>
-        <Link href="/Convenios" className="btn-secondary" style={{ marginTop: 12, display: "inline-block" }}>
+        <Link href={`/Convenios?ano=${selectedYear}`} className="btn-secondary" style={{ marginTop: 12, display: "inline-block" }}>
           Volver
         </Link>
       </div>
@@ -112,9 +182,20 @@ function ConvenioDetalleInner() {
 
   return (
     <div className="metas-page">
+      <Breadcrumbs items={[{ label: "Convenios", href: (() => {
+        const params = new URLSearchParams({ ano: String(selectedYear) });
+        if (selectedSector && selectedSector !== "0") params.set("sectorId", selectedSector);
+        if (selectedEstablecimiento) params.set("establecimientoId", selectedEstablecimiento);
+        return `/Convenios?${params.toString()}`;
+      })() }, { label: data.nombre }]} />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
         <h1 className="page-title" style={{ margin: 0 }}>{data.nombre}</h1>
-        <Link href="/Convenios" className="btn-secondary">Volver</Link>
+        <Link href={(() => {
+          const params = new URLSearchParams({ ano: String(selectedYear) });
+          if (selectedSector && selectedSector !== "0") params.set("sectorId", selectedSector);
+          if (selectedEstablecimiento) params.set("establecimientoId", selectedEstablecimiento);
+          return `/Convenios?${params.toString()}`;
+        })()} className="btn-secondary">Volver</Link>
       </div>
 
       <div className="filters-bar" style={{ marginTop: 12 }}>
@@ -131,6 +212,57 @@ function ConvenioDetalleInner() {
             ))}
           </select>
         </div>
+        {sectores.length > 0 && (
+          <div className="filter-item">
+            <label htmlFor="sector-select">Sector:</label>
+            <select
+              className="year-select"
+              id="sector-select"
+              value={selectedSector}
+              onChange={(e) => {
+                setSelectedSector(e.target.value);
+                setSelectedEstablecimiento("");
+              }}
+            >
+              <option value="">Todos</option>
+              {sectores.map((sector) => (
+                <option key={sector.id} value={String(sector.id)}>{sector.nombre}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        {establecimientos.length > 0 && (
+          <div className="filter-item">
+            <label htmlFor="est-select">Establecimiento:</label>
+            <select
+              className="year-select"
+              id="est-select"
+              value={selectedEstablecimiento}
+              onChange={(e) => setSelectedEstablecimiento(e.target.value)}
+            >
+              <option value="">Todos</option>
+              {establecimientos.map((establecimiento) => (
+                <option key={establecimiento.cod} value={establecimiento.id}>
+                  {establecimiento.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        <a
+          href={(() => {
+            const params = new URLSearchParams({ convenioId: String(data.id) });
+            if (selectedSector && selectedSector !== "0") params.set("sectorId", selectedSector);
+            if (selectedEstablecimiento) params.set("establecimientoId", selectedEstablecimiento);
+            return `${API_BASE}informeMensual/1/${selectedYear}?${params.toString()}`;
+          })()}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 btn-secondary"
+        >
+          <FileDown size={15} />
+          Descargar PDF
+        </a>
       </div>
 
       <div className="overall-container" style={{ marginTop: 16 }}>

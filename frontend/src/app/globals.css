@@ -337,3 +337,34 @@ table{
     @apply font-sans;
   }
 }
+.breadcrumbs {
+  margin-bottom: 0.65rem;
+  color: var(--text-light);
+  font-size: 0.78rem;
+}
+.breadcrumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.breadcrumbs li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.breadcrumbs a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+.breadcrumbs a:hover { text-decoration: underline; }
+.page-intro {
+  width: 100%;
+  margin-bottom: 1.25rem;
+}
+.page-intro h1, .page-intro h2 { margin: 0; color: var(--text); }
+.page-intro p { margin: 0.35rem 0 0; color: var(--text-light); }

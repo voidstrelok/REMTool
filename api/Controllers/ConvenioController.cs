@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using RemTool.Services;
 using RemTool.Shared;
-using RemTool.Shared.Enum;
 
 namespace RemTool.Controllers
 {
@@ -9,12 +9,14 @@ namespace RemTool.Controllers
     [Route("api")]
     public class ConvenioController : ControllerBase
     {
+        private const int TipoConvenio = 1;
         private readonly RemToolDataContext db;
-        private List<long> EstablecimientosExcluidos = new List<long> { (long)EnumEstablecimiento.ClinicaDentalMovilMontePatria, (long)EnumEstablecimiento.SARMontePatria, (long)EnumEstablecimiento.SURElPalqui };
+        private readonly IIndicadorService indicadorService;
 
-        public ConvenioController(RemToolDataContext context)
+        public ConvenioController(RemToolDataContext context, IIndicadorService indicadorService)
         {
             db = context;
+            this.indicadorService = indicadorService;
         }
 
         public class ConvenioResumenDTO
@@ -35,6 +37,7 @@ namespace RemTool.Controllers
             public long Denominador { get; set; }
             public float Meta { get; set; }
             public float Aporte { get; set; }
+            public float Avance { get; set; }
             public float Actual { get; set; }
             public bool Mensual { get; set; }
             public bool IsTasa { get; set; }
@@ -49,33 +52,117 @@ namespace RemTool.Controllers
             public List<IndicadorResumenDTO> Indicadores { get; set; } = new();
         }
 
-        [HttpGet("getConvenios/{ano:int}")]
-        public async Task<IActionResult> GetConvenios(int ano)
+        private List<ResultadoIndicador> FiltrarResultados(
+            Indicador indicador,
+            ResultadoFiltroEstablecimiento filtro,
+            long? sectorId,
+            long? establecimientoId)
         {
-            var convenios = await db.Convenio
-                .Include(c => c.IndicadorConvenios)
-                    .ThenInclude(ic => ic.Indicador)
-                        .ThenInclude(i => i.ResultadoIndicadors.Where(e => !EstablecimientosExcluidos.Contains(e.id_establecimiento)))
-                .OrderBy(c => c.Nombre)
-                .ToListAsync();
+            var resultados = indicador.ResultadoIndicadors
+                .Where(r => filtro.Incluye(r.id_establecimiento));
 
-            var octSepOrden = convenios
-                .SelectMany(c => c.IndicadorConvenios)
-                .Select(ic => ic.Indicador)
-                .Where(i => i.Año == ano && i.EsPeriodoOctubreSep)
+            if (sectorId.HasValue && sectorId.Value != 0)
+            {
+                resultados = resultados.Where(r => r.Establecimiento?.id_sector == sectorId.Value);
+            }
+
+            if (establecimientoId.HasValue && establecimientoId.Value != 0)
+            {
+                resultados = resultados.Where(r => r.id_establecimiento == establecimientoId.Value);
+            }
+
+            return resultados.ToList();
+        }
+
+        private (decimal numerador, decimal denominador, float meta, float actual, float avance) CalcularIndicador(
+            Indicador indicador,
+            IEnumerable<ResultadoIndicador> resultados,
+            decimal denominadorAnterior)
+        {
+            var numerador = indicadorService.CalcularNumerador(resultados);
+            var denominador = indicadorService.CalcularDenominador(
+                indicador,
+                resultados,
+                mesCorte: 12,
+                denPrevAnoOctDic: denominadorAnterior);
+            var (displayDen, displayMeta) = indicadorService.AjustarDenFijo(
+                denominador,
+                indicador.Meta,
+                indicador.IsDenFijo);
+            var actual = indicadorService.CalcularActual(numerador, displayDen);
+            var avance = indicadorService.CalcularAvance(actual, displayMeta);
+
+            return (numerador, displayDen, displayMeta, actual, avance);
+        }
+
+        private async Task<Dictionary<int, decimal>> ObtenerDenominadoresAnterioresAsync(
+            IEnumerable<Indicador> indicadores,
+            int ano,
+            long? sectorId,
+            long? establecimientoId)
+        {
+            var ordenes = indicadores
+                .Where(i => i.EsPeriodoOctubreSep)
                 .Select(i => i.Orden)
                 .Distinct()
                 .ToList();
 
-            var prevDenMap = new Dictionary<int, decimal>();
-            if (octSepOrden.Count > 0)
+            if (ordenes.Count == 0)
+                return new Dictionary<int, decimal>();
+
+            var indicadoresLista = indicadores.ToList();
+            var filtros = await indicadorService.GetFiltrosAsync(indicadoresLista.Select(i => i.Id));
+            var anteriores = await db.Indicador
+                .Where(i => i.Año == ano - 1
+                         && i.Tipoindicador == TipoConvenio
+                         && ordenes.Contains(i.Orden))
+                .Include(i => i.ResultadoIndicadors)
+                    .ThenInclude(r => r.Establecimiento)
+                .ToListAsync();
+
+            var resultado = new Dictionary<int, decimal>();
+            foreach (var indicador in indicadoresLista.Where(i => i.EsPeriodoOctubreSep))
             {
-                var prevData = await db.Indicador
-                    .Where(i => i.Año == ano - 1 && octSepOrden.Contains(i.Orden))
-                    .Select(i => new { i.Orden, Den = i.ResultadoIndicadors.Where(r => r.Mes >= 10 && !EstablecimientosExcluidos.Contains(r.id_establecimiento)).Sum(r => r.Denominador) })
-                    .ToListAsync();
-                prevDenMap = prevData.ToDictionary(x => x.Orden, x => decimal.Round(x.Den));
+                var datos = anteriores
+                    .Where(i => i.Orden == indicador.Orden)
+                    .SelectMany(i => FiltrarResultados(i, filtros[indicador.Id], sectorId, establecimientoId))
+                    .Where(r => r.Mes >= 10)
+                    .ToList();
+                resultado[indicador.Orden] = indicador.IsColaborativo && datos.Count > 0
+                    ? decimal.Round(datos.Max(r => IndicadorService.ObtenerDenominadorFila(indicador, r)))
+                    : decimal.Round(datos.Sum(r => IndicadorService.ObtenerDenominadorFila(indicador, r)));
             }
+
+            return resultado;
+        }
+
+        [HttpGet("getConvenios/{ano:int}")]
+        public async Task<IActionResult> GetConvenios(
+            int ano,
+            [FromQuery] long? sectorId = null,
+            [FromQuery] long? establecimientoId = null)
+        {
+            var convenios = await db.Convenio
+                .Include(c => c.IndicadorConvenios)
+                    .ThenInclude(ic => ic.Indicador)
+                        .ThenInclude(i => i.ResultadoIndicadors)
+                            .ThenInclude(r => r.Establecimiento)
+                                .ThenInclude(e => e.Sector)
+                .OrderBy(c => c.Nombre)
+                .ToListAsync();
+
+            var indicadoresAno = convenios
+                .SelectMany(c => c.IndicadorConvenios)
+                .Select(ic => ic.Indicador)
+                .Where(i => i.Año == ano)
+                .GroupBy(i => i.Id)
+                .Select(g => g.First())
+                .ToList();
+            var denominadoresAnteriores = await ObtenerDenominadoresAnterioresAsync(
+                indicadoresAno,
+                ano,
+                sectorId,
+                establecimientoId);
 
             var result = new List<ConvenioResumenDTO>();
             foreach (var convenio in convenios)
@@ -83,38 +170,20 @@ namespace RemTool.Controllers
                 var indicadores = convenio.IndicadorConvenios
                     .Select(ic => ic.Indicador)
                     .Where(i => i.Año == ano)
+                    .GroupBy(i => i.Id)
+                    .Select(g => g.First())
                     .ToList();
 
-                if (!indicadores.Any())
+                var sumaAvances = 0f;
+                foreach (var indicador in indicadores)
                 {
-                    result.Add(new ConvenioResumenDTO
-                    {
-                        Id = convenio.Id,
-                        Nombre = convenio.Nombre,
-                        Año = ano,
-                        Avance = 0,
-                        IndicadorCount = 0
-                    });
-                    continue;
-                }
-
-                float avanceTotal = 0f;
-                foreach (var ind in indicadores)
-                {
-                    var num = decimal.Round(ind.ResultadoIndicadors.Sum(r => r.Numerador));
-                    decimal den = ind.EsPeriodoOctubreSep
-                        ? decimal.Round(ind.ResultadoIndicadors.Where(r => r.Mes < 10).Sum(r => r.Denominador))
-                          + prevDenMap.GetValueOrDefault(ind.Orden, 0m)
-                        : ind.IsColaborativo && ind.ResultadoIndicadors.Any()
-                            ? decimal.Round(ind.ResultadoIndicadors.Max(r => r.Denominador))
-                            : decimal.Round(ind.ResultadoIndicadors.Sum(r => r.Denominador));
-
-                    decimal displayDen = ind.IsDenFijo ? decimal.Round(den * (decimal)ind.Meta) : den;
-                    float displayMeta = ind.IsDenFijo ? 1.0f : ind.Meta;
-
-                    var actual = displayDen != 0 ? MathF.Round((float)(num / displayDen), 3) : 0f;
-                    float avance = displayMeta > 0 ? Math.Min(actual / displayMeta, 1f) : 0f;
-                    avanceTotal += ind.Peso * avance;
+                    var filtro = await indicadorService.GetFiltroAsync(indicador.Id);
+                    var resultados = FiltrarResultados(indicador, filtro, sectorId, establecimientoId);
+                    var calculo = CalcularIndicador(
+                        indicador,
+                        resultados,
+                        denominadoresAnteriores.GetValueOrDefault(indicador.Orden));
+                    sumaAvances += calculo.avance;
                 }
 
                 result.Add(new ConvenioResumenDTO
@@ -122,7 +191,7 @@ namespace RemTool.Controllers
                     Id = convenio.Id,
                     Nombre = convenio.Nombre,
                     Año = ano,
-                    Avance = avanceTotal,
+                    Avance = indicadores.Count > 0 ? sumaAvances / indicadores.Count : 0f,
                     IndicadorCount = indicadores.Count
                 });
             }
@@ -131,13 +200,19 @@ namespace RemTool.Controllers
         }
 
         [HttpGet("getConvenioIndicadores/{convenioId:int}/{ano:int}")]
-        public async Task<IActionResult> GetConvenioIndicadores(int convenioId, int ano)
+        public async Task<IActionResult> GetConvenioIndicadores(
+            int convenioId,
+            int ano,
+            [FromQuery] long? sectorId = null,
+            [FromQuery] long? establecimientoId = null)
         {
             var convenio = await db.Convenio
                 .Where(c => c.Id == convenioId)
                 .Include(c => c.IndicadorConvenios)
                     .ThenInclude(ic => ic.Indicador)
-                        .ThenInclude(i => i.ResultadoIndicadors.Where(e => !EstablecimientosExcluidos.Contains(e.id_establecimiento)))
+                        .ThenInclude(i => i.ResultadoIndicadors)
+                            .ThenInclude(r => r.Establecimiento)
+                                .ThenInclude(e => e.Sector)
                 .FirstOrDefaultAsync();
 
             if (convenio == null)
@@ -146,55 +221,40 @@ namespace RemTool.Controllers
             var indicadores = convenio.IndicadorConvenios
                 .Select(ic => ic.Indicador)
                 .Where(i => i.Año == ano)
+                .GroupBy(i => i.Id)
+                .Select(g => g.First())
                 .OrderBy(i => i.Orden)
                 .ToList();
-
-            var octSepOrden = indicadores
-                .Where(i => i.EsPeriodoOctubreSep)
-                .Select(i => i.Orden)
-                .Distinct()
-                .ToList();
-
-            var prevDenMap = new Dictionary<int, decimal>();
-            if (octSepOrden.Count > 0)
-            {
-                var prevData = await db.Indicador
-                    .Where(i => i.Año == ano - 1 && octSepOrden.Contains(i.Orden))
-                    .Select(i => new { i.Orden, Den = i.ResultadoIndicadors.Where(r => r.Mes >= 10 && !EstablecimientosExcluidos.Contains(r.id_establecimiento)).Sum(r => r.Denominador) })
-                    .ToListAsync();
-                prevDenMap = prevData.ToDictionary(x => x.Orden, x => decimal.Round(x.Den));
-            }
+            var denominadoresAnteriores = await ObtenerDenominadoresAnterioresAsync(
+                indicadores,
+                ano,
+                sectorId,
+                establecimientoId);
 
             var resumen = new List<IndicadorResumenDTO>();
-            foreach (var ind in indicadores)
+            foreach (var indicador in indicadores)
             {
-                var num = decimal.Round(ind.ResultadoIndicadors.Sum(r => r.Numerador));
-                decimal den = ind.EsPeriodoOctubreSep
-                    ? decimal.Round(ind.ResultadoIndicadors.Where(r => r.Mes < 10).Sum(r => r.Denominador))
-                      + prevDenMap.GetValueOrDefault(ind.Orden, 0m)
-                    : ind.IsColaborativo && ind.ResultadoIndicadors.Any()
-                        ? decimal.Round(ind.ResultadoIndicadors.Max(r => r.Denominador))
-                        : decimal.Round(ind.ResultadoIndicadors.Sum(r => r.Denominador));
-
-                decimal displayDen = ind.IsDenFijo ? decimal.Round(den * (decimal)ind.Meta) : den;
-                float displayMeta = ind.IsDenFijo ? 1.0f : ind.Meta;
-
-                var actual = displayDen != 0 ? MathF.Round((float)(num / displayDen), 3) : 0f;
-                float avance = displayMeta > 0 ? Math.Min(actual / displayMeta, 1f) : 0f;
+                var filtro = await indicadorService.GetFiltroAsync(indicador.Id);
+                var resultados = FiltrarResultados(indicador, filtro, sectorId, establecimientoId);
+                var calculo = CalcularIndicador(
+                    indicador,
+                    resultados,
+                    denominadoresAnteriores.GetValueOrDefault(indicador.Orden));
 
                 resumen.Add(new IndicadorResumenDTO
                 {
-                    Id = ind.Id,
-                    Nombre = ind.Nombre,
-                    Año = ind.Año,
-                    Meta = displayMeta,
-                    Numerador = (long)num,
-                    Denominador = (long)displayDen,
-                    Actual = actual,
-                    Aporte = ind.Peso * avance,
-                    Mensual = ind.Mensual,
-                    IsTasa = ind.IsTasa,
-                    IsColaborativo = ind.IsColaborativo
+                    Id = indicador.Id,
+                    Nombre = indicador.Nombre,
+                    Año = indicador.Año,
+                    Meta = calculo.meta,
+                    Numerador = (long)calculo.numerador,
+                    Denominador = (long)calculo.denominador,
+                    Avance = calculo.avance,
+                    Actual = calculo.actual,
+                    Aporte = indicador.Peso * calculo.avance,
+                    Mensual = indicador.Mensual,
+                    IsTasa = indicador.IsTasa,
+                    IsColaborativo = indicador.IsColaborativo
                 });
             }
 
