@@ -15,7 +15,7 @@ export default function InformativosPreview() {
       <div className="mb-4 flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="rounded-lg p-2" style={{ background: "var(--accent-light)" }}><Newspaper size={19} style={{ color: "var(--primary)" }} aria-hidden="true" /></div>
-          <div><h2 className="text-xl font-bold" style={{ color: "var(--text)" }}>Noticias y avisos</h2><p className="text-sm" style={{ color: "var(--text-light)" }}>Información vigente para la comunidad.</p></div>
+          <div><h2 className="text-xl font-bold" style={{ color: "var(--text)" }}>Noticias y avisos</h2><p className="text-sm" style={{ color: "var(--text-light)" }}>Información vigente para la red.</p></div>
         </div>
         <Link href="/Informativos" className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold" style={{ color: "var(--primary)" }}>Ver todos <ArrowRight size={14} aria-hidden="true" /></Link>
       </div>

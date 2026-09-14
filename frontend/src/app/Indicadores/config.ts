@@ -35,5 +35,5 @@ export const indicadoresConfig: Record<TipoIndicador, IndicadorConfig> = {
 export const TIPOS_INDICADOR = Object.keys(indicadoresConfig) as TipoIndicador[];
 
 export function isTipoIndicador(value: string): value is TipoIndicador {
-  return value in indicadoresConfig;
+  return Object.prototype.hasOwnProperty.call(indicadoresConfig, value);
 }

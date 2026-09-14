@@ -28,6 +28,7 @@ builder.Services.AddDbContext<RemToolDataContext>(options =>
 builder.Services.AddScoped<DataController>();
 builder.Services.AddScoped<REMController>();
 builder.Services.AddScoped<IIndicadorService, IndicadorService>();
+builder.Services.AddScoped<SeguimientoService>();
 builder.Services.AddScoped<IRemAnalyzer, RemAnalyzerService>();
 builder.Services.AddScoped<ConstruirRemService>();
 

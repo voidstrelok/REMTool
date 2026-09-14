@@ -419,7 +419,7 @@ export default function ConstruirREMPage() {
             </select>
           </label>
         </div>
-        {!workspace && <div className="mt-4 text-xs" style={{ color: "var(--text-light)" }}>Última versión disponible de Serie A: <strong style={{ color: "var(--primary)" }}>{latestVersion || "cargando..."}</strong>. La primera parte debe utilizarla.</div>}
+        {!workspace && <div className="mt-4 text-xs" style={{ color: "var(--text-light)" }}>Última versión disponible de Serie A: <strong style={{ color: "var(--primary)" }}>{latestVersion || "cargando..."}</strong></div>}
         {workspace && <div className="mt-4 flex flex-wrap gap-2 text-xs" style={{ color: "var(--text-light)" }}><span className="rounded-full px-2.5 py-1" style={{ background: "var(--accent-light)", color: "var(--primary)" }}>Serie {workspace.serie}</span><span className="rounded-full px-2.5 py-1" style={{ background: "var(--accent-light)", color: "var(--primary)" }}>Versión {workspace.version}</span><span>Última disponible: {latestVersion || "cargando..."}.</span></div>}
         {outdatedWorkspace && <div className="mt-3 rounded-lg border p-3 text-sm" style={{ color: "#92400e", borderColor: "#f59e0b", background: "#fffbeb" }}>La versión de este armado ya no es la última disponible. Reinícielo para comenzar con {latestVersion}.</div>}
       </section>
@@ -427,13 +427,12 @@ export default function ConstruirREMPage() {
       <section className="rounded-xl border p-4 mb-5" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
         <div className="flex items-center gap-2 mb-3"><Upload size={17} style={{ color: "var(--primary)" }} /><h2 className="font-semibold" style={{ color: "var(--text)" }}>Agregar parte</h2></div>
         <div className="flex flex-col sm:flex-row gap-2">
-          <input value={nombreParte} disabled={uploading || outdatedWorkspace || !activeMes || !activeCodDeis} onChange={(event) => setNombreParte(event.target.value)} placeholder="Nombre identificador, por ejemplo: SOME" className="flex-1 px-3 py-2 rounded-lg text-sm" style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)" }} />
+          <input value={nombreParte} disabled={uploading || outdatedWorkspace || !activeMes || !activeCodDeis} onChange={(event) => setNombreParte(event.target.value)} placeholder="Nombre identificador, por ejemplo: Nutricionistas" className="flex-1 px-3 py-2 rounded-lg text-sm" style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)" }} />
           <label className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer ${uploading || outdatedWorkspace || !nombreParte.trim() || !activeMes || !activeCodDeis ? "opacity-50 cursor-not-allowed" : ""}`} style={{ background: "var(--primary)", color: "white" }}>
             {uploading ? <Loader2 size={16} className="animate-spin" /> : <FileSpreadsheet size={16} />}{uploading ? "Procesando..." : "Seleccionar XLSM"}
             <input ref={fileInputRef} type="file" accept=".xlsm" disabled={uploading || outdatedWorkspace || !nombreParte.trim() || !activeMes || !activeCodDeis} onChange={handleUpload} className="hidden" />
           </label>
         </div>
-        <p className="text-xs mt-2" style={{ color: "var(--text-light)" }}>Al subir una parte se verifica únicamente que corresponda a la misma versión del armado.</p>
       </section>
 
       {(error || storageError) && <div className="mb-5 rounded-lg border p-3 text-sm" style={{ color: "var(--error-dark)", borderColor: "var(--error)", background: "var(--error-bg)" }}>{error || storageError}</div>}
