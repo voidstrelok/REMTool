@@ -9,9 +9,10 @@ namespace RemTools
 
         private readonly RemToolDataContext _db;
         public readonly HashSet<string> CodPrestaciones = new();
-        private List<Registro> _registros;
+        private List<Registro> _registros = new();
+        private Dictionary<string, List<Registro>> _registrosPorCodigo = new(StringComparer.OrdinalIgnoreCase);
         private List<Fonasa> _fonasa = new();
-        private List<PercapitaSsc> _percapitaSsc;
+        private List<PercapitaSsc> _percapitaSsc = new();
         private int _pMonth;
         private bool _pEsFallbackAñoAnterior;
         public int PMonth => _pMonth;
@@ -29,7 +30,10 @@ namespace RemTools
 
         public void CargarPercapitaSsc(int año)
         {
-            _percapitaSsc = _db.PercapitaSsc.Where(p => p.AñoCorte == año).Include(p => p.Establecimiento).ToList();
+            _percapitaSsc = _db.PercapitaSsc
+                .AsNoTracking()
+                .Where(p => p.AñoCorte == año)
+                .ToList();
         }
 
         // Si es false, no se carga el año anterior como fallback cuando aún no hay datos del año actual
@@ -60,58 +64,48 @@ namespace RemTools
             {
                 // Sin fallback: no hay corte P disponible para el año actual
                 _pMonth = 0;
-                _registros = _db.Registro
-                    .Include(r => r.Prestacion).ThenInclude(p => p.VersionRem).ThenInclude(v => v.SerieRem)
-                    .Include(r => r.Reporte)
-                    .Where(r => CodPrestaciones.Contains(r.Prestacion.CodigoPrestacion)
-                                && (r.Prestacion.VersionRem.SerieRem.Nombre == "A" || r.Prestacion.VersionRem.SerieRem.Nombre == "BM")
-                                && r.Prestacion.VersionRem.Fecha.Year == año)
-                    .ToList();
+                CargarRegistros(año, null, Array.Empty<(int Año, int Mes, string Serie)>());
                 return;
             }
 
             _pMonth = pMonth;
-            _registros = _db.Registro
-                .Include(r => r.Prestacion).ThenInclude(p => p.VersionRem).ThenInclude(v => v.SerieRem)
-                .Include(r => r.Reporte)
-                .Where(r => CodPrestaciones.Contains(r.Prestacion.CodigoPrestacion)
-                            && (
-                                (r.Prestacion.VersionRem.SerieRem.Nombre == "A" && r.Prestacion.VersionRem.Fecha.Year == año)
-                                || (r.Prestacion.VersionRem.SerieRem.Nombre == "BM" && r.Prestacion.VersionRem.Fecha.Year == año)
-                                || (r.Prestacion.VersionRem.SerieRem.Nombre == "P" && r.Prestacion.VersionRem.Fecha.Year == pYear && r.Reporte.Mes == pMonth)
-                               ))
-                .ToList();
+            CargarRegistros(
+                año,
+                (pYear, pMonth, "P"),
+                (año, 0, "A"),
+                (año, 0, "BM"),
+                (año, 0, "D"));
         }
 
         public decimal GetPrestacionValue(string prestacion, int columna, EvaluationContext ctx)
         {
-            var q = _registros.Where(r => r.Prestacion.CodigoPrestacion.Equals(prestacion)).ToList();
+            if (!_registrosPorCodigo.TryGetValue(prestacion, out var registros))
+                return 0;
+
+            var q = registros;
 
             if (ctx.EstablecimientoId.HasValue)
                 q = q.Where(r => r.Reporte.id_establecimiento == ctx.EstablecimientoId).ToList();
 
             if (q.Count == 0) return 0;
 
-            // Separar registros A, BM y P
-            var qA = q.Where(r => r.Prestacion.VersionRem.SerieRem.Nombre == "A" || r.Prestacion.VersionRem.SerieRem.Nombre == "BM").ToList();
-            var qP = q.Where(r => r.Prestacion.VersionRem.SerieRem.Nombre == "P").ToList();
+            var seriesIncluidas = ctx.SeriesIncluidas;
+            var qMensual = q.Where(r =>
+                !r.Prestacion.VersionRem.SerieRem.Nombre.Equals("P", StringComparison.OrdinalIgnoreCase)
+                && (seriesIncluidas is null
+                    || seriesIncluidas.Contains(r.Prestacion.VersionRem.SerieRem.Nombre)))
+                .Where(r => r.Reporte.Año == ctx.Año && r.Reporte.Mes == ctx.Mes)
+                .ToList();
+            var qP = q.Where(r =>
+                r.Prestacion.VersionRem.SerieRem.Nombre.Equals("P", StringComparison.OrdinalIgnoreCase)
+                && (seriesIncluidas is null || seriesIncluidas.Contains("P")))
+                .ToList();
 
             decimal total = 0;
 
-            bool incluirA = ctx.SoloSerie == null || ctx.SoloSerie == "A" || ctx.SoloSerie == "BM";
-            bool incluirP = ctx.SoloSerie == null || ctx.SoloSerie == "P";
+            total += qMensual.Sum(r => ValorEnColumna(r, columna));
 
-            if (incluirA)
-            {
-                // Series A y BM: mensual, filtrar por mes y año exactos
-                var fA = qA.Where(r =>
-                    r.Reporte.Mes == ctx.Mes &&
-                    r.Prestacion.VersionRem.Fecha.Year == ctx.Año
-                ).ToList();
-                total += (decimal)fA.Sum(r => r.Valor[columna - 1]);
-            }
-
-            if (incluirP && _pMonth > 0)
+            if (qP.Count > 0 && _pMonth > 0)
             {
                 // Serie P: acumulado. Solo aporta en el mes de aplicación:
                 // - Fallback año anterior (_pEsFallbackAñoAnterior): mes 1
@@ -119,11 +113,129 @@ namespace RemTools
                 if (ctx.Mes == PMesAplicacion)
                 {
                     var fP = qP.Where(r => r.Reporte.Mes == _pMonth).ToList();
-                    total += (decimal)fP.Sum(r => r.Valor[columna - 1]);
+                    total += fP.Sum(r => ValorEnColumna(r, columna));
                 }
             }
 
             return total;
+        }
+
+        private void CargarRegistros(
+            int año,
+            (int Año, int Mes, string Serie)? corteP,
+            params (int Año, int Mes, string Serie)[] series)
+        {
+            var reportesSeleccionados = new HashSet<int>();
+
+            foreach (var grupo in series
+                .Where(item => item.Serie is "A" or "BM" or "D")
+                .GroupBy(item => item.Año))
+            {
+                foreach (var reporteId in ObtenerReportesSeleccionados(
+                    grupo.Key,
+                    null,
+                    "A",
+                    "BM",
+                    "D"))
+                {
+                    reportesSeleccionados.Add(reporteId);
+                }
+            }
+
+            if (corteP.HasValue)
+            {
+                foreach (var reporteId in ObtenerReportesSeleccionados(
+                    corteP.Value.Año,
+                    corteP.Value.Mes,
+                    "P"))
+                {
+                    reportesSeleccionados.Add(reporteId);
+                }
+            }
+
+            _registros = reportesSeleccionados.Count == 0
+                ? new List<Registro>()
+                : _db.Registro
+                    .AsNoTracking()
+                    .Include(r => r.Prestacion)
+                        .ThenInclude(p => p.VersionRem)
+                            .ThenInclude(v => v.SerieRem)
+                    .Include(r => r.Prestacion)
+                        .ThenInclude(p => p.Coordenadas)
+                    .Include(r => r.Reporte)
+                    .Where(r => reportesSeleccionados.Contains(r.id_reporte)
+                        && CodPrestaciones.Contains(r.Prestacion.CodigoPrestacion))
+                    .ToList();
+
+            _registrosPorCodigo = _registros
+                .GroupBy(registro => registro.Prestacion.CodigoPrestacion, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.ToList(), StringComparer.OrdinalIgnoreCase);
+        }
+
+        private List<int> ObtenerReportesSeleccionados(int año, int? mes, params string[] series)
+        {
+            var candidatos = _db.Registro
+                .AsNoTracking()
+                .Where(registro => registro.Reporte.Año == año
+                    && (!mes.HasValue || registro.Reporte.Mes == mes.Value)
+                    && series.Contains(registro.Prestacion.VersionRem.SerieRem.Nombre))
+                .Select(registro => new ReporteSerieCandidato
+                {
+                    ReporteId = registro.id_reporte,
+                    EstablecimientoId = registro.Reporte.id_establecimiento,
+                    Mes = registro.Reporte.Mes,
+                    Serie = registro.Prestacion.VersionRem.SerieRem.Nombre
+                })
+                .Distinct()
+                .ToList();
+
+            return candidatos
+                .GroupBy(candidato => new
+                {
+                    candidato.EstablecimientoId,
+                    candidato.Mes,
+                    candidato.Serie
+                })
+                .Select(grupo => grupo.Max(candidato => candidato.ReporteId))
+                .ToList();
+        }
+
+        private static decimal ValorEnColumna(Registro registro, int columna)
+        {
+            if (columna <= 0)
+                return 0;
+
+            // Las fórmulas históricas guardan el código lógico de columna
+            // (COL01, COL02, ...), no la posición física que finalmente se
+            // extrae en Registro. Una versión de la planilla puede omitir
+            // columnas estructurales y desplazar esa posición física.
+            var coordenada = registro.Prestacion.Coordenadas
+                .FirstOrDefault(c => EsCodigoColumna(c.CodigoColumna, columna));
+            var indice = coordenada is null ? columna - 1 : coordenada.Orden - 1;
+
+            return indice >= 0 && indice < registro.Valor.Count
+                ? registro.Valor[indice]
+                : 0;
+        }
+
+        private static bool EsCodigoColumna(string? codigo, int columna)
+        {
+            if (string.IsNullOrWhiteSpace(codigo))
+                return false;
+
+            var valor = codigo.Trim();
+            if (!valor.StartsWith("COL", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            return int.TryParse(valor[3..], out var numero) && numero == columna;
+        }
+
+        private sealed class ReporteSerieCandidato
+        {
+            public int ReporteId { get; init; }
+            public long EstablecimientoId { get; init; }
+            public int Mes { get; init; }
+            public string Serie { get; init; } = string.Empty;
         }
 
         public decimal ResolveVariable(string variableName, Dictionary<string, object> filters, EvaluationContext ctx)
@@ -132,7 +244,10 @@ namespace RemTools
                 throw new Exception($"Variable no soportada: {variableName}");
 
             // Las variables poblacionales (FONASA, DM2, HTA, EPOC) no pertenecen a Serie P
-            if (ctx.SoloSerie == "P") return 0;
+            if (ctx.SeriesIncluidas is not null
+                && ctx.SeriesIncluidas.Contains("P")
+                && ctx.SeriesIncluidas.Count == 1)
+                return 0;
 
             if (UsarPercapitaSsc)
                 return ResolveVariablePercapita(variableName, filters, ctx);

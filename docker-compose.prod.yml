@@ -41,6 +41,8 @@ services:
 
   # ── Next.js (static) served by nginx ────────────────────────────────────────
   frontend:
+    volumes:
+      - ./publicaciones/consolidados:/usr/share/nginx/html/consolidados:ro
     build:
       context: ./frontend
       args:

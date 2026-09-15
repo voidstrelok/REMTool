@@ -10,6 +10,8 @@ namespace RemTool.Shared
             builder
                 .HasKey(x => x.Id);
 
+            builder.HasIndex(x => new { x.id_serie_rem, x.Nombre });
+
             builder
                 .HasOne(x => x.SerieRem)
                 .WithMany(x => x.HojaRems)
@@ -26,6 +28,11 @@ namespace RemTool.Shared
             builder
                 .Property(x => x.Nombre)
                 .HasColumnName("nombre")
+                .HasColumnType("character varying");
+
+            builder
+                .Property(x => x.Titulo)
+                .HasColumnName("titulo")
                 .HasColumnType("character varying");
 
             builder

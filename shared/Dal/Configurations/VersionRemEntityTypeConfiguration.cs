@@ -16,6 +16,8 @@ namespace RemTool.Shared
                 .HasForeignKey(x => x.id_serie)
                 .OnDelete(DeleteBehavior.NoAction);
 
+            builder.HasIndex(x => new { x.id_serie, x.Nombre });
+
             builder
                 .Property(x => x.Id)
                 .ValueGeneratedOnAdd()

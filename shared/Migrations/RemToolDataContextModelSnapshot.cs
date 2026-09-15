@@ -23,6 +23,102 @@ namespace RemTool.Shared.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("RemTool.Shared.CeldaSeccionRem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(32)
+                        .HasColumnType("integer")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("nextval('\"REMTool\".celda_seccion_rem_id_seq'::regclass)");
+
+                    b.Property<string>("CeldaBase")
+                        .IsRequired()
+                        .HasColumnType("character varying")
+                        .HasColumnName("celda_base");
+
+                    b.Property<string>("CeldaDiccionario")
+                        .IsRequired()
+                        .HasColumnType("character varying")
+                        .HasColumnName("celda_diccionario");
+
+                    b.Property<int>("ColSpan")
+                        .HasColumnType("integer")
+                        .HasColumnName("col_span");
+
+                    b.Property<string>("ColorFondo")
+                        .IsRequired()
+                        .HasColumnType("character varying")
+                        .HasColumnName("color_fondo");
+
+                    b.Property<int>("ColumnaOrigen")
+                        .HasColumnType("integer")
+                        .HasColumnName("columna_origen");
+
+                    b.Property<string>("DependenciasTotal")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("dependencias_total");
+
+                    b.Property<bool>("EsCeldaAncla")
+                        .HasColumnType("boolean")
+                        .HasColumnName("es_celda_ancla");
+
+                    b.Property<bool>("EsEditable")
+                        .HasColumnType("boolean")
+                        .HasColumnName("es_editable");
+
+                    b.Property<bool>("EsEntradaPrestacion")
+                        .HasColumnType("boolean")
+                        .HasColumnName("es_entrada_prestacion");
+
+                    b.Property<bool>("EsTotal")
+                        .HasColumnType("boolean")
+                        .HasColumnName("es_total");
+
+                    b.Property<int>("EstiloOrigen")
+                        .HasColumnType("integer")
+                        .HasColumnName("estilo_origen");
+
+                    b.Property<int>("FilaOrigen")
+                        .HasColumnType("integer")
+                        .HasColumnName("fila_origen");
+
+                    b.Property<string>("FormulaOrigen")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("formula_origen");
+
+                    b.Property<int>("IdFila")
+                        .HasColumnType("integer")
+                        .HasColumnName("id_fila");
+
+                    b.Property<string>("OperacionTotal")
+                        .IsRequired()
+                        .HasColumnType("character varying")
+                        .HasColumnName("operacion_total");
+
+                    b.Property<int>("RowSpan")
+                        .HasColumnType("integer")
+                        .HasColumnName("row_span");
+
+                    b.Property<string>("TipoTotal")
+                        .IsRequired()
+                        .HasColumnType("character varying")
+                        .HasColumnName("tipo_total");
+
+                    b.Property<string>("Valor")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("valor");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdFila");
+
+                    b.ToTable("celda_seccion_rem", "REMTool");
+                });
+
             modelBuilder.Entity("RemTool.Shared.Comuna", b =>
                 {
                     b.Property<long>("Id")
@@ -72,6 +168,53 @@ namespace RemTool.Shared.Migrations
                     b.ToTable("convenio", "REMTool");
                 });
 
+            modelBuilder.Entity("RemTool.Shared.CoordenadaPrestacion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(32)
+                        .HasColumnType("integer")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("nextval('\"REMTool\".coordenada_prestacion_id_seq'::regclass)");
+
+                    b.Property<string>("CeldaBase")
+                        .IsRequired()
+                        .HasColumnType("character varying")
+                        .HasColumnName("celda_base");
+
+                    b.Property<string>("CeldaDiccionario")
+                        .IsRequired()
+                        .HasColumnType("character varying")
+                        .HasColumnName("celda_diccionario");
+
+                    b.Property<string>("CodigoColumna")
+                        .IsRequired()
+                        .HasColumnType("character varying")
+                        .HasColumnName("codigo_columna");
+
+                    b.Property<int>("IdCelda")
+                        .HasColumnType("integer")
+                        .HasColumnName("id_celda");
+
+                    b.Property<int>("IdPrestacion")
+                        .HasColumnType("integer")
+                        .HasColumnName("id_prestacion");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("integer")
+                        .HasColumnName("orden");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdCelda")
+                        .IsUnique();
+
+                    b.HasIndex("IdPrestacion", "Orden")
+                        .IsUnique();
+
+                    b.ToTable("coordenada_prestacion", "REMTool");
+                });
+
             modelBuilder.Entity("RemTool.Shared.Establecimiento", b =>
                 {
                     b.Property<long>("Id")
@@ -103,6 +246,44 @@ namespace RemTool.Shared.Migrations
                     b.HasIndex("id_sector");
 
                     b.ToTable("establecimiento", "REMTool");
+                });
+
+            modelBuilder.Entity("RemTool.Shared.FilaSeccionRem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(32)
+                        .HasColumnType("integer")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("nextval('\"REMTool\".fila_seccion_rem_id_seq'::regclass)");
+
+                    b.Property<int>("FilaOrigen")
+                        .HasColumnType("integer")
+                        .HasColumnName("fila_origen");
+
+                    b.Property<long>("IdSeccion")
+                        .HasColumnType("bigint")
+                        .HasColumnName("id_seccion");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("integer")
+                        .HasColumnName("orden");
+
+                    b.Property<bool>("TienePrestacion")
+                        .HasColumnType("boolean")
+                        .HasColumnName("tiene_prestacion");
+
+                    b.Property<string>("TipoFila")
+                        .IsRequired()
+                        .HasColumnType("character varying")
+                        .HasColumnName("tipo_fila");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdSeccion", "Orden")
+                        .IsUnique();
+
+                    b.ToTable("fila_seccion_rem", "REMTool");
                 });
 
             modelBuilder.Entity("RemTool.Shared.FiltroEstablecimiento", b =>
@@ -159,12 +340,17 @@ namespace RemTool.Shared.Migrations
                         .HasColumnType("character varying")
                         .HasColumnName("nombre");
 
+                    b.Property<string>("Titulo")
+                        .IsRequired()
+                        .HasColumnType("character varying")
+                        .HasColumnName("titulo");
+
                     b.Property<long>("id_serie_rem")
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("id_serie_rem");
+                    b.HasIndex("id_serie_rem", "Nombre");
 
                     b.ToTable("hoja_rem", "REMTool");
                 });
@@ -276,6 +462,63 @@ namespace RemTool.Shared.Migrations
                     b.ToTable("indicador_convenio", "REMTool");
                 });
 
+            modelBuilder.Entity("RemTool.Shared.Informativo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Contenido")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("contenido");
+
+                    b.Property<bool>("Destacado")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("destacado");
+
+                    b.Property<DateTime>("FechaPublicacion")
+                        .HasColumnType("date")
+                        .HasColumnName("fecha_publicacion");
+
+                    b.Property<string>("TextoEnlace")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("texto_enlace");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer")
+                        .HasColumnName("tipo");
+
+                    b.Property<string>("Titulo")
+                        .IsRequired()
+                        .HasMaxLength(180)
+                        .HasColumnType("character varying(180)")
+                        .HasColumnName("titulo");
+
+                    b.Property<string>("Url")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("url");
+
+                    b.Property<bool>("Vigente")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("vigente");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Vigente", "Destacado", "FechaPublicacion");
+
+                    b.ToTable("informativo", "REMTool");
+                });
+
             modelBuilder.Entity("RemTool.Shared.Parametros", b =>
                 {
                     b.Property<int>("Id")
@@ -361,9 +604,26 @@ namespace RemTool.Shared.Migrations
                         .HasColumnType("text[]")
                         .HasColumnName("coordenada");
 
+                    b.Property<int?>("IdFilaSeccion")
+                        .HasColumnType("integer")
+                        .HasColumnName("id_fila_seccion");
+
+                    b.Property<long?>("IdSeccion")
+                        .HasColumnType("bigint")
+                        .HasColumnName("id_seccion");
+
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("boolean")
                         .HasColumnName("is_enabled");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasColumnType("character varying")
+                        .HasColumnName("nombre");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("integer")
+                        .HasColumnName("orden");
 
                     b.Property<int>("id_hoja")
                         .HasColumnType("integer");
@@ -372,6 +632,11 @@ namespace RemTool.Shared.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("IdFilaSeccion")
+                        .IsUnique();
+
+                    b.HasIndex("IdSeccion");
 
                     b.HasIndex("id_hoja");
 
@@ -439,7 +704,7 @@ namespace RemTool.Shared.Migrations
 
                     b.HasIndex("id_prestacion");
 
-                    b.HasIndex("id_reporte");
+                    b.HasIndex("id_reporte", "id_prestacion");
 
                     b.ToTable("registro", "REMTool");
                 });
@@ -490,6 +755,11 @@ namespace RemTool.Shared.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("nextval('\"REMTool\".reporte_id_seq'::regclass)");
 
+                    b.Property<int>("Año")
+                        .HasPrecision(32)
+                        .HasColumnType("integer")
+                        .HasColumnName("año");
+
                     b.Property<int>("Mes")
                         .HasPrecision(32)
                         .HasColumnType("integer")
@@ -506,6 +776,8 @@ namespace RemTool.Shared.Migrations
                     b.HasIndex("id_comuna");
 
                     b.HasIndex("id_establecimiento");
+
+                    b.HasIndex("Año", "Mes", "id_establecimiento");
 
                     b.ToTable("reporte", "REMTool");
                 });
@@ -565,21 +837,75 @@ namespace RemTool.Shared.Migrations
                         .ValueGeneratedOnAdd()
                         .HasPrecision(64)
                         .HasColumnType("bigint")
-                        .HasColumnName("id");
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("nextval('\"REMTool\".seccion_rem_id_seq'::regclass)");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasColumnType("character varying")
+                        .HasColumnName("codigo");
+
+                    b.Property<int>("ColumnaFin")
+                        .HasColumnType("integer")
+                        .HasColumnName("columna_fin");
+
+                    b.Property<int>("ColumnaInicio")
+                        .HasColumnType("integer")
+                        .HasColumnName("columna_inicio");
+
+                    b.Property<int>("FilaFin")
+                        .HasColumnType("integer")
+                        .HasColumnName("fila_fin");
+
+                    b.Property<int>("FilaInicio")
+                        .HasColumnType("integer")
+                        .HasColumnName("fila_inicio");
+
+                    b.Property<string>("HtmlEstructura")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("html_estructura");
 
                     b.Property<long>("IdHojaRem")
                         .HasPrecision(64)
                         .HasColumnType("bigint")
                         .HasColumnName("id_hoja_rem");
 
+                    b.Property<int?>("IdVersionHoja")
+                        .HasColumnType("integer")
+                        .HasColumnName("id_version_hoja");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasColumnType("character varying")
                         .HasColumnName("nombre");
 
+                    b.Property<int>("OffsetColumna")
+                        .HasColumnType("integer")
+                        .HasColumnName("offset_columna");
+
+                    b.Property<int>("OffsetPrestacion")
+                        .HasColumnType("integer")
+                        .HasColumnName("offset_prestacion");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("integer")
+                        .HasColumnName("orden");
+
+                    b.Property<string>("RangoBase")
+                        .IsRequired()
+                        .HasColumnType("character varying")
+                        .HasColumnName("rango_base");
+
+                    b.Property<string>("RangoDiccionario")
+                        .IsRequired()
+                        .HasColumnType("character varying")
+                        .HasColumnName("rango_diccionario");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("IdVersionHoja", "Orden")
+                        .IsUnique();
 
                     b.ToTable("seccion_rem", "REMTool");
                 });
@@ -662,6 +988,37 @@ namespace RemTool.Shared.Migrations
                     b.ToTable("tipo_regla", "REMTool");
                 });
 
+            modelBuilder.Entity("RemTool.Shared.VersionHojaRem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(32)
+                        .HasColumnType("integer")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("nextval('\"REMTool\".version_hoja_rem_id_seq'::regclass)");
+
+                    b.Property<int>("IdHoja")
+                        .HasColumnType("integer")
+                        .HasColumnName("id_hoja");
+
+                    b.Property<int>("IdVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("id_version");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("integer")
+                        .HasColumnName("orden");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdHoja");
+
+                    b.HasIndex("IdVersion", "IdHoja")
+                        .IsUnique();
+
+                    b.ToTable("version_hoja_rem", "REMTool");
+                });
+
             modelBuilder.Entity("RemTool.Shared.VersionRem", b =>
                 {
                     b.Property<int>("Id")
@@ -685,9 +1042,39 @@ namespace RemTool.Shared.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("id_serie");
+                    b.HasIndex("id_serie", "Nombre");
 
                     b.ToTable("version_rem", "REMTool");
+                });
+
+            modelBuilder.Entity("RemTool.Shared.CeldaSeccionRem", b =>
+                {
+                    b.HasOne("RemTool.Shared.FilaSeccionRem", "Fila")
+                        .WithMany("Celdas")
+                        .HasForeignKey("IdFila")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Fila");
+                });
+
+            modelBuilder.Entity("RemTool.Shared.CoordenadaPrestacion", b =>
+                {
+                    b.HasOne("RemTool.Shared.CeldaSeccionRem", "Celda")
+                        .WithOne("CoordenadaPrestacion")
+                        .HasForeignKey("RemTool.Shared.CoordenadaPrestacion", "IdCelda")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("RemTool.Shared.Prestacion", "Prestacion")
+                        .WithMany("Coordenadas")
+                        .HasForeignKey("IdPrestacion")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Celda");
+
+                    b.Navigation("Prestacion");
                 });
 
             modelBuilder.Entity("RemTool.Shared.Establecimiento", b =>
@@ -699,6 +1086,17 @@ namespace RemTool.Shared.Migrations
                         .IsRequired();
 
                     b.Navigation("Sector");
+                });
+
+            modelBuilder.Entity("RemTool.Shared.FilaSeccionRem", b =>
+                {
+                    b.HasOne("RemTool.Shared.SeccionRem", "Seccion")
+                        .WithMany("Filas")
+                        .HasForeignKey("IdSeccion")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Seccion");
                 });
 
             modelBuilder.Entity("RemTool.Shared.FiltroEstablecimiento", b =>
@@ -762,6 +1160,16 @@ namespace RemTool.Shared.Migrations
 
             modelBuilder.Entity("RemTool.Shared.Prestacion", b =>
                 {
+                    b.HasOne("RemTool.Shared.FilaSeccionRem", "FilaSeccion")
+                        .WithOne("Prestacion")
+                        .HasForeignKey("RemTool.Shared.Prestacion", "IdFilaSeccion")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("RemTool.Shared.SeccionRem", "Seccion")
+                        .WithMany("Prestacions")
+                        .HasForeignKey("IdSeccion")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("RemTool.Shared.HojaRem", "HojaRem")
                         .WithMany("Prestacions")
                         .HasForeignKey("id_hoja")
@@ -774,7 +1182,11 @@ namespace RemTool.Shared.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.Navigation("FilaSeccion");
+
                     b.Navigation("HojaRem");
+
+                    b.Navigation("Seccion");
 
                     b.Navigation("VersionRem");
                 });
@@ -866,6 +1278,35 @@ namespace RemTool.Shared.Migrations
                     b.Navigation("Indicador");
                 });
 
+            modelBuilder.Entity("RemTool.Shared.SeccionRem", b =>
+                {
+                    b.HasOne("RemTool.Shared.VersionHojaRem", "VersionHoja")
+                        .WithMany("Secciones")
+                        .HasForeignKey("IdVersionHoja")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("VersionHoja");
+                });
+
+            modelBuilder.Entity("RemTool.Shared.VersionHojaRem", b =>
+                {
+                    b.HasOne("RemTool.Shared.HojaRem", "HojaRem")
+                        .WithMany("Versiones")
+                        .HasForeignKey("IdHoja")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("RemTool.Shared.VersionRem", "VersionRem")
+                        .WithMany("Hojas")
+                        .HasForeignKey("IdVersion")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("HojaRem");
+
+                    b.Navigation("VersionRem");
+                });
+
             modelBuilder.Entity("RemTool.Shared.VersionRem", b =>
                 {
                     b.HasOne("RemTool.Shared.SerieRem", "SerieRem")
@@ -875,6 +1316,11 @@ namespace RemTool.Shared.Migrations
                         .IsRequired();
 
                     b.Navigation("SerieRem");
+                });
+
+            modelBuilder.Entity("RemTool.Shared.CeldaSeccionRem", b =>
+                {
+                    b.Navigation("CoordenadaPrestacion");
                 });
 
             modelBuilder.Entity("RemTool.Shared.Comuna", b =>
@@ -896,9 +1342,18 @@ namespace RemTool.Shared.Migrations
                     b.Navigation("ResultadoIndicadors");
                 });
 
+            modelBuilder.Entity("RemTool.Shared.FilaSeccionRem", b =>
+                {
+                    b.Navigation("Celdas");
+
+                    b.Navigation("Prestacion");
+                });
+
             modelBuilder.Entity("RemTool.Shared.HojaRem", b =>
                 {
                     b.Navigation("Prestacions");
+
+                    b.Navigation("Versiones");
                 });
 
             modelBuilder.Entity("RemTool.Shared.Indicador", b =>
@@ -912,12 +1367,21 @@ namespace RemTool.Shared.Migrations
 
             modelBuilder.Entity("RemTool.Shared.Prestacion", b =>
                 {
+                    b.Navigation("Coordenadas");
+
                     b.Navigation("Registros");
                 });
 
             modelBuilder.Entity("RemTool.Shared.Reporte", b =>
                 {
                     b.Navigation("Registros");
+                });
+
+            modelBuilder.Entity("RemTool.Shared.SeccionRem", b =>
+                {
+                    b.Navigation("Filas");
+
+                    b.Navigation("Prestacions");
                 });
 
             modelBuilder.Entity("RemTool.Shared.Sector", b =>
@@ -939,8 +1403,15 @@ namespace RemTool.Shared.Migrations
                     b.Navigation("Reglas");
                 });
 
+            modelBuilder.Entity("RemTool.Shared.VersionHojaRem", b =>
+                {
+                    b.Navigation("Secciones");
+                });
+
             modelBuilder.Entity("RemTool.Shared.VersionRem", b =>
                 {
+                    b.Navigation("Hojas");
+
                     b.Navigation("Prestacions");
 
                     b.Navigation("Reglas");

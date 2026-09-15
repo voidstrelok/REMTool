@@ -5,6 +5,16 @@ namespace RemTools
     public partial class Utils
     {
         private readonly RemToolDataContext Bdd;
+        private readonly Dictionary<string, EstructuraCarga> _estructuraCargaCache = new(StringComparer.OrdinalIgnoreCase);
+
+        private sealed record EstructuraCarga(
+            int Id,
+            IReadOnlyList<PrestacionCarga> Prestaciones);
+
+        private sealed record PrestacionCarga(
+            int Id,
+            string Hoja,
+            IReadOnlyList<string> Coordenadas);
 
         public Utils(RemToolDataContext dbContext)
         {

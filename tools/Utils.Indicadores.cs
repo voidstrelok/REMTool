@@ -9,125 +9,160 @@ namespace RemTools
     {
         public void CalcularIndicadores(int año)
         {
-            var Metas = Bdd.Indicador.Where(i => i.Año == año).OrderBy(m => m.Orden).ToList();
-            var Establecimientos = Bdd.Establecimiento.ToList();
+            var metas = Bdd.Indicador
+                .AsNoTracking()
+                .Where(i => i.Año == año)
+                .OrderBy(m => m.Orden)
+                .ToList();
+            var establecimientos = Bdd.Establecimiento
+                .AsNoTracking()
+                .ToList();
 
-            Bdd.ResultadoIndicador.Include(r => r.Indicador).Where(r => r.Indicador.Año == año).ExecuteDelete();
-            Bdd.SaveChanges();
+            Bdd.ResultadoIndicador
+                .Where(r => r.Indicador.Año == año)
+                .ExecuteDelete();
+            Bdd.ChangeTracker.Clear();
 
-            foreach (var meta in Metas)
+            var metasPreparadas = new List<(Indicador Meta, AstNode Numerador, AstNode Denominador)>();
+            foreach (var meta in metas)
             {
-                Console.WriteLine(meta.Nombre);
-
                 var ast = ParseNode(JsonElement.Parse(meta.Formula));
                 var (astNumerador, astDenominador) = Split(ast);
+                metasPreparadas.Add((meta, astNumerador, astDenominador));
+            }
 
-                var DataProvider = new RemDataProvider(Bdd);
-
-                var collectCtx = new EvaluationContext { Año = año, EstablecimientoId = null, Mes = 1, DataProvider = DataProvider };
-                ast.Collect(collectCtx);
-
-                DataProvider.CargarPrestaciones(año, DateTime.Now);
-                DataProvider.CargarFonasa(año);
-                DataProvider.CargarPercapitaSsc(año);
-
-                var ResultadosIndicadores = new List<ResultadoIndicador>();
-
-                
-                int MesMax = año == DateTime.Now.Year
-                    ? Bdd.Registro
-                        .Where(r => r.Prestacion.VersionRem.Fecha.Year == año)
-                        .Max(r => r.Reporte.Mes)
-                    : 12;
-
-                
-                foreach (var Establecimiento in Establecimientos)
+            var dataProvider = new RemDataProvider(Bdd);
+            var seriesMensuales = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "A",
+                "BM",
+                "D"
+            };
+            var serieP = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "P"
+            };
+            foreach (var preparada in metasPreparadas)
+            {
+                var collectCtx = new EvaluationContext
                 {
-                    // Contexto para el corte P (mes de aplicación: 1 si fallback año anterior, 6 o 12 si corte corriente)
+                    Año = año,
+                    EstablecimientoId = null,
+                    Mes = 1,
+                    DataProvider = dataProvider
+                };
+                preparada.Numerador.Collect(collectCtx);
+                preparada.Denominador.Collect(collectCtx);
+            }
+
+            dataProvider.CargarPrestaciones(año, DateTime.Now);
+            dataProvider.CargarFonasa(año);
+            dataProvider.CargarPercapitaSsc(año);
+
+            int mesMax = año == DateTime.Now.Year
+                ? Bdd.Reporte
+                    .AsNoTracking()
+                    .Where(reporte => reporte.Año == año
+                        && reporte.Registros.Any(registro =>
+                            registro.Prestacion.VersionRem.SerieRem.Nombre == "A"
+                            || registro.Prestacion.VersionRem.SerieRem.Nombre == "BM"
+                            || registro.Prestacion.VersionRem.SerieRem.Nombre == "D"
+                            || registro.Prestacion.VersionRem.SerieRem.Nombre == "P"))
+                    .Select(reporte => (int?)reporte.Mes)
+                    .Max() ?? 0
+                : 12;
+
+            foreach (var preparada in metasPreparadas)
+            {
+                var meta = preparada.Meta;
+                Console.WriteLine(meta.Nombre);
+                var resultadosIndicadores = new List<ResultadoIndicador>();
+
+                foreach (var establecimiento in establecimientos)
+                {
                     var ctxP = new EvaluationContext
                     {
                         Año = año,
-                        EstablecimientoId = (int)Establecimiento.Id,
-                        Mes = DataProvider.PMesAplicacion,
-                        DataProvider = DataProvider,
-                        SoloSerie = "P"
+                        EstablecimientoId = (int)establecimiento.Id,
+                        Mes = dataProvider.PMesAplicacion,
+                        DataProvider = dataProvider,
+                        SeriesIncluidas = serieP
                     };
-                    decimal numeradorP = astNumerador.Evaluate(ctxP);
-                    decimal denominadorP = astDenominador.Evaluate(ctxP);
+                    decimal numeradorP = preparada.Numerador.Evaluate(ctxP);
+                    decimal denominadorP = preparada.Denominador.Evaluate(ctxP);
 
-                    // Para IsDenFijo también usamos la serie A en el corte
                     decimal denominadorFijo = 0;
                     if (meta.IsDenFijo)
                     {
                         var ctxDenFijo = new EvaluationContext
                         {
                             Año = año,
-                            EstablecimientoId = (int)Establecimiento.Id,
-                            Mes = DataProvider.PMonth,
-                            DataProvider = DataProvider,
-                            SoloSerie = "A"
+                            EstablecimientoId = (int)establecimiento.Id,
+                            Mes = dataProvider.PMonth,
+                            DataProvider = dataProvider,
+                            SeriesIncluidas = seriesMensuales
                         };
-                        denominadorFijo = astDenominador.Evaluate(ctxDenFijo);
+                        denominadorFijo = preparada.Denominador.Evaluate(ctxDenFijo);
                     }
 
                     for (int mes = 1; mes <= 12; mes++)
                     {
-                        if (mes > MesMax) break;
+                        if (mes > mesMax) break;
 
                         var ctx = new EvaluationContext
                         {
                             Año = año,
-                            EstablecimientoId = (int)Establecimiento.Id,
+                            EstablecimientoId = (int)establecimiento.Id,
                             Mes = mes,
-                            DataProvider = DataProvider,
-                            SoloSerie = "A"
+                            DataProvider = dataProvider,
+                        SeriesIncluidas = seriesMensuales
                         };
 
                         var nuevoResultado = new ResultadoIndicador
                         {
                             Mes = mes,
                             id_indicador = meta.Id,
-                            id_establecimiento = Establecimiento.Id,
-                            Numerador = astNumerador.Evaluate(ctx),
-                            Denominador = meta.IsDenFijo ? (mes == 1 ? denominadorFijo : 0m) : astDenominador.Evaluate(ctx),
-                            NumeradorP = mes == DataProvider.PMesAplicacion ? numeradorP : 0m,
-                            DenominadorP = mes == DataProvider.PMesAplicacion ? denominadorP : 0m
+                            id_establecimiento = establecimiento.Id,
+                            Numerador = preparada.Numerador.Evaluate(ctx),
+                            Denominador = meta.IsDenFijo ? (mes == 1 ? denominadorFijo : 0m) : preparada.Denominador.Evaluate(ctx),
+                            NumeradorP = mes == dataProvider.PMesAplicacion ? numeradorP : 0m,
+                            DenominadorP = mes == dataProvider.PMesAplicacion ? denominadorP : 0m
                         };
 
-
                         // Override manual: pie diabético
-                        if(meta.Id == 19)
+                        if (meta.Id == 19)
                         {
                             nuevoResultado.NumeradorP = 0;
                             nuevoResultado.Denominador = nuevoResultado.DenominadorP;
                             nuevoResultado.DenominadorP = 0;
-   
                         }
                         if (mes == 1 && meta.Id == 19)
                         {
                             nuevoResultado.Mes = 4;
-                            switch (Establecimiento.Id)
-                            {                                
+                            switch (establecimiento.Id)
+                            {
                                 case 13:
                                     nuevoResultado.Numerador = 408;
                                     break;
                                 case 3:
                                     nuevoResultado.Numerador = 205;
                                     break;
-                                case 5: 
+                                case 5:
                                     nuevoResultado.Numerador = 0;
                                     break;
-                                case 8: 
-                                    nuevoResultado.Numerador = 394; 
+                                case 8:
+                                    nuevoResultado.Numerador = 394;
                                     break;
                             }
                         }
 
-                        ResultadosIndicadores.Add(nuevoResultado);
+                        resultadosIndicadores.Add(nuevoResultado);
                     }
                 }
-                Bdd.AddRange(ResultadosIndicadores);
+
+                Bdd.AddRange(resultadosIndicadores);
                 Bdd.SaveChanges();
+                Bdd.ChangeTracker.Clear();
             }
         }
 

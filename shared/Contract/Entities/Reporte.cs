@@ -13,6 +13,8 @@ namespace RemTool.Shared
 
         public int Mes { get; set; }
 
+        public int Año { get; set; }
+
         public virtual Comuna Comuna { get; set; } = null!;
 
         public virtual Establecimiento Establecimiento { get; set; } = null!;

@@ -14,6 +14,13 @@ namespace RemTool.Services
             EsWhitelist = esWhitelist;
             Ids = ids;
         }
+
+        public bool Incluye(long establecimientoId)
+        {
+            return EsWhitelist
+                ? Ids.Contains(establecimientoId)
+                : !Ids.Contains(establecimientoId);
+        }
     }
 
     public interface IIndicadorService
@@ -28,6 +35,7 @@ namespace RemTool.Services
         /// Pasar null para obtener solo el filtro global.
         /// </summary>
         Task<ResultadoFiltroEstablecimiento> GetFiltroAsync(int? indicadorId = null);
+        Task<Dictionary<int, ResultadoFiltroEstablecimiento>> GetFiltrosAsync(IEnumerable<int> indicadorIds);
         Task<Dictionary<int, decimal>> GetPrevYearOctDecDenominatorsAsync(
             int ano,
             int? tipoIndicador,
@@ -57,6 +65,22 @@ namespace RemTool.Services
             _db = db;
         }
 
+        /// <summary>
+        /// Los denominadores fijos y comunales representan una única base.
+        /// En esos casos el proceso de carga puede dejar el mismo valor en
+        /// denominador_p; sumarlo produciría una duplicación.
+        /// </summary>
+        public static decimal ObtenerDenominadorFila(
+            Indicador indicador,
+            ResultadoIndicador resultado,
+            bool includeP = true)
+        {
+            if (indicador.IsDenFijo || indicador.IsColaborativo)
+                return resultado.Denominador;
+
+            return resultado.Denominador + (includeP ? resultado.DenominadorP : 0m);
+        }
+
         public IReadOnlyList<long> EstablecimientosExcluidos
         {
             get
@@ -74,23 +98,57 @@ namespace RemTool.Services
         {
             if (indicadorId.HasValue)
             {
-                var whitelist = await _db.FiltroEstablecimiento
-                    .Where(f => f.id_indicador == indicadorId && f.Tipo == TipoFiltroEstablecimiento.Incluir)
-                    .Select(f => f.id_establecimiento)
-                    .ToListAsync();
-
-                if (whitelist.Count > 0)
-                    return new ResultadoFiltroEstablecimiento(true, whitelist);
+                var filtros = await GetFiltrosAsync([indicadorId.Value]);
+                return filtros[indicadorId.Value];
             }
 
             var exclusiones = await _db.FiltroEstablecimiento
-                .Where(f => f.Tipo == TipoFiltroEstablecimiento.Excluir
-                         && (f.id_indicador == null || f.id_indicador == indicadorId))
+                .Where(f => f.Tipo == TipoFiltroEstablecimiento.Excluir && f.id_indicador == null)
                 .Select(f => f.id_establecimiento)
                 .Distinct()
                 .ToListAsync();
 
             return new ResultadoFiltroEstablecimiento(false, exclusiones);
+        }
+
+        public async Task<Dictionary<int, ResultadoFiltroEstablecimiento>> GetFiltrosAsync(
+            IEnumerable<int> indicadorIds)
+        {
+            var ids = indicadorIds.Distinct().ToList();
+            if (ids.Count == 0)
+                return new Dictionary<int, ResultadoFiltroEstablecimiento>();
+
+            var reglas = await _db.FiltroEstablecimiento
+                .Where(f => f.id_indicador == null || (f.id_indicador.HasValue && ids.Contains(f.id_indicador.Value)))
+                .Select(f => new { f.id_indicador, f.id_establecimiento, f.Tipo })
+                .ToListAsync();
+
+            var resultado = new Dictionary<int, ResultadoFiltroEstablecimiento>();
+            foreach (var indicadorId in ids)
+            {
+                var reglasIndicador = reglas.Where(f => f.id_indicador == indicadorId).ToList();
+                var incluir = reglasIndicador
+                    .Where(f => f.Tipo == TipoFiltroEstablecimiento.Incluir)
+                    .Select(f => f.id_establecimiento)
+                    .Distinct()
+                    .ToList();
+
+                if (incluir.Count > 0)
+                {
+                    resultado[indicadorId] = new ResultadoFiltroEstablecimiento(true, incluir);
+                    continue;
+                }
+
+                var excluir = reglas
+                    .Where(f => f.Tipo == TipoFiltroEstablecimiento.Excluir
+                             && (f.id_indicador == null || f.id_indicador == indicadorId))
+                    .Select(f => f.id_establecimiento)
+                    .Distinct()
+                    .ToList();
+                resultado[indicadorId] = new ResultadoFiltroEstablecimiento(false, excluir);
+            }
+
+            return resultado;
         }
 
         public async Task<Dictionary<int, decimal>> GetPrevYearOctDecDenominatorsAsync(
@@ -121,6 +179,8 @@ namespace RemTool.Services
                     (i, r) => new
                     {
                         i.Orden,
+                        i.IsDenFijo,
+                        i.IsColaborativo,
                         r.Mes,
                         r.id_establecimiento,
                         SectorId = r.Establecimiento != null ? (long?)r.Establecimiento.id_sector : null,
@@ -145,7 +205,10 @@ namespace RemTool.Services
                 .GroupBy(x => x.Orden)
                 .ToDictionary(
                     g => g.Key,
-                    g => decimal.Round(g.Sum(x => x.Denominador + (includeP ? x.DenominadorP : 0m))));
+                    g => decimal.Round(g.Sum(x =>
+                        x.IsDenFijo || x.IsColaborativo
+                            ? x.Denominador
+                            : x.Denominador + (includeP ? x.DenominadorP : 0m))));
         }
 
         public decimal CalcularNumerador(IEnumerable<ResultadoIndicador> resultados, bool includeP = true)
@@ -162,7 +225,7 @@ namespace RemTool.Services
         {
             var hastaCorte = resultados.Where(r => r.Mes <= mesCorte).ToList();
 
-            Func<ResultadoIndicador, decimal> denSelector = r => r.Denominador + (includeP ? r.DenominadorP : 0m);
+            Func<ResultadoIndicador, decimal> denSelector = r => ObtenerDenominadorFila(indicador, r, includeP);
 
             if (indicador.EsPeriodoOctubreSep)
             {

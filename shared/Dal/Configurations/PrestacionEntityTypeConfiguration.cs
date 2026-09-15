@@ -10,6 +10,8 @@ namespace RemTool.Shared
             builder
                 .HasKey(x => x.Id);
 
+            builder.HasIndex(x => x.id_version);
+
             builder
                 .HasOne(x => x.VersionRem)
                 .WithMany(x => x.Prestacions)
@@ -20,6 +22,16 @@ namespace RemTool.Shared
                 .HasOne(x => x.HojaRem)
                 .WithMany(x => x.Prestacions)
                 .HasForeignKey(x => x.id_hoja)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.HasOne(x => x.Seccion)
+                .WithMany(x => x.Prestacions)
+                .HasForeignKey(x => x.IdSeccion)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.HasOne(x => x.FilaSeccion)
+                .WithOne(x => x.Prestacion)
+                .HasForeignKey<Prestacion>(x => x.IdFilaSeccion)
                 .OnDelete(DeleteBehavior.NoAction);
 
             builder
@@ -33,6 +45,11 @@ namespace RemTool.Shared
                 .Property(x => x.CodigoPrestacion)
                 .HasColumnName("codigo_prestacion")
                 .HasColumnType("character varying");
+
+            builder.Property(x => x.IdSeccion).HasColumnName("id_seccion");
+            builder.Property(x => x.IdFilaSeccion).HasColumnName("id_fila_seccion");
+            builder.Property(x => x.Nombre).HasColumnName("nombre").HasColumnType("character varying");
+            builder.Property(x => x.Orden).HasColumnName("orden");
 
             builder
                 .Property(x => x.IsEnabled)

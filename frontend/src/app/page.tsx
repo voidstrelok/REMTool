@@ -1,92 +1,24 @@
 import Link from "next/link";
-import { Settings, CheckCircle2, BarChart2, Building2, FolderOpen, ExternalLink, FileDown, Lock, FileImage, ClipboardList } from "lucide-react";
+import { ExternalLink, FileDown, Lock } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-
-const allTools = [
-  {
-    name: "Panel REM",
-    icon: ClipboardList,
-    link: "/PanelREM",
-    comment: "Estado de revisión de archivos REM por establecimiento y serie.",
-    external: false,
-    requiresMonitoreo: false,
-  },
-  {
-    name: "Compilar REM Serie A",
-    icon: Settings,
-    link: "/CompilarREM",
-    comment: "Consolidación de archivos REM Serie A en una única planilla.",
-    external: false,
-    requiresMonitoreo: false,
-  },/*
-  {
-    name: "Compilar REM Serie P",
-    icon: Settings,
-    link: "/CompilarREMP",
-    comment: "Consolidación de archivos REM Serie P en una única planilla.",
-    external: false,
-    requiresMonitoreo: false,
-  },*/
-  {
-    name: "Revisar REM",
-    icon: CheckCircle2,
-    link: "/RevisarREM",
-    comment: "Validación y detección de inconsistencias en archivos REM.",
-    external: false,
-    requiresMonitoreo: false,
-  },
-  {
-    name: "Metas Sanitarias",
-    icon: BarChart2,
-    link: "/Indicadores?tipo=MetasSanitarias",
-    comment: "Seguimiento del avance de metas sanitarias.",
-    external: false,
-    requiresMonitoreo: true,
-  },
-  {
-    name: "IAAPS",
-    icon: Building2,
-    link: "/Indicadores?tipo=IAAPS",
-    comment: "Seguimiento del avance de indicadores IAAPS.",
-    external: false,
-    requiresMonitoreo: true,
-  },/*
-  {
-    name: "Convenios",
-    icon: Building2,
-    link: "/Convenios",
-    comment: "Seguimiento del avance de convenios.",
-    external: false,
-    requiresMonitoreo: true,
-  },*/
-  {
-    name: "Repositorio REM",
-    icon: FolderOpen,
-    link: "https://drive.google.com/drive/folders/1vlCWcZMrdayOv5n8-ev1PstQCQIoSQCT?usp=sharing",
-    comment: "Archivos REM y consolidados en Google Drive.",
-    external: true,
-    requiresMonitoreo: false,
-  },
-  {
-    name: "Rasterizar PDF",
-    icon: FileImage,
-    link: "/RasterizarPDF",
-    comment: "Convierte las capas y anotaciones de un PDF en imagen permanente.",
-    external: false,
-    requiresMonitoreo: false,
-  },
-];
+import { apiUrl } from "@/lib/api";
+import { NAVIGATION_SECTIONS, type NavigationItem } from "./components/navigation";
+import InformativosPreview from "./components/InformativosPreview";
 
 const informesMensuales = [
   { nombre: "Metas Sanitarias", tipoId: 2 },
   { nombre: "IAAPS", tipoId: 3 },
 ];
 
-const API = process.env.NEXT_PUBLIC_API ?? "";
+type HomeParameters = {
+  monitoreo_enabled?: boolean;
+  ultima_actualizacion?: string;
+  ultimo_rem_cargado?: { ano: number; mes: number } | null;
+};
 
-async function getParametros() {
+async function getParametros(): Promise<HomeParameters> {
   try {
-    const res = await fetch(`${API}getUltimaActualizacion`, { cache: "no-store" });
+    const res = await fetch(apiUrl("getUltimaActualizacion"), { cache: "no-store" });
     if (!res.ok) return { monitoreo_enabled: true };
     return await res.json();
   } catch {
@@ -94,134 +26,66 @@ async function getParametros() {
   }
 }
 
+function formatDate(value?: string) {
+  const match = value?.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : value ?? "Sin información";
+}
+
+function ModuleCard({ item, disabled }: { item: NavigationItem; disabled: boolean }) {
+  const Icon = item.icon;
+  const content = (
+    <Card className="h-full transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-md" style={{ border: "1px solid var(--border)", background: "var(--surface)", opacity: disabled ? 0.5 : 1 }}>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="shrink-0 rounded-lg p-2.5" style={{ background: "var(--accent-light)" }}>
+              <Icon size={21} style={{ color: "var(--primary)" }} aria-hidden="true" />
+            </div>
+            <span className="font-semibold leading-tight" style={{ color: "var(--text)" }}>{item.label}</span>
+          </div>
+          {disabled ? <Lock size={14} className="mt-1 shrink-0" style={{ color: "var(--text-light)" }} aria-label="No disponible" /> : item.external ? <ExternalLink size={14} className="mt-1 shrink-0" style={{ color: "var(--text-light)" }} aria-label="Enlace externo" /> : item.badge ? <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--primary)", background: "var(--accent-light)", border: "1px solid var(--border)" }}>{item.badge}</span> : null}
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0"><p className="text-sm" style={{ color: "var(--text-light)" }}>{item.description}</p></CardContent>
+    </Card>
+  );
+
+  if (disabled) return <div className="cursor-not-allowed rounded-xl" aria-disabled="true">{content}</div>;
+  return <Link href={item.href} target={item.external ? "_blank" : undefined} rel={item.external ? "noopener noreferrer" : undefined} className="group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]">{content}</Link>;
+}
+
 export default async function Home() {
   const currentYear = new Date().getFullYear();
   const parametros = await getParametros();
-  const monitoreoEnabled: boolean = parametros.monitoreo_enabled ?? true;
-  const tools = allTools.map((t) => ({
-    ...t,
-    disabled: t.requiresMonitoreo && !monitoreoEnabled,
-  }));
+  const monitoreoEnabled = parametros.monitoreo_enabled ?? true;
+  const quickItems = ["panel-rem", "revisar-rem", "consultar-rem"];
+
   return (
     <div className="py-4">
-      <div className="mb-8">
-        <h2
-          className="text-2xl font-bold mb-1"
-          style={{ color: "var(--text)" }}
-        >
-          Módulos disponibles
-        </h2>
-        <p className="text-sm" style={{ color: "var(--text-light)" }}>
-          Seleccione la herramienta que desea utilizar.
-        </p>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {tools.map((tool) => {
-          const Icon = tool.icon;
-          const cardContent = (
-            <Card
-              className="h-full transition-all duration-200 group-hover:shadow-md"
-              style={{
-                border: "1px solid var(--border)",
-                background: "var(--surface)",
-                opacity: tool.disabled ? 0.45 : 1,
-              }}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="p-2.5 rounded-lg flex-shrink-0"
-                      style={{ background: "var(--accent-light)" }}
-                    >
-                      <Icon
-                        size={22}
-                        style={{ color: "var(--primary)" }}
-                      />
-                    </div>
-                    <span
-                      className="font-semibold text-base leading-tight"
-                      style={{ color: "var(--text)" }}
-                    >
-                      {tool.name}
-                    </span>
-                  </div>
-                  {tool.disabled ? (
-                    <Lock size={14} className="flex-shrink-0 mt-1" style={{ color: "var(--text-light)" }} />
-                  ) : tool.external ? (
-                    <ExternalLink
-                      size={14}
-                      className="flex-shrink-0 mt-1"
-                      style={{ color: "var(--text-light)" }}
-                    />
-                  ) : null}
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm" style={{ color: "var(--text-light)" }}>
-                  {tool.comment}
-                </p>
-              </CardContent>
-            </Card>
-          );
-          if (tool.disabled) {
-            return (
-              <div key={tool.name} className="rounded-xl cursor-not-allowed">
-                {cardContent}
-              </div>
-            );
-          }
-          return (
-            <Link
-              href={tool.link}
-              key={tool.name}
-              target={tool.external ? "_blank" : undefined}
-              rel={tool.external ? "noopener noreferrer" : undefined}
-              className="group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] rounded-xl"
-            >
-              {cardContent}
-            </Link>
-          );
-        })}
-      </div>
+      <InformativosPreview />
 
-      <div className="mt-10">
-        <h2
-          className="text-2xl font-bold mb-1"
-          style={{ color: "var(--text)" }}
-        >
-          Informes Mensuales
-        </h2>
-        <p className="text-sm mb-5" style={{ color: "var(--text-light)" }}>
-          Descargue el informe mensual en formato PDF.
-        </p>
+      {NAVIGATION_SECTIONS.map((section) => {
+        const SectionIcon = section.icon;
+        return (
+          <section key={section.id} className="mb-9">
+            <div className="mb-4 flex items-start gap-3">
+              <div className="rounded-lg p-2" style={{ background: "var(--accent-light)" }}><SectionIcon size={19} style={{ color: "var(--primary)" }} aria-hidden="true" /></div>
+              <div><h2 className="text-xl font-bold" style={{ color: "var(--text)" }}>{section.label}</h2><p className="text-sm" style={{ color: "var(--text-light)" }}>Herramientas para {section.id === "operacion-rem" ? "trabajar con archivos y registros REM" : section.id === "seguimiento" ? "consultar avances y resultados" : "resolver tareas complementarias"}.</p></div>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {section.items.map((item) => <ModuleCard key={item.id} item={item} disabled={Boolean(item.requiresMonitoreo && !monitoreoEnabled)} />)}
+            </div>
+          </section>
+        );
+      })}
+
+      <section className="rounded-xl border p-5" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+        <div className="mb-4"><h2 className="text-xl font-bold" style={{ color: "var(--text)" }}>Descargas mensuales</h2><p className="text-sm" style={{ color: "var(--text-light)" }}>Informes PDF del año {currentYear}.</p></div>
         <div className="flex flex-wrap gap-3">
-          {informesMensuales.map(({ nombre, tipoId }) => (
-            <a
-              key={tipoId}
-              href={`${API}informeMensual/${tipoId}/${currentYear}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              style={{
-                background: "var(--accent-light)",
-                color: "var(--primary)",
-                border: "1px solid var(--border)",
-              }}
-            >
-              <FileDown size={16} />
-              {nombre} {currentYear}
-            </a>
-          ))}
+          {informesMensuales.map(({ nombre, tipoId }) => <a key={tipoId} href={apiUrl(`informeMensual/${tipoId}/${currentYear}`)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors hover:bg-[var(--surface-alt)]" style={{ color: "var(--primary)", borderColor: "var(--border)" }}><FileDown size={16} aria-hidden="true" />{nombre} {currentYear}</a>)}
         </div>
-      </div>
+      </section>
     </div>
   );
 }
-
-
-
-
-
-

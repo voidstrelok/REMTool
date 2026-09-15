@@ -17,6 +17,7 @@ import {
 import ErrorListPanel from "@/app/components/ErrorListPanel";
 import { usePanelREM, type PanelAttachment, type PanelEntry } from "@/lib/hooks/usePanelREM";
 import { exportRevisionWord } from "@/lib/exportRevision";
+import Breadcrumbs from "../components/Breadcrumbs";
 
 const API = process.env.NEXT_PUBLIC_API ?? "";
 
@@ -540,6 +541,7 @@ export default function PanelREMPage() {
 
   return (
     <div className="py-6 px-4 sm:px-6 max-w-[1400px] mx-auto">
+      <Breadcrumbs items={[{ label: "Operación REM" }, { label: "Panel REM" }]} />
       <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
         <div>
           <h1 className="text-2xl font-bold mb-1" style={{ color: "var(--text)" }}>Panel de Revisión REM</h1>

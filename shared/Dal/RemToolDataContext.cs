@@ -21,9 +21,17 @@ namespace RemTool.Shared
 
         public virtual DbSet<HojaRem> HojaRem { get; set; }
 
+        public virtual DbSet<VersionHojaRem> VersionHojaRem { get; set; }
+
         public virtual DbSet<Prestacion> Prestacion { get; set; }
 
-        //public virtual DbSet<SeccionRem> SeccionRem { get; set; }
+        public virtual DbSet<SeccionRem> SeccionRem { get; set; }
+
+        public virtual DbSet<FilaSeccionRem> FilaSeccionRem { get; set; }
+
+        public virtual DbSet<CeldaSeccionRem> CeldaSeccionRem { get; set; }
+
+        public virtual DbSet<CoordenadaPrestacion> CoordenadaPrestacion { get; set; }
 
         public virtual DbSet<SerieRem> SerieRem { get; set; }
 
@@ -44,11 +52,16 @@ namespace RemTool.Shared
         public virtual DbSet<PercapitaSsc> PercapitaSsc { get; set; }
         public virtual DbSet<FiltroEstablecimiento> FiltroEstablecimiento { get; set; }
         public virtual DbSet<PuntoResumen> PuntoResumen { get; set; }
+        public virtual DbSet<Informativo> Informativo { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfiguration(new SeccionRemEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new HojaRemEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new VersionHojaRemEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new FilaSeccionRemEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new CeldaSeccionRemEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new CoordenadaPrestacionEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new SerieRemEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new VersionRemEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new PrestacionEntityTypeConfiguration());
@@ -68,6 +81,7 @@ namespace RemTool.Shared
             modelBuilder.ApplyConfiguration(new PercapitaSscEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new FiltroEstablecimientoEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new PuntoResumenEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new InformativoEntityTypeConfiguration());
 
             base.OnModelCreating(modelBuilder);
         }

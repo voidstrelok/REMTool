@@ -94,6 +94,7 @@ namespace RemTools
 
             // Context menu
             ctx_nodo = new ContextMenuStrip(components);
+            agregar_raiz_mni = new ToolStripMenuItem();
             agregar_hijo_mni = new ToolStripMenuItem();
             eliminar_nodo_mni = new ToolStripMenuItem();
             cambiar_tipo_mni = new ToolStripMenuItem();
@@ -405,6 +406,7 @@ namespace RemTools
             formula_tv.Name = "formula_tv";
             formula_tv.TabIndex = 0;
             formula_tv.AfterSelect += formula_tv_AfterSelect;
+            formula_tv.MouseDown += formula_tv_MouseDown;
 
             // tab_den_fijo
             tab_den_fijo.Controls.Add(denFijo_tv);
@@ -419,6 +421,7 @@ namespace RemTools
             denFijo_tv.Name = "denFijo_tv";
             denFijo_tv.TabIndex = 0;
             denFijo_tv.AfterSelect += denFijo_tv_AfterSelect;
+            denFijo_tv.MouseDown += denFijo_tv_MouseDown;
 
             // tab_json
             tab_json.Controls.Add(pnl_json);
@@ -598,6 +601,7 @@ namespace RemTools
             // ── ctx_nodo ──────────────────────────────────────────────
             ctx_nodo.Items.AddRange(new ToolStripItem[]
             {
+                agregar_raiz_mni,
                 agregar_hijo_mni,
                 eliminar_nodo_mni,
                 new ToolStripSeparator(),
@@ -605,6 +609,10 @@ namespace RemTools
             });
             ctx_nodo.Name = "ctx_nodo";
             ctx_nodo.Opening += ctx_nodo_Opening;
+
+            agregar_raiz_mni.Name = "agregar_raiz_mni";
+            agregar_raiz_mni.Text = "Agregar nodo raíz";
+            agregar_raiz_mni.Click += agregar_raiz_mni_Click;
 
             agregar_hijo_mni.Name = "agregar_hijo_mni";
             agregar_hijo_mni.Text = "Agregar hijo";
@@ -740,6 +748,7 @@ namespace RemTools
         private Button guardar_btn;
 
         private ContextMenuStrip ctx_nodo;
+        private ToolStripMenuItem agregar_raiz_mni;
         private ToolStripMenuItem agregar_hijo_mni;
         private ToolStripMenuItem eliminar_nodo_mni;
         private ToolStripMenuItem cambiar_tipo_mni;

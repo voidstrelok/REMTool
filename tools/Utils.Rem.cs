@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using NCalc;
+using Npgsql;
+using NpgsqlTypes;
 using OfficeOpenXml;
 using System.Diagnostics;
 using System.Globalization;
@@ -16,93 +18,101 @@ namespace RemTools
     {
         public void ExtraerArchivo(string rutaArchivo, string serie, int año)
         {
+            try
+            {
+                ExtraerArchivoInterno(rutaArchivo, serie, año);
+            }
+            finally
+            {
+                // Cada archivo se procesa de forma independiente. No conservar
+                // reportes ni registros anteriores evita que SaveChanges tarde
+                // cada vez más a medida que avanza la carga mensual.
+                Bdd.ChangeTracker.Clear();
+            }
+        }
+
+        private void ExtraerArchivoInterno(string rutaArchivo, string serie, int año)
+        {
             string nombreArchivo = Path.GetFileNameWithoutExtension(rutaArchivo);
-            var VersionSerie = Bdd.VersionRem.Include(v => v.SerieRem).Where(v => v.SerieRem.Nombre.Equals(serie)).ToList();
             using var REM = new ExcelPackage(rutaArchivo);
 
             ExcelWorksheet hojaNombre = REM.Workbook.Worksheets["NOMBRE"];
-            string VersionArchivo = hojaNombre.Cells["A9"].Value.ToString() ?? "";
+            string VersionArchivo = hojaNombre.Cells["A9"].Value?.ToString() ?? "";
             //VersionArchivo = "Versión 1.1: Febrero 2026";
-            string CodigoArchivo = nombreArchivo.Substring(0, 6);
-            string TipoArchivo = hojaNombre.Cells["B17"].Value.ToString() ?? "";
             string MesArchivo = nombreArchivo.Substring(nombreArchivo.Length - 2);
-
-            bool vVersion = VersionSerie.Exists(v => v.Nombre.Equals(VersionArchivo));
-
-            var TipoREM = ExtraerSerieDesdeNombre(hojaNombre.Cells["B17"].Value?.ToString() ?? "");
 
             string CodigoREM = hojaNombre.Cells["C3"].Value.ToString() + hojaNombre.Cells["D3"].Value.ToString() + hojaNombre.Cells["E3"].Value.ToString() + hojaNombre.Cells["F3"].Value.ToString() + hojaNombre.Cells["G3"].Value.ToString() + hojaNombre.Cells["H3"].Value.ToString();
             string MesREM = hojaNombre.Cells["C6"].Value.ToString() + hojaNombre.Cells["D6"].Value.ToString();
             string ComunaREM = hojaNombre.Cells["C2"].Value.ToString() + hojaNombre.Cells["D2"].Value.ToString() + hojaNombre.Cells["E2"].Value.ToString() + hojaNombre.Cells["F2"].Value.ToString() + hojaNombre.Cells["G2"].Value.ToString();
 
-            string MesTxt = new DateTime(2025, int.Parse(MesArchivo), 1).ToString("MMMM", CultureInfo.CreateSpecificCulture("es")).ToUpper();
-            var Establecimiento = Bdd.Establecimiento.Where(e => e.CodDeis.Equals(CodigoREM)).FirstOrDefault();
-            Console.WriteLine("Cargando : " + Establecimiento.Nombre + " - REM " + serie + " - " + MesTxt);
+            int mesRem = int.Parse(MesREM);
+            string MesTxt = new DateTime(año, int.Parse(MesArchivo), 1).ToString("MMMM", CultureInfo.CreateSpecificCulture("es")).ToUpper();
+            var establecimiento = Bdd.Establecimiento
+                .AsNoTracking()
+                .FirstOrDefault(e => e.CodDeis == CodigoREM);
+            if (establecimiento == null)
+            {
+                Console.WriteLine($"No se encontro el establecimiento {CodigoREM}. Se omite el archivo {nombreArchivo}.");
+                return;
+            }
 
-            var EstructuraVersion = Bdd.VersionRem
-                .Include(v => v.Prestacions)
-                    .ThenInclude(p => p.HojaRem)
-                .Where(v => v.Nombre.Equals(VersionArchivo) && v.SerieRem.Nombre.Equals(serie)).FirstOrDefault();
+            var comuna = Bdd.Comuna
+                .AsNoTracking()
+                .FirstOrDefault(c => c.CodDeis == ComunaREM);
+            if (comuna == null)
+            {
+                Console.WriteLine($"No se encontro la comuna {ComunaREM}. Se omite el archivo {nombreArchivo}.");
+                return;
+            }
 
-            if(EstructuraVersion== null)
+            Console.WriteLine("Cargando : " + establecimiento.Nombre + " - REM " + serie + " - " + MesTxt);
+
+            var estructuraVersion = ObtenerEstructuraVersion(VersionArchivo, serie);
+
+            if (estructuraVersion == null)
             {
                 Console.WriteLine("No se encontró la estructura para esta versión y serie. No se guardarán los cambios.");
                 return;
             }
-            string ColumnasSACSV = "";
-            int maxColumnas = 0;
-            foreach (var prestacion in EstructuraVersion.Prestacions)
+            var cronometroExtraccion = Stopwatch.StartNew();
+            var prestacionesCarga = estructuraVersion.Prestaciones;
+            var registrosReporte = new List<Registro>(prestacionesCarga.Count);
+            var prestacionesSinDatos = 0;
+
+            foreach (var prestacionCarga in prestacionesCarga)
             {
-                if (prestacion.Coordenada.Count > maxColumnas) maxColumnas = prestacion.Coordenada.Count;
-            }
-            for (int i = 0; i < maxColumnas; i++)
-                ColumnasSACSV += $",Col{(i + 1).ToString("D2")}";
+                string hoja = prestacionCarga.Hoja;
+                var hojaRem = REM.Workbook.Worksheets[hoja]
+                    ?? throw new InvalidOperationException($"No se encontro la planilla '{hoja}' en el archivo.");
+                var datosBdd = new List<int>(prestacionCarga.Coordenadas.Count);
 
-            //string nombreCSV = $"salida/{DateTime.Now.Ticks}-{nombreArchivo}-{MesArchivo}.csv";
-            //using var salidaCSV = new StreamWriter(nombreCSV);
-            //salidaCSV.WriteLine($"Mes,IdServicio,Ano,IdEstablecimiento,CodigoPrestacion,IdRegion,IdComuna{ColumnasSACSV}");
-
-            var RegistrosReporte = new List<Registro>();
-            foreach (var prestacion in EstructuraVersion.Prestacions)
-            {
-                string hoja = prestacion.HojaRem.Nombre;
-                var HojaREM = REM.Workbook.Worksheets[hoja];
-                var DatosPrestacion = prestacion.Coordenada;
-                string lineadatos = "";
-                bool lineaconDatos = false;
-                var datosBdd = new List<int>();
-
-                foreach (var dato in DatosPrestacion)
+                foreach (var dato in prestacionCarga.Coordenadas)
                 {
                     try
                     {
-                        if (HojaREM.Cells[dato].Value == null)
+                        var valorCelda = hojaRem.Cells[dato].Value;
+                        if (valorCelda == null)
                         {
-                            lineadatos += ",";
                             datosBdd.Add(0);
                         }
                         else
                         {
-                            string extraido = HojaREM.Cells[dato].Value.ToString();
+                            string extraido = valorCelda.ToString() ?? string.Empty;
                             if (extraido.Equals("") || extraido.Equals("0"))
                             {
-                                lineadatos += ",";
                                 datosBdd.Add(0);
                                 continue;
                             }
-                            float numExtraido = float.Parse(extraido);
+                            float numExtraido = float.Parse(extraido, CultureInfo.CurrentCulture);
                             int redondeado = (int)Convert.ToInt32(numExtraido);
-                            if (!serie.Equals("D"))
+                            if (!serie.Equals("D", StringComparison.OrdinalIgnoreCase))
                             {
-                                lineadatos += "," + redondeado;
                                 datosBdd.Add(redondeado);
                             }
                             else
                             {
-                                lineadatos += "," + numExtraido.ToString(CultureInfo.InvariantCulture);
                                 datosBdd.Add((int)numExtraido);
                             }
-                            lineaconDatos = true;
                         }
                     }
                     catch
@@ -112,51 +122,109 @@ namespace RemTools
                     }
                 }
 
-                //if (!lineaconDatos) continue;
-                //salidaCSV.WriteLine($"{int.Parse(MesArchivo)},5,2025,{CodigoArchivo},{prestacion.CodigoPrestacion},4,4303{lineadatos}");
-
-                var prestacionBdd = Bdd.Prestacion.Include(p => p.VersionRem)
-                    .Where(p => p.CodigoPrestacion.Equals(prestacion.CodigoPrestacion) && p.VersionRem.Nombre.Equals(VersionArchivo))
-                    .FirstOrDefault();
-
-                RegistrosReporte.Add(new Registro
+                if (datosBdd.Any(valor => valor != 0))
                 {
-                    id_prestacion = prestacionBdd.Id,
-                    Valor = datosBdd,
-                });
+                    registrosReporte.Add(new Registro
+                    {
+                        id_prestacion = prestacionCarga.Id,
+                        Valor = datosBdd,
+                    });
+                }
+                else
+                {
+                    prestacionesSinDatos++;
+                }
             }
 
-            var reporteExistente = Bdd.Reporte.Include(r => r.Registros).ThenInclude(r => r.Prestacion).ThenInclude(p => p.VersionRem)
-                .Where(r => r.id_establecimiento == Establecimiento.Id &&
-                                     r.Mes.Equals(int.Parse(MesREM)) &&
-                                     r.Comuna.CodDeis.Equals(ComunaREM) &&
-                                     r.Registros.FirstOrDefault().Prestacion.VersionRem.Nombre.Equals(VersionArchivo) &&
-                                     r.Registros.FirstOrDefault().Prestacion.VersionRem.Fecha.Year == año);
+            cronometroExtraccion.Stop();
+            Console.WriteLine($"[Registros] Datos extraídos: {establecimiento.Nombre} - {registrosReporte.Count:N0} prestaciones con datos; {prestacionesSinDatos:N0} sin datos omitidas en {cronometroExtraccion.Elapsed.TotalSeconds:F1}s.");
 
-            if (reporteExistente != null)
+            Bdd.Database.SetCommandTimeout(TimeSpan.FromMinutes(10));
+            using var transaction = Bdd.Database.BeginTransaction();
+
+            var idsReportesExistentes = Bdd.Reporte
+                .Where(reporte => reporte.id_establecimiento == establecimiento.Id
+                    && reporte.id_comuna == comuna.Id
+                    && reporte.Año == año
+                    && reporte.Mes == mesRem
+                    && reporte.Registros.Any(registro => registro.Prestacion.id_version == estructuraVersion.Id))
+                .Select(reporte => reporte.Id)
+                .ToList();
+
+            if (idsReportesExistentes.Count > 0)
             {
-                Bdd.Registro.RemoveRange(reporteExistente.SelectMany(r => r.Registros));
-                Bdd.Reporte.RemoveRange(reporteExistente);
-                Bdd.SaveChanges();
+                Console.WriteLine($"[Registros] Eliminando {idsReportesExistentes.Count} reporte(s) anterior(es) de {establecimiento.Nombre}...");
+                Bdd.Registro
+                    .Where(registro => idsReportesExistentes.Contains(registro.id_reporte))
+                    .ExecuteDelete();
+                Bdd.Reporte
+                    .Where(reporte => idsReportesExistentes.Contains(reporte.Id))
+                    .ExecuteDelete();
             }
 
-            var establecimiento = Bdd.Establecimiento.Where(e => e.CodDeis.Equals(CodigoREM)).FirstOrDefault();
-            var comuna = Bdd.Comuna.Where(c => c.CodDeis.Equals(ComunaREM)).FirstOrDefault();
-
-            if (RegistrosReporte.Count == 0)
+            if (registrosReporte.Count == 0)
             {
                 Console.WriteLine($"No se encontraron datos para cargar en BD. No se guardarán los cambios de {establecimiento.Nombre} {MesTxt} {VersionArchivo}");
                 return;
             }
 
-            Bdd.Reporte.Add(new Reporte
+            var reporteNuevo = new Reporte
             {
                 id_establecimiento = establecimiento.Id,
-                id_comuna = 1,
-                Mes = int.Parse(MesREM),
-                Registros = RegistrosReporte
-            });
+                id_comuna = comuna.Id,
+                Mes = mesRem,
+                Año = año,
+            };
+
+            Bdd.Reporte.Add(reporteNuevo);
+            var cronometroCarga = Stopwatch.StartNew();
             Bdd.SaveChanges();
+
+            GuardarRegistrosMasivo(reporteNuevo.Id, registrosReporte);
+            transaction.Commit();
+            transaction.Dispose();
+            SincronizarSecuenciasDatos();
+            cronometroCarga.Stop();
+            Console.WriteLine($"[Registros] Registros guardados: {registrosReporte.Count:N0} en {cronometroCarga.Elapsed.TotalSeconds:F1}s.");
+            Console.WriteLine($"[Registros] Carga completada: {establecimiento.Nombre} - {serie} - {MesTxt}.");
+        }
+
+        private void SincronizarSecuenciasDatos()
+        {
+            Bdd.Database.ExecuteSqlRaw(@"
+SELECT setval('""REMTool"".reporte_id_seq',
+    COALESCE((SELECT MAX(id) FROM ""REMTool"".reporte), 0) + 1,
+    false);
+SELECT setval('""REMTool"".registro_id_seq',
+    COALESCE((SELECT MAX(id) FROM ""REMTool"".registro), 0) + 1,
+    false);");
+        }
+
+        private void GuardarRegistrosMasivo(int idReporte, IReadOnlyList<Registro> registros)
+        {
+            if (Bdd.Database.GetDbConnection() is not NpgsqlConnection conexion)
+                throw new InvalidOperationException("La conexión configurada no es PostgreSQL.");
+
+            if (conexion.State != System.Data.ConnectionState.Open)
+                conexion.Open();
+
+            using var importador = conexion.BeginBinaryImport(
+                "COPY \"REMTool\".registro (id_prestacion, id_reporte, valor) FROM STDIN (FORMAT BINARY)");
+
+            foreach (var registro in registros)
+            {
+                importador.StartRow();
+                importador.Write((long)registro.id_prestacion, NpgsqlDbType.Bigint);
+                importador.Write((long)idReporte, NpgsqlDbType.Bigint);
+
+                // The existing database stores this legacy column as numeric[].
+                var valores = registro.Valor
+                    .Select(valor => (decimal)valor)
+                    .ToArray();
+                importador.Write(valores, NpgsqlDbType.Array | NpgsqlDbType.Numeric);
+            }
+
+            importador.Complete();
         }
 
         public void RevisarRem(string serie)
@@ -386,6 +454,76 @@ namespace RemTools
 
             Console.WriteLine();
             Console.WriteLine($"--- Resumen: {correctos} correcto(s), {conProblemas} con problema(s) ---");
+        }
+
+        private EstructuraCarga? ObtenerEstructuraVersion(string version, string serie)
+        {
+            var clave = $"{serie.Trim()}|{version.Trim()}";
+            if (_estructuraCargaCache.TryGetValue(clave, out var estructuraCacheada))
+                return estructuraCacheada;
+
+            Console.WriteLine($"[Registros] Cargando estructura de la version '{version}' para la serie '{serie}'...");
+            var versionId = Bdd.VersionRem
+                .AsNoTracking()
+                .Where(v => v.Nombre == version && v.SerieRem.Nombre == serie)
+                .Select(v => (int?)v.Id)
+                .FirstOrDefault();
+
+            if (versionId == null)
+                return null;
+
+            var prestacionesBase = Bdd.Prestacion
+                .AsNoTracking()
+                .Where(prestacion => prestacion.id_version == versionId.Value)
+                .OrderBy(prestacion => prestacion.HojaRem.Nombre)
+                .ThenBy(prestacion => prestacion.Orden)
+                .Select(prestacion => new
+                {
+                    prestacion.Id,
+                    prestacion.Orden,
+                    Hoja = prestacion.HojaRem.Nombre,
+                    CoordenadasLegadas = prestacion.Coordenada
+                })
+                .ToList();
+
+            var coordenadas = Bdd.CoordenadaPrestacion
+                .AsNoTracking()
+                .Where(coordenada => coordenada.Prestacion.id_version == versionId.Value)
+                .OrderBy(coordenada => coordenada.IdPrestacion)
+                .ThenBy(coordenada => coordenada.Orden)
+                .Select(coordenada => new
+                {
+                    coordenada.IdPrestacion,
+                    coordenada.CeldaBase
+                })
+                .ToList()
+                .GroupBy(coordenada => coordenada.IdPrestacion)
+                .ToDictionary(
+                    grupo => grupo.Key,
+                    grupo => (IReadOnlyList<string>)grupo
+                        .Select(coordenada => coordenada.CeldaBase)
+                        .ToArray());
+
+            var prestaciones = prestacionesBase
+                .Select(prestacion => new PrestacionCarga(
+                    prestacion.Id,
+                    prestacion.Hoja,
+                    coordenadas.TryGetValue(prestacion.Id, out var coordenadasNormalizadas)
+                        && coordenadasNormalizadas.Count > 0
+                        ? coordenadasNormalizadas
+                        : prestacion.CoordenadasLegadas ?? new List<string>()))
+                .ToList();
+
+            var estructura = new EstructuraCarga(versionId.Value, prestaciones);
+            _estructuraCargaCache[clave] = estructura;
+            Console.WriteLine($"[Registros] Estructura liviana preparada en cache: {prestaciones.Count:N0} prestaciones para {version}.");
+
+            return estructura;
+        }
+
+        private void InvalidarCacheEstructuras()
+        {
+            _estructuraCargaCache.Clear();
         }
 
         private static void ImprimirResultado(string nombreArchivo, List<string> errores, ref int correctos, ref int conProblemas)

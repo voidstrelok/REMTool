@@ -13,7 +13,7 @@
     <PackageReference Include="CoreCLR-NCalc" Version="3.1.253" />
     <PackageReference Include="CsvHelper" Version="33.1.0" />
     <PackageReference Include="DocumentFormat.OpenXml" Version="3.3.0" />
-    <PackageReference Include="EPPlus" Version="8.1.0" />
+    <PackageReference Include="EPPlus" Version="8.5.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.25">
       <PrivateAssets>all</PrivateAssets>

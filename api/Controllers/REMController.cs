@@ -33,12 +33,32 @@ namespace RemTool.Controllers
         [HttpGet("getUltimaActualizacion/")]
         public async Task<IActionResult> GetUltimaActualizacion()
         {
-            var parametros = db.Parametros.FirstOrDefault();
+            var parametros = await db.Parametros
+                .AsNoTracking()
+                .FirstOrDefaultAsync();
+
+            if (parametros is null)
+                return NotFound("No hay parámetros de actualización configurados.");
+
+            var ultimoRemCargado = await db.Reporte
+                .AsNoTracking()
+                .Where(reporte => reporte.Registros.Any())
+                .OrderByDescending(reporte => reporte.Año)
+                .ThenByDescending(reporte => reporte.Mes)
+                .ThenByDescending(reporte => reporte.Id)
+                .Select(reporte => new
+                {
+                    ano = reporte.Año,
+                    mes = reporte.Mes,
+                })
+                .FirstOrDefaultAsync();
+
             return Ok(new
             {
                 ultima_actualizacion = parametros.UltimaActualizacion,
                 servicio_enabled = parametros.ServicioEnabled,
                 monitoreo_enabled = parametros.MonitoreoEnabled,
+                ultimo_rem_cargado = ultimoRemCargado,
             });
         }
 
