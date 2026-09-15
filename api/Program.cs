@@ -41,7 +41,7 @@ builder.Services.AddCors(options =>
                           .AllowAnyHeader()
                           .AllowAnyMethod());
     options.AddPolicy("CorsPolicy",
-        builder => builder.WithOrigins("https://remtools.thepit.cl","https://estadisticas.apsmontepatria.cl/")
+        builder => builder.WithOrigins("https://estadisticas.apsmontepatria.cl/")
                           .AllowAnyHeader()
                           .AllowAnyMethod()
                           .AllowCredentials());                  
