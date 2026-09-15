@@ -20,6 +20,7 @@ public class InformativoEditorForm : Form
     private readonly Button _nuevo = new();
     private readonly Button _alternarVigencia = new();
     private readonly Button _archivar = new();
+    private readonly Button _eliminar = new();
     private readonly Label _estado = new();
     private Informativo? _seleccionado;
 
@@ -81,6 +82,9 @@ public class InformativoEditorForm : Form
         _alternarVigencia.Click += (_, _) => AlternarVigencia();
         _archivar.Text = "Archivar";
         _archivar.Click += (_, _) => Archivar();
+        _eliminar.Text = "Eliminar";
+        _eliminar.ForeColor = Color.DarkRed;
+        _eliminar.Click += (_, _) => Eliminar();
 
         var editor = new TableLayoutPanel
         {
@@ -105,7 +109,7 @@ public class InformativoEditorForm : Form
         editor.Controls.Add(_estado, 1, 8);
 
         var acciones = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, FlowDirection = FlowDirection.LeftToRight };
-        acciones.Controls.AddRange([_nuevo, _guardar, _alternarVigencia, _archivar]);
+        acciones.Controls.AddRange([_nuevo, _guardar, _alternarVigencia, _archivar, _eliminar]);
         editor.Controls.Add(acciones, 1, 9);
 
         var editorPanel = new GroupBox { Text = "Edición", Dock = DockStyle.Fill, Padding = new Padding(4) };
@@ -256,6 +260,30 @@ public class InformativoEditorForm : Form
         _seleccionado.Vigente = false;
         _db.SaveChanges();
         CargarInformativos(_seleccionado.Id);
+    }
+
+    private void Eliminar()
+    {
+        if (_seleccionado is null)
+        {
+            MostrarError("Seleccione un informativo.");
+            return;
+        }
+
+        var confirmar = MessageBox.Show(
+            $"¿Eliminar definitivamente el informativo \"{_seleccionado.Titulo}\"?\nEsta acción no se puede deshacer.",
+            "Confirmar eliminación",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Warning);
+        if (confirmar != DialogResult.Yes) return;
+
+        _db.Informativo.Remove(_seleccionado);
+        _db.SaveChanges();
+        _seleccionado = null;
+        CargarInformativos();
+        NuevoInformativo();
+        _estado.ForeColor = Color.DarkGreen;
+        _estado.Text = "Eliminado correctamente.";
     }
 
     private void MostrarError(string mensaje)

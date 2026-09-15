@@ -248,7 +248,7 @@ export default function ConsultarREMPage() {
     Promise.all([
       fetch(`${API}GetSeries`).then((response) => response.json()),
       fetch(`${API}getSectores`).then((response) => response.json()),
-      fetch(`${API}getEstablecimientos`).then((response) => response.json()),
+      fetch(`${API}getEstablecimientos?incluirTodos=true`).then((response) => response.json()),
     ])
       .then(([seriesData, sectoresData, establecimientosData]) => {
         if (!activo) return;

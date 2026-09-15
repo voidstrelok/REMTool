@@ -66,7 +66,10 @@ public sealed class ConsolidadoDataReader(Func<RemToolDataContext> createContext
         foreach (var p in definitions)
         {
             p.Columns = byPrestacion[p.Id].Select(c => new ColumnDefinition(c.CodigoColumna, c.CeldaBase, c.EsTotal)).ToList();
-            if (p.Columns.Count == 0)
+            // Some migrated versions contain a partial normalized coordinate set
+            // while the legacy JSON still has the complete row. Keep the
+            // complete mapping until the normalized set is known to cover it.
+            if (p.Columns.Count < p.LegacyCoordinates.Count)
                 p.Columns = p.LegacyCoordinates.Select((address, i) => new ColumnDefinition($"COL{i + 1:00}", address)).ToList();
             p.StructureSignature = p.SectionId.HasValue ? signatures.GetValueOrDefault(p.SectionId.Value, "") : "";
         }

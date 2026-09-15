@@ -82,6 +82,7 @@
 .sg-page summary { cursor:pointer; font-weight:600; padding:16px 20px; font-size:.85rem; }
 .sg-page .sg-est-table th:first-child { min-width:220px; position:sticky; left:0; background:var(--surface); z-index:1; }
 .sg-page .sg-est-table td { min-width:78px; }
+.sg-page .sg-est-table tfoot :is(th,td),.sg-page .sg-est-table tfoot th:first-child { background:var(--surface-alt); border-top:2px solid var(--border); font-weight:700; }
 .sg-serie { display:block; font-size:.65rem; color:var(--text-light); white-space:nowrap; }
 .sg-analysis { padding:20px; }
 .sg-analysis ul { padding-left:20px; margin:14px 0 0; }

@@ -22,7 +22,6 @@ public sealed class ConsolidadoGenerationService(ConsolidadoDataReader reader)
     public static GenerationResult GenerateSnapshot(GenerationRequest request, ConsolidadoSnapshot snapshot,
         DownloadCatalog catalog, IProgress<string> progress, Stopwatch clock, CancellationToken ct)
     {
-        var mapped = ConsolidadoMapper.Map(snapshot, ct);
         var root = Path.GetFullPath(request.OutputDirectory);
         var folder = Path.Combine(root, request.Year.ToString(), "A");
         Directory.CreateDirectory(folder);
@@ -33,7 +32,10 @@ public sealed class ConsolidadoGenerationService(ConsolidadoDataReader reader)
         bool committed = false;
         try
         {
-            var warnings = new ConsolidadoExcelWriter().Write(request.TemplatePath, temporary, mapped, progress, ct);
+            // Keep the supplied workbook intact. Only the cached source records
+            // of FILTRO's existing pivot table are replaced.
+            var recordCount = new ConsolidadoLegacyPivotWriter().Write(request.TemplatePath, temporary, snapshot, progress, ct);
+            var warnings = new List<string>();
             ct.ThrowIfCancellationRequested();
             string hash;
             using (var stream = File.OpenRead(temporary)) hash = Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
@@ -45,8 +47,8 @@ public sealed class ConsolidadoGenerationService(ConsolidadoDataReader reader)
                 snapshot.Reports.Select(r => r.Month).Distinct().Order().ToArray(), snapshot.Version.Name, bytes, hash, warnings.ToArray());
             ConsolidadoCatalogWriter.Commit(root, catalog, entry);
             committed = true;
-            progress.Report($"Terminado: {mapped.Rows.Count:N0} filas, {bytes / 1048576d:F1} MB, {clock.Elapsed.TotalSeconds:F1} s. Suba el Excel y después catalogo.json.");
-            return new GenerationResult(path, mapped.Rows.Count, bytes, clock.Elapsed, warnings);
+            progress.Report($"Terminado: {recordCount:N0} registros, {bytes / 1048576d:F1} MB, {clock.Elapsed.TotalSeconds:F1} s. Suba el Excel y después catalogo.json.");
+            return new GenerationResult(path, recordCount, bytes, clock.Elapsed, warnings);
         }
         finally
         {

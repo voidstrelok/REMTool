@@ -118,8 +118,8 @@ public sealed class GenerarConsolidadosForm : Form
                     using var prepared = ConsolidadoTemplate.Prepare(request.TemplatePath, token);
                     _ = ConsolidadoCatalogWriter.Read(request.OutputDirectory);
                     var snapshot = await reader.ReadAsync(request, progress, token);
-                    var data = ConsolidadoMapper.Map(snapshot, token);
-                    ((IProgress<string>)progress).Report($"Datos compatibles: {snapshot.Reports.Count:N0} reportes, {data.Rows.Count:N0} filas con actividad. La validación de fórmulas se realiza al generar.");
+                    if (snapshot.Records.Count == 0) throw new InvalidOperationException("No hay registros Serie A para actualizar la tabla dinámica.");
+                    ((IProgress<string>)progress).Report($"Datos disponibles: {snapshot.Reports.Count:N0} reportes y {snapshot.Records.Count:N0} registros. La generación conservará intacta la plantilla.");
                 }, token);
             }
             else
@@ -130,7 +130,7 @@ public sealed class GenerarConsolidadosForm : Form
             }
         }
         catch (OperationCanceledException) { Append("Operación cancelada. Se conserva el catálogo anterior."); }
-        catch (Exception ex) { Append("No se completó la operación: " + ex.Message); }
+        catch (Exception ex) { Append("No se completó la operación: " + ex); }
         finally
         {
             operation.Dispose(); operation = null; fields.Enabled = generate.Enabled = validate.Enabled = true;

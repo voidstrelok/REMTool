@@ -23,24 +23,29 @@ namespace RemTool.Controllers
             _indicadorService = indicadorService;
         }
         [HttpGet("getEstablecimientos/")]
-        public async Task<IActionResult> GetEstablecimientos([FromQuery] int? indicadorId = null)
+        public async Task<IActionResult> GetEstablecimientos(
+            [FromQuery] int? indicadorId = null,
+            [FromQuery] bool incluirTodos = false)
         {
             var filtro = indicadorId.HasValue
                 ? await _indicadorService.GetFiltroAsync(indicadorId.Value)
                 : null;
             var establecimientosQuery = db.Establecimiento.AsQueryable();
-            if (filtro == null)
-                establecimientosQuery = establecimientosQuery
-                    .Where(e => !_indicadorService.EstablecimientosExcluidos.Contains(e.Id));
-            else if (filtro.EsWhitelist)
+            if (!incluirTodos)
             {
-                var incluidos = filtro.Ids.ToArray();
-                establecimientosQuery = establecimientosQuery.Where(e => incluidos.Contains(e.Id));
-            }
-            else
-            {
-                var excluidos = filtro.Ids.ToArray();
-                establecimientosQuery = establecimientosQuery.Where(e => !excluidos.Contains(e.Id));
+                if (filtro == null)
+                    establecimientosQuery = establecimientosQuery
+                        .Where(e => !_indicadorService.EstablecimientosExcluidos.Contains(e.Id));
+                else if (filtro.EsWhitelist)
+                {
+                    var incluidos = filtro.Ids.ToArray();
+                    establecimientosQuery = establecimientosQuery.Where(e => incluidos.Contains(e.Id));
+                }
+                else
+                {
+                    var excluidos = filtro.Ids.ToArray();
+                    establecimientosQuery = establecimientosQuery.Where(e => !excluidos.Contains(e.Id));
+                }
             }
             establecimientosQuery = establecimientosQuery
                 .Include(e => e.Sector)

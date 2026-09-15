@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Xml.Linq;
 using OfficeOpenXml;
 using RemTools.Consolidados;
 
@@ -51,6 +52,31 @@ var snapshot = new ConsolidadoSnapshot(2026, version, DateTimeOffset.UtcNow,
     [new(1, "Uno", "000001", "Norte"), new(2, "Dos", "000002", "Sur"), new(3, "Sin reporte", "000003", "Sur")],
     [new(10, 1, 1, 1), new(11, 2, 1, 2), new(12, 1, 1, 2)], definitions,
     [new(10, 1, Values(5)), new(11, 1, Values(3)), new(10, 2, Values(4)), new(12, 3, new decimal[48])]);
+var legacyTemplate = args.SkipWhile(a => a != "--legacy").Skip(1).FirstOrDefault();
+if (legacyTemplate != null)
+{
+    var legacyOutput = Path.Combine(root, "legacy.xlsx");
+    var augustSnapshot = snapshot with { Reports = [new(10, 1, 1, 8), new(11, 2, 1, 8), new(12, 1, 1, 8)] };
+    var count = new ConsolidadoLegacyPivotWriter().Write(legacyTemplate, legacyOutput, augustSnapshot, progress, default);
+    Check(count == snapshot.Records.Count, "Legacy cache receives every record");
+    using var archive = System.IO.Compression.ZipFile.OpenRead(legacyOutput);
+    var entry = archive.Entries.Single(e => e.FullName.StartsWith("xl/pivotCache/pivotCacheRecords"));
+    using var stream = entry.Open(); using var reader = new StreamReader(stream); var xml = reader.ReadToEnd();
+    Check(xml.Contains("count=\"4\""), "Legacy cache record count persisted");
+    var ns = (XNamespace)"http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+    var cacheDefinition = XDocument.Parse(new StreamReader(archive.Entries.Single(e => e.FullName == "xl/pivotCache/pivotCacheDefinition1.xml").Open()).ReadToEnd());
+    var augustIndex = cacheDefinition.Descendants(ns + "cacheField").Single(f => (string?)f.Attribute("name") == "NMes").Element(ns + "sharedItems")!.Elements().ToList().FindIndex(i => (string?)i.Attribute("v") == "agosto");
+    Check(augustIndex >= 0, "August is added to the month cache");
+    var pivot = XDocument.Parse(new StreamReader(archive.Entries.Single(e => e.FullName == "xl/pivotTables/pivotTable1.xml").Open()).ReadToEnd());
+    Check(pivot.Descendants(ns + "pivotFields").Elements(ns + "pivotField").ElementAt(57).Element(ns + "items")!.Elements(ns + "item").Any(i => (int?)i.Attribute("x") == augustIndex), "August is available in the pivot month filter");
+    using var originalArchive = System.IO.Compression.ZipFile.OpenRead(legacyTemplate);
+    var originalSheet = originalArchive.Entries.Single(e => e.FullName == "xl/worksheets/sheet4.xml");
+    var generatedSheet = archive.Entries.Single(e => e.FullName == "xl/worksheets/sheet4.xml");
+    using var originalStream = originalSheet.Open(); using var generatedStream = generatedSheet.Open();
+    Check(System.Security.Cryptography.SHA256.HashData(originalStream).SequenceEqual(System.Security.Cryptography.SHA256.HashData(generatedStream)), "Workbook formulas and sheets remain untouched");
+    Console.WriteLine("Legacy workbook: " + legacyOutput);
+    return;
+}
 Check(ConsolidadoDataReader.SelectLatestReports([new(1, 1, 1, 1), new(2, 1, 1, 1), new(3, 2, 1, 1)]).Select(r => r.Id).SequenceEqual(new[] { 2, 3 }), "Latest report per establishment");
 var mapped = ConsolidadoMapper.Map(snapshot, CancellationToken.None);
 Check(mapped.Rows.Count == 3 && mapped.OmittedZeroRows == 1, "Sparse rows retain zero report evidence");
@@ -61,6 +87,11 @@ var incompatible = definitions[0] with { Id = 99, VersionId = 2, StructureSignat
 Reject(() => ConsolidadoMapper.Map(snapshot with { Definitions = [.. definitions, incompatible], Records = [new(10, 99, Values(2))] }, default), "incompatible");
 var compatible = incompatible with { StructureSignature = "same-section" };
 Check(ConsolidadoMapper.Map(snapshot with { Definitions = [.. definitions, compatible], Records = [new(10, 99, Values(2))] }, default).Rows.Count == 1, "Verified identical section across versions");
+if (args.Length == 0)
+{
+    Console.WriteLine($"PASS: {passed} mapping checks. Use --legacy <template.xlsx> to verify pivot-cache replacement.");
+    return;
+}
 var request = new GenerationRequest(2026, 1, templatePath, Path.Combine(root, "publicacion"));
 if (args.Contains("--debug-write"))
 {

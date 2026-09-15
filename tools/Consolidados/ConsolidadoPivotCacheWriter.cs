@@ -73,19 +73,5 @@ public static class ConsolidadoPivotCacheWriter
         var children = pivot.Root!.Elements().OrderBy(e => { var index = Array.IndexOf(order, e.Name.LocalName); return index < 0 ? 99 : index; }).ToList();
         pivot.Root.ReplaceNodes(children);
         Write(pivotEntry, pivot);
-        // New slicers created by EPPlus can reuse drawing id=2. Assign one unique
-        // id per anchor, shared by its Choice/Fallback representations.
-        foreach (var drawing in zip.Entries.Where(e => e.FullName.StartsWith("xl/drawings/drawing") && e.FullName.EndsWith(".xml")).ToArray())
-        {
-            var doc = Read(drawing);
-            if (!doc.Descendants().Any(e => e.Name.LocalName == "slicer")) continue;
-            int id = 1;
-            foreach (var anchor in doc.Root!.Elements())
-            {
-                foreach (var property in anchor.Descendants().Where(e => e.Name.LocalName == "cNvPr")) property.SetAttributeValue("id", id);
-                id++;
-            }
-            Write(drawing, doc);
-        }
     }
 }

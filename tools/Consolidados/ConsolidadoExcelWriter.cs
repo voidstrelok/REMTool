@@ -13,7 +13,7 @@ public sealed class ConsolidadoExcelWriter
     private static readonly Regex Lookup = new(
         @"^IFERROR\(VLOOKUP\(\$?A(?<row>\d+),(?:'FILTRO'|FILTRO)!\$?A\$?\d+:\$?[A-Z]+\$?\d+,(?:'FILTRO'|FILTRO)!(?<column>\$?[A-Z]+\$?8)\+1,FALSE\),0\)$",
         RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-    private sealed record Binding(string Sheet, string Address, string Code, int Index, int LookupRow);
+    private sealed record Binding(string Sheet, string Address, string Code, int Index, int LookupRow, bool RewriteFormula = true);
 
     public List<string> Write(string template, string destination, MappedConsolidado mapped, IProgress<string> progress, CancellationToken ct)
     {
@@ -23,8 +23,19 @@ public sealed class ConsolidadoExcelWriter
         var workbook = package.Workbook;
         var filter = workbook.Worksheets["FILTRO"];
         var warnings = new List<string>();
+        var missingColumns = new HashSet<(string Code, int Index)>();
         var inheritedErrors = new HashSet<string>();
         var bindings = new List<Binding>();
+        var zeroBasedLookupHeaders = false;
+        foreach (var headerCell in filter.Cells[8, 2, 8, 200])
+        {
+            if (headerCell.Value == null) continue;
+            if (int.TryParse(Convert.ToString(headerCell.Value, CultureInfo.InvariantCulture), out var firstHeader))
+            {
+                zeroBasedLookupHeaders = firstHeader == 0;
+                break;
+            }
+        }
         foreach (var ws in workbook.Worksheets.Where(s => s.Name != "FILTRO"))
         {
             if (ws.Dimension == null) continue;
@@ -41,10 +52,29 @@ public sealed class ConsolidadoExcelWriter
                 if (!match.Success) throw new InvalidOperationException($"Fórmula de consulta no admitida en {ws.Name}!{cell.Address}: revise la plantilla.");
                 var code = ws.Cells[int.Parse(match.Groups["row"].Value), 1].Text.Trim();
                 var index = Convert.ToInt32(filter.Cells[match.Groups["column"].Value].Value, CultureInfo.InvariantCulture);
+                if (zeroBasedLookupHeaders) index++;
+                if (index < 1) index = 1;
                 if (!mapped.Target.TryGetValue(code, out var definition))
-                    throw new InvalidOperationException($"{ws.Name}!{cell.Address}: el código {code} no existe en la versión elegida.");
-                if (definition.Sheet != ws.Name || index < 1 || index > definition.Columns.Count)
-                    throw new InvalidOperationException($"{ws.Name}!{cell.Address}: columna {index} incompatible con {code} en la versión elegida.");
+                {
+                    if (index < 1) throw new InvalidOperationException($"{ws.Name}!{cell.Address}: columna {index} inválida para el código {code}.");
+                    if (missingColumns.Add((code, index)))
+                        warnings.Add($"{ws.Name}!{cell.Address}: el código {code} no existe en la versión elegida; se completará con cero.");
+                    bindings.Add(new Binding(ws.Name, cell.Address, code, index, int.Parse(match.Groups["row"].Value)));
+                    continue;
+                }
+                // Prefer the physical column registered for this prestación.
+                // Some legacy templates have shifted or stale row-8 ordinals.
+                var formulaColumn = new ExcelCellAddress(cell.Address).Column;
+                var coordinateIndex = definition.Columns.FindIndex(c =>
+                {
+                    try { return new ExcelCellAddress(c.Address).Column == formulaColumn; }
+                    catch (Exception) { return false; }
+                });
+                if (coordinateIndex >= 0) index = coordinateIndex + 1;
+                if (definition.Sheet != ws.Name || index < 1)
+                    throw new InvalidOperationException($"{ws.Name}!{cell.Address}: columna {index} incompatible con {code} en la versión elegida (hoja registrada '{definition.Sheet}', {definition.Columns.Count} columnas disponibles).");
+                if (index > definition.Columns.Count && missingColumns.Add((code, index)))
+                    warnings.Add($"{ws.Name}!{cell.Address}: la versión no registra la columna {index} de {code}; se completará con cero.");
                 bindings.Add(new Binding(ws.Name, cell.Address, code, index, int.Parse(match.Groups["row"].Value)));
             }
         }
@@ -58,17 +88,52 @@ public sealed class ConsolidadoExcelWriter
                 if (group.Any(r => r.Values[i] != 0) && !represented.Contains((row.Code, i + 1)))
                 {
                     var definition = mapped.Target[row.Code];
-                    var examples = bindings.Where(b => b.Code == row.Code).ToArray();
+                    // Synthetic bindings for columns absent from the selected
+                    // version cannot provide a coordinate for total offsets.
+                    var examples = bindings.Where(b => b.Code == row.Code && b.Index <= definition.Columns.Count).ToArray();
                     if (!definition.Columns[i].IsTotal || examples.Length == 0)
-                        throw new InvalidOperationException($"La plantilla no representa {row.Code}, columna {i + 1}, que tiene datos. No se publicará un consolidado incompleto.");
+                    {
+                        int baseColumn;
+                        try { baseColumn = new ExcelCellAddress(definition.Columns[i].Address).Column; }
+                        catch (Exception) { throw new InvalidOperationException($"La plantilla no representa {row.Code}, columna {i + 1} y la coordenada {definition.Columns[i].Address} no es vÃ¡lida."); }
+                        var targetSheet = workbook.Worksheets[definition.Sheet];
+                        if (targetSheet == null || targetSheet.Dimension == null)
+                            throw new InvalidOperationException($"La plantilla no contiene la hoja {definition.Sheet} para escribir {row.Code}, columna {i + 1}.");
+                        var targetRows = Enumerable.Range(targetSheet.Dimension?.Start.Row ?? 1, targetSheet.Dimension?.Rows ?? 0)
+                            .Where(r => targetSheet.Cells[r, 1].Text.Trim() == row.Code).ToArray();
+                        if (targetRows.Length == 0)
+                            throw new InvalidOperationException($"La plantilla no contiene una fila para {row.Code}; no se puede escribir la columna {i + 1} con datos.");
+                        foreach (var targetRow in targetRows)
+                            computedBindings.Add(new Binding(definition.Sheet, targetSheet.Cells[targetRow, baseColumn].Address, row.Code, i + 1, targetRow));
+                        continue;
+                    }
                     var offsets = examples.Select(b => new ExcelCellAddress(b.Address).Column - new ExcelCellAddress(definition.Columns[b.Index - 1].Address).Column).Distinct().ToArray();
-                    if (offsets.Length != 1) throw new InvalidOperationException($"No se pudo ubicar el total {row.Code}, columna {i + 1} en la plantilla.");
+                    if (offsets.Length != 1)
+                    {
+                        warnings.Add($"No se pudo ubicar el total {row.Code}, columna {i + 1} en la plantilla; se conserva la fórmula existente.");
+                        continue;
+                    }
                     foreach (var example in examples.DistinctBy(b => b.LookupRow))
                     {
-                        var col = new ExcelCellAddress(definition.Columns[i].Address).Column + offsets[0];
+                        int baseColumn;
+                        try { baseColumn = new ExcelCellAddress(definition.Columns[i].Address).Column; }
+                        catch (Exception) {
+                            warnings.Add($"La coordenada {definition.Columns[i].Address} del total {row.Code} no es válida; se conserva la plantilla.");
+                            continue;
+                        }
+                        var col = baseColumn + offsets[0];
+                        if (col < 1 || col > ExcelPackage.MaxColumns)
+                        {
+                            warnings.Add($"La coordenada calculada para el total {row.Code}, columna {i + 1} no es válida; se conserva la plantilla.");
+                            continue;
+                        }
                         var cell = workbook.Worksheets[example.Sheet].Cells[example.LookupRow, col];
-                        if (string.IsNullOrWhiteSpace(cell.Formula)) throw new InvalidOperationException($"Falta la fórmula del total {example.Sheet}!{cell.Address}.");
-                        computedBindings.Add(new Binding(example.Sheet, cell.Address, row.Code, i + 1, example.LookupRow));
+                        if (string.IsNullOrWhiteSpace(cell.Formula))
+                        {
+                            warnings.Add($"Falta la fórmula del total {example.Sheet}!{cell.Address}; se conserva la plantilla.");
+                            continue;
+                        }
+                        computedBindings.Add(new Binding(example.Sheet, cell.Address, row.Code, i + 1, example.LookupRow, false));
                     }
                 }
         }
@@ -113,6 +178,8 @@ public sealed class ConsolidadoExcelWriter
         filter.Cells[3, 1].Value = "Seleccione establecimiento, mes y sector. Consulte COBERTURA para interpretar la ausencia de datos.";
         // Controls are above the pivot; reserve enough height without moving its A9 contract.
         for (int row = 4; row <= 7; row++) filter.Row(row).Height = 46;
+        // Row 8 stores the one-based data ordinal used by the legacy
+        // formulas; VLOOKUP adds one for the Codigo column.
         for (int i = 1; i <= width; i++) filter.Cells[8, i + 1].Value = i;
         filter.Row(8).Hidden = true;
         filter.Column(1).Width = 18;
@@ -150,9 +217,12 @@ public sealed class ConsolidadoExcelWriter
         filter.Cells[9, 1, 9, width + 1].Style.Font.Bold = true;
         filter.Cells[10, 2, lastRow, width + 1].Style.Numberformat.Format = "#,##0.########";
         filter.View.FreezePanes(10, 2);
-        foreach (var binding in bindings)
-            workbook.Worksheets[binding.Sheet].Cells[binding.Address].Formula =
-                $"IFERROR(VLOOKUP($A{binding.LookupRow},FILTRO!$A$10:${ExcelCellAddress.GetColumnLetter(width + 1)}${lastRow},{binding.Index + 1},FALSE),0)";
+        foreach (var binding in bindings.Concat(computedBindings).Where(b => b.RewriteFormula))
+        {
+            var cell = workbook.Worksheets[binding.Sheet].Cells[binding.Address];
+            cell.Value = null;
+            cell.Formula = $"IFERROR(VLOOKUP($A{binding.LookupRow},FILTRO!$A$10:${ExcelCellAddress.GetColumnLetter(width + 1)}${lastRow},{binding.Index + 1},FALSE),0)";
+        }
         AddCoverage(workbook, mapped, warnings);
         progress.Report($"Calculando {bindings.Count:N0} BUSCARV y fórmulas de la plantilla...");
         ct.ThrowIfCancellationRequested();
@@ -160,10 +230,12 @@ public sealed class ConsolidadoExcelWriter
         ct.ThrowIfCancellationRequested();
         foreach (var binding in bindings.Concat(computedBindings))
         {
-            var actual = workbook.Worksheets[binding.Sheet].Cells[binding.Address].Value;
-            var expected = sums.TryGetValue(binding.Code, out var value) ? value[binding.Index - 1] : 0m;
+            var targetCell = workbook.Worksheets[binding.Sheet].Cells[binding.Address];
+            targetCell.Calculate();
+            var actual = targetCell.Value;
+            var expected = sums.TryGetValue(binding.Code, out var value) && binding.Index <= value.Length ? value[binding.Index - 1] : 0m;
             if (actual is ExcelErrorValue || actual == null || Math.Abs(Convert.ToDecimal(actual) - expected) > 0.0000001m)
-                throw new InvalidOperationException($"No concilia {binding.Sheet}!{binding.Address}: esperado {expected}, obtenido {actual}.");
+                throw new InvalidOperationException($"No concilia {binding.Sheet}!{binding.Address} (código {binding.Code}, columna {binding.Index}): esperado {expected}, obtenido {actual}. Fórmula: {targetCell.Formula}");
         }
         var newErrors = workbook.Worksheets.Where(s => s.Name != "DATOS" && s.Dimension != null)
             .SelectMany(ws => ws.Cells[ws.Dimension.Address].Where(c => c.Value is ExcelErrorValue)

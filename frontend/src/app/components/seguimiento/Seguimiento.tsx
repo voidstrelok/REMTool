@@ -121,7 +121,19 @@ export function Detalle({ item }: { item: Indicador }) {
         <tbody>{item.establecimientos.map(s => <tr key={s.id}><th scope="row">{s.nombre}</th>{matriz ? <>{meses.slice(0, e.mesEvaluacion).map((m, index) => {
           const records = s.meses.filter(r => r.mes === index + 1);
           return <td key={m}>{records.length ? records.map((r, j) => <div key={j}>{numero(r.numerador, 0)}{!item.isColaborativo && !item.isDenFijo ? ` / ${numero(r.denominador, 0)}` : ""}{(r.numeradorP !== 0 || r.denominadorP !== 0) && <small className="sg-serie">P: {numero(r.numeradorP, 0)}{!item.isColaborativo && !item.isDenFijo ? ` / ${numero(r.denominadorP, 0)}` : ""}</small>}</div>) : "—"}</td>;
-        })}<td>{numero(s.evaluacion.numerador, 0)}{!item.isColaborativo ? ` / ${numero(s.evaluacion.denominador, 0)}` : ""}</td></> : <><td>{s.sector}</td><td>{numero(s.evaluacion.numerador, 0)}</td>{!item.isColaborativo && <><td>{numero(s.evaluacion.denominador, 0)}</td><td>{valor(s.evaluacion.resultado, item.isTasa)}</td><td><Cumplimiento value={s.evaluacion.cumplimiento} /></td><td><Estado e={s.evaluacion} /></td></>}</>}</tr>)}</tbody></table></div>
+        })}<td>{numero(s.evaluacion.numerador, 0)}{!item.isColaborativo ? ` / ${numero(s.evaluacion.denominador, 0)}` : ""}</td></> : <><td>{s.sector}</td><td>{numero(s.evaluacion.numerador, 0)}</td>{!item.isColaborativo && <><td>{numero(s.evaluacion.denominador, 0)}</td><td>{valor(s.evaluacion.resultado, item.isTasa)}</td><td><Cumplimiento value={s.evaluacion.cumplimiento} /></td><td><Estado e={s.evaluacion} /></td></>}</>}</tr>)}</tbody>
+        {matriz && item.establecimientos.length > 0 && <tfoot><tr><th scope="row">Total mensual</th>{meses.slice(0, e.mesEvaluacion).map((mes, index) => {
+          const registros = item.establecimientos.flatMap(s => s.meses.filter(r => r.mes === index + 1));
+          const total = registros.reduce((suma, r) => ({
+            numerador: suma.numerador + r.numerador, denominador: suma.denominador + r.denominador,
+            numeradorP: suma.numeradorP + r.numeradorP, denominadorP: suma.denominadorP + r.denominadorP,
+          }), { numerador: 0, denominador: 0, numeradorP: 0, denominadorP: 0 });
+          const mostrarDenominador = !item.isColaborativo && !item.isDenFijo;
+          return <td key={mes}>{registros.length ? <>{numero(total.numerador, 0)}{mostrarDenominador ? ` / ${numero(total.denominador, 0)}` : ""}
+            {registros.some(r => r.numeradorP !== 0 || r.denominadorP !== 0) && <small className="sg-serie">P: {numero(total.numeradorP, 0)}{mostrarDenominador ? ` / ${numero(total.denominadorP, 0)}` : ""}</small>}
+          </> : "—"}</td>;
+        })}<td>{numero(e.numerador, 0)}{!item.isColaborativo ? ` / ${numero(e.denominador, 0)}` : ""}</td></tr></tfoot>}
+      </table></div>
       {!item.establecimientos.length && <p className="sg-empty">No hay registros de establecimientos en el período evaluado.</p>}
       {matriz && <p className="sg-note">Cada celda muestra numerador / denominador, o solo producción cuando corresponde. P identifica aportes de serie P; “—” indica ausencia de registros y 0 es producción registrada. El acumulado aplica las reglas del indicador y puede incorporar denominadores del año anterior.</p>}
     </section>

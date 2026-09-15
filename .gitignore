@@ -28,3 +28,6 @@ publicaciones/consolidados/*
 !publicaciones/consolidados/.gitkeep
 tests/**/bin/
 tests/**/obj/
+shared/*
+tests/*
+tmp/*

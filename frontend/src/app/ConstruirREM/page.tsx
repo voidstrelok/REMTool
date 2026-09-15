@@ -41,6 +41,12 @@ type Workspace = {
   serie: string;
   partes: Parte[];
 };
+type WorkspaceBackup = {
+  formato: "remtool-construir-rem";
+  versionFormato: 1;
+  exportadoEn: string;
+  workspace: Workspace;
+};
 type VistaSeccion = {
   id: number;
   hoja: string;
@@ -115,8 +121,38 @@ function descargar(blob: Blob, fileName: string) {
   URL.revokeObjectURL(url);
 }
 
+function validarWorkspaceImportado(value: unknown): Workspace | null {
+  if (!value || typeof value !== "object") return null;
+  const envelope = value as Partial<WorkspaceBackup> & { workspace?: unknown };
+  const candidate = envelope.workspace && typeof envelope.workspace === "object" ? envelope.workspace : value;
+  if (!candidate || typeof candidate !== "object") return null;
+  const workspace = candidate as Partial<Workspace>;
+  if (
+    typeof workspace.codDeis !== "string" ||
+    typeof workspace.mes !== "number" ||
+    workspace.mes < 1 ||
+    workspace.mes > 12 ||
+    typeof workspace.version !== "string" ||
+    typeof workspace.serie !== "string" ||
+    !Array.isArray(workspace.partes) ||
+    workspace.partes.length === 0
+  ) return null;
+  if (workspace.serie !== "A") return null;
+  if (workspace.partes.some((parte) => (
+    !parte ||
+    typeof parte !== "object" ||
+    typeof parte.id !== "string" ||
+    typeof parte.nombre !== "string" ||
+    typeof parte.version !== "string" ||
+    !Array.isArray(parte.secciones) ||
+    !Array.isArray(parte.datos)
+  ))) return null;
+  return workspace as Workspace;
+}
+
 export default function ConstruirREMPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const backupInputRef = useRef<HTMLInputElement>(null);
   const [establecimientos, setEstablecimientos] = useState<Establecimiento[]>([]);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [latestVersion, setLatestVersion] = useState("");
@@ -276,6 +312,44 @@ export default function ConstruirREMPage() {
     });
   };
 
+  const handleExportWorkspace = () => {
+    if (!workspace || workspace.partes.length === 0) return;
+    const backup: WorkspaceBackup = {
+      formato: "remtool-construir-rem",
+      versionFormato: 1,
+      exportadoEn: new Date().toISOString(),
+      workspace,
+    };
+    const fileName = "REMTool-" + workspace.codDeis + "-A" + String(workspace.mes).padStart(2, "0") + "-armado.json";
+    descargar(new Blob([JSON.stringify(backup, null, 2)], { type: "application/json;charset=utf-8" }), fileName);
+  };
+
+  const handleImportWorkspace = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      const imported = validarWorkspaceImportado(JSON.parse(await file.text()));
+      if (!imported) {
+        setError("El archivo no contiene un armado Serie A válido.");
+        return;
+      }
+      if (workspace && !window.confirm("Cargar este archivo reemplazará el armado actual en este navegador. ¿Desea continuar?")) return;
+      setWorkspace(imported);
+      setSelectedCodDeis("");
+      setSelectedMes(0);
+      setNombreParte("");
+      setRevision(null);
+      setError("");
+      setStorageError("");
+      setExpandedParts(new Set(imported.partes.map((parte) => parte.id)));
+      setExpandedSheets(new Set());
+      setExpandedSections(new Set());
+    } catch {
+      setError("No se pudo leer el archivo JSON del armado.");
+    }
+  };
+
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -397,9 +471,18 @@ export default function ConstruirREMPage() {
           <h1 className="text-2xl font-bold mb-1" style={{ color: "var(--text)" }}>Construir REM Serie A</h1>
           <p className="text-sm" style={{ color: "var(--text-light)" }}>Arme progresivamente el reporte de un establecimiento y mes a partir de sus partes.</p>
         </div>
-        <button type="button" onClick={handleReset} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium" style={{ color: "var(--text)", border: "1px solid var(--border)" }}>
-          <RotateCcw size={15} /> Nuevo armado
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={handleExportWorkspace} disabled={!hasWorkspace} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed" style={{ color: "var(--text)", border: "1px solid var(--border)" }}>
+            <Download size={15} /> Exportar armado JSON
+          </button>
+          <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer" style={{ color: "var(--text)", border: "1px solid var(--border)" }}>
+            <Upload size={15} /> Cargar armado JSON
+            <input ref={backupInputRef} type="file" accept=".json,application/json" onChange={handleImportWorkspace} className="hidden" />
+          </label>
+          <button type="button" onClick={handleReset} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium" style={{ color: "var(--text)", border: "1px solid var(--border)" }}>
+            <RotateCcw size={15} /> Nuevo armado
+          </button>
+        </div>
       </div>
 
       <section className="rounded-xl border p-4 mb-5" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
