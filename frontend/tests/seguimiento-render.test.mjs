@@ -27,7 +27,7 @@ function load(filename) {
   } }).outputText, filename);
   return module.exports;
 }
-const { Detalle, IndicadoresTabla, ResumenPanel } = load(path.join(root, "app/components/seguimiento/Seguimiento.tsx"));
+const { Detalle, IndicadoresTabla, ResumenPanel, ValorRegistroMatriz } = load(path.join(root, "app/components/seguimiento/Seguimiento.tsx"));
 const evaluacion = { mesCorte: 7, mesEvaluacion: 7, ultimoMesDatos: 7, provisional: false, tieneDatos: true,
   tieneRegistroPeriodo: true, numerador: 0, denominador: 100, meta: 80, resultado: 0, cumplimiento: 0, esperado: 46.7, brecha: -46.7, estado: "Critico", unidad: "%" };
 const indicador = { id: 1, nombre: "Indicador de prueba", año: 2026, orden: 1, tipoindicador: 2, mensual: true, isTasa: false,
@@ -38,6 +38,24 @@ test("detalle mantiene establecimientos con cero y explica resultado, esperado y
   const html = renderToStaticMarkup(React.createElement(Detalle, { item: indicador }));
   for (const text of ["Establecimiento con cero", "0,0 %", "Esperado al corte", "Brecha al esperado", "Descripción real del indicador", "Evolución acumulada", "Ver datos de la evolución", "Sector norte"]) assert.ok(html.includes(text), text);
   assert.ok(!html.includes("NaN") && !html.includes("Infinity"));
+});
+test("detalle prepara la exportación de matriz con el contexto activo", () => {
+  const html = renderToStaticMarkup(React.createElement(Detalle, { item: indicador, matrizPath: "matrizIndicador/1?sectorId=2&mesCorte=7" }));
+  assert.ok(html.includes("Ver matriz mensual"));
+});
+test("serie P se integra al numerador y denominador de la matriz", () => {
+  const html = renderToStaticMarkup(React.createElement(ValorRegistroMatriz, {
+    registro: { numerador: 4, denominador: 0, numeradorP: 2, denominadorP: 25 },
+    mostrarDenominador: true,
+  }));
+  assert.ok(html.includes("6 / 25") && !html.includes("P:"));
+});
+test("detalle usa el denominador consolidado que entrega la evaluación", () => {
+  const html = renderToStaticMarkup(React.createElement(Detalle, { item: {
+    ...indicador,
+    resultados: [{ mes: 6, numerador: 0, denominador: 0, numeradorP: 0, denominadorP: 219, establecimientoNombre: "Centro", sectorId: 1, establecimientoId: 1 }],
+  } }));
+  assert.ok(html.includes("Denominador</dt><dd>100") && !html.includes("Denominador P"));
 });
 test("colaborativo muestra aportes sin cumplimiento individual", () => {
   const html = renderToStaticMarkup(React.createElement(Detalle, { item: { ...indicador, isColaborativo: true } }));

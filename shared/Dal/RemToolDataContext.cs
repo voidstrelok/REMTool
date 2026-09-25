@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace RemTool.Shared
 {
@@ -7,16 +6,6 @@ namespace RemTool.Shared
     {
         public RemToolDataContext(DbContextOptions<RemToolDataContext> options) : base(options)
         {
-        }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-#if DEBUG
-            optionsBuilder.LogTo(Console.WriteLine, LogLevel.Warning)
-                .EnableSensitiveDataLogging()
-                .EnableDetailedErrors();
-#endif
-            base.OnConfiguring(optionsBuilder);
         }
 
         public virtual DbSet<HojaRem> HojaRem { get; set; }

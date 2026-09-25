@@ -75,7 +75,7 @@ namespace RemTool.Services
             ResultadoIndicador resultado,
             bool includeP = true)
         {
-            if (indicador.IsDenFijo || indicador.IsColaborativo)
+            if (indicador.IsColaborativo)
                 return resultado.Denominador;
 
             return resultado.Denominador + (includeP ? resultado.DenominadorP : 0m);

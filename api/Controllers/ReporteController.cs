@@ -62,4 +62,17 @@ public class ReporteController(RemToolDataContext db, SeguimientoService seguimi
         return File(SeguimientoPdf.Generar(item.Nombre, await Contexto(sectorId, establecimientoId), item.Año,
             item.Evaluacion.MesCorte, [item], soloDetalle: true), "application/pdf", $"indicador-{id}.pdf");
     }
+
+    [HttpGet("matrizIndicador/{id:int}")]
+    public async Task<IActionResult> MatrizIndicador(int id, [FromQuery] long? sectorId = null,
+        [FromQuery] long? establecimientoId = null, [FromQuery] int? mesCorte = null)
+    {
+        if (!SeguimientoService.CorteValido(mesCorte)) return BadRequest("mesCorte debe estar entre 1 y 12.");
+        var item = await seguimiento.Indicador(id, mesCorte, sectorId, establecimientoId);
+        if (item == null) return NotFound("Indicador no encontrado.");
+        var nombreSeguro = string.Concat(item.Nombre.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c)).Trim();
+        return File(MatrizMensualExcel.Generar(item, await Contexto(sectorId, establecimientoId)),
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"matriz-mensual-{nombreSeguro}-{item.Año}.xlsx");
+    }
 }

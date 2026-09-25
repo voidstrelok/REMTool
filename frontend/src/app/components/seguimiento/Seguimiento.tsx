@@ -2,11 +2,11 @@
 import { Fragment, useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown, ChevronRight, Download, ArrowUpRight, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, Download, FileSpreadsheet, ArrowUpRight, Search } from "lucide-react";
 import Breadcrumbs from "../Breadcrumbs";
 import { apiUrl } from "@/lib/api";
 import { useFiltrosSeguimiento, useRecurso } from "@/lib/hooks/useSeguimiento";
-import { Indicador, Convenio, Evaluacion, Resumen, ListaIndicadores, ListaConvenios, estados,
+import { Indicador, Convenio, Evaluacion, Registro, Resumen, ListaIndicadores, ListaConvenios, estados,
   meses, mesNombre, numero, valor, brecha, queryContexto, retornoSeguro, seleccionarIndicadores } from "@/lib/seguimiento";
 import { indicadoresConfig, isTipoIndicador } from "../../Indicadores/config";
 import "./seguimiento.css";
@@ -20,6 +20,14 @@ function Estado({ e }: { e: Evaluacion }) {
 function Cumplimiento({ value }: { value: number | null }) {
   return <div className="sg-compliance"><strong>{valor(value)}</strong><span className="sg-track" aria-hidden="true"><span style={{ width: `${Math.max(0, Math.min(100, value ?? 0))}%` }} /></span></div>;
 }
+export function ValorRegistroMatriz({ registro, mostrarDenominador }: {
+  registro: Pick<Registro, "numerador" | "denominador" | "numeradorP" | "denominadorP">;
+  mostrarDenominador: boolean;
+}) {
+  const numerador = registro.numerador + registro.numeradorP;
+  const denominador = registro.denominador + registro.denominadorP;
+  return <>{numero(numerador, 0)}{mostrarDenominador ? ` / ${numero(denominador, 0)}` : ""}</>;
+}
 function FiltrosBar({ f, añoFijo }: { f: Filtros; añoFijo?: number }) {
   const years = [...new Set([new Date().getFullYear() - 1, new Date().getFullYear(), f.year])].sort((a, b) => b - a);
   return <section className="sg-filters" aria-label="Filtros de seguimiento">
@@ -31,7 +39,9 @@ function FiltrosBar({ f, añoFijo }: { f: Filtros; añoFijo?: number }) {
     {(f.sectores.error || f.establecimientos.error) && <p className="sg-filter-error" role="alert">No se pudieron cargar los filtros. <button onClick={() => { f.sectores.reintentar(); f.establecimientos.reintentar(); }}>Reintentar</button></p>}
   </section>;
 }
-function Exportar({ path, disabled }: { path: string; disabled: boolean }) {
+function Exportar({ path, disabled, etiqueta = "Descargar respaldo PDF", archivo = "respaldo-seguimiento.pdf", excel = false }: {
+  path: string; disabled: boolean; etiqueta?: string; archivo?: string; excel?: boolean;
+}) {
   const [busy, setBusy] = useState(false), [error, setError] = useState("");
   useEffect(() => setError(""), [path]);
   async function descargar() {
@@ -40,12 +50,12 @@ function Exportar({ path, disabled }: { path: string; disabled: boolean }) {
       const response = await fetch(apiUrl(path));
       if (!response.ok) throw new Error("No se pudo generar el respaldo. Intenta nuevamente.");
       const url = URL.createObjectURL(await response.blob());
-      const link = document.createElement("a"); link.href = url; link.download = "respaldo-seguimiento.pdf";
+      const link = document.createElement("a"); link.href = url; link.download = archivo;
       document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) { setError(e instanceof Error ? e.message : "No se pudo descargar."); }
     finally { setBusy(false); }
   }
-  return <div className="sg-export"><button className="sg-button" onClick={descargar} disabled={disabled || busy}><Download size={16} />{busy ? "Generando respaldo…" : "Descargar respaldo PDF"}</button>{error && <p role="alert">{error}</p>}</div>;
+  return <div className="sg-export"><button className="sg-button" onClick={descargar} disabled={disabled || busy}>{excel ? <FileSpreadsheet size={16} /> : <Download size={16} />}{busy ? "Generando archivo…" : etiqueta}</button>{error && <p role="alert">{error}</p>}</div>;
 }
 export function ResumenPanel({ resumen }: { resumen: Resumen }) {
   return <section aria-label="Resumen del contexto" className="sg-summary">
@@ -95,7 +105,7 @@ function Evolucion({ item }: { item: Indicador }) {
   const x = (mes: number) => 60 + (mes - 1) / 11 * 690;
   const y = (value: number) => 235 - value / max * 205;
   const series = [{ key: "resultado", color: "var(--primary)", label: "Resultado", dash: undefined }, { key: "esperado", color: "#0284c7", label: "Esperado", dash: "6 4" }] as const;
-  return <section className="sg-panel"><div className="sg-panel-heading"><div><h2>Evolución acumulada</h2><p>{item.mensual ? "Resultado mensual" : "Evaluación por cierre semestral"} · {item.isTasa ? "Tasa" : "Porcentaje"}</p></div><div className="sg-legend"><span>━ Resultado</span><span>┄ Esperado</span><span>┄ Meta</span></div></div>
+  return <section hidden className="sg-panel"><div className="sg-panel-heading"><div><h2>Evolución acumulada</h2><p>{item.mensual ? "Resultado mensual" : "Evaluación por cierre semestral"} · {item.isTasa ? "Tasa" : "Porcentaje"}</p></div><div className="sg-legend"><span>━ Resultado</span><span>┄ Esperado</span><span>┄ Meta</span></div></div>
     <div className="sg-chart"><svg viewBox="0 0 800 280" role="img" aria-labelledby={id}><title id={id}>Resultado acumulado, esperado y meta. Los valores exactos están en la tabla siguiente.</title>
       {[0, 1, 2, 3, 4].map(t => <g key={t}><line x1="60" x2="750" y1={y(max * t / 4)} y2={y(max * t / 4)} stroke="var(--border)" /><text x="50" y={y(max * t / 4) + 4} textAnchor="end">{numero(max * t / 4, 0)}</text></g>)}
       <line x1="60" x2="750" y1={y(item.evaluacion.meta)} y2={y(item.evaluacion.meta)} stroke="#15803d" strokeDasharray="4 4" /><text x="750" y={y(item.evaluacion.meta) - 7} textAnchor="end">Meta {valor(item.evaluacion.meta, item.isTasa)}</text>
@@ -108,36 +118,34 @@ function Evolucion({ item }: { item: Indicador }) {
   </section>;
 }
 
-export function Detalle({ item }: { item: Indicador }) {
+export function Detalle({ item, matrizPath }: { item: Indicador; matrizPath?: string }) {
   const e = item.evaluacion;
   const [matriz, setMatriz] = useState(false);
+  const rutaMatriz = matrizPath ?? `matrizIndicador/${item.id}?mesCorte=${e.mesCorte}`;
   return <>
     <section className="sg-detail-kpis" aria-label="Resultado del indicador">{[["Resultado", valor(e.resultado, item.isTasa)], ["Meta", valor(e.meta, item.isTasa)], ["Cumplimiento", valor(e.cumplimiento)], ["Esperado al corte", valor(e.esperado, item.isTasa)], ["Brecha al esperado", brecha(e.brecha, item.isTasa)]].map(([label, value]) => <div className="sg-kpi" key={label}><span>{label}</span><strong>{value}</strong></div>)}</section>
     <div className="sg-evaluation"><Estado e={e} /><span>Evaluación: <strong>{mesNombre(e.mesEvaluacion)}</strong>{e.provisional ? " · Provisional, antes del primer cierre" : ""}</span><span>Último registro al corte: {mesNombre(e.ultimoMesDatos)}</span></div>
     <dl className="sg-facts sg-detail-facts"><div><dt>Numerador</dt><dd>{numero(e.numerador, 0)}</dd></div><div><dt>{item.isColaborativo ? "Denominador comunal" : "Denominador"}</dt><dd>{numero(e.denominador, 0)}</dd></div><div><dt>Periodicidad</dt><dd>{item.mensual ? "Mensual" : "Semestral"}</dd></div>{item.esPeriodoOctubreSep && <div><dt>Período del denominador</dt><dd>Octubre {item.año - 1} – septiembre {item.año}, hasta el corte</dd></div>}</dl>
     <Evolucion item={item} />
-    <section className="sg-panel"><div className="sg-panel-heading"><div><h2>Comparación por establecimiento</h2><p>{item.isColaborativo ? "Producción aportada al objetivo comunal; no representa cumplimiento individual." : "Totales y estado al mismo período de evaluación."}</p></div><button className="sg-button" aria-pressed={matriz} onClick={() => setMatriz(v => !v)}>{matriz ? "Ver comparación" : "Ver matriz mensual"}</button></div>
-      <div className="sg-table-scroll"><table className="sg-table sg-est-table"><caption className="sg-sr">{matriz ? "Registros mensuales y serie P por establecimiento" : "Resultados por establecimiento"}</caption><thead><tr><th>Establecimiento</th>{matriz ? <>{meses.slice(0, e.mesEvaluacion).map(m => <th key={m}>{m.slice(0, 3)}</th>)}<th>Acumulado</th></> : <><th>Sector</th><th>{item.isColaborativo ? "Producción aportada" : "Numerador"}</th>{!item.isColaborativo && <><th>Denominador</th><th>Resultado</th><th>Cumplimiento</th><th>Estado</th></>}</>}</tr></thead>
-        <tbody>{item.establecimientos.map(s => <tr key={s.id}><th scope="row">{s.nombre}</th>{matriz ? <>{meses.slice(0, e.mesEvaluacion).map((m, index) => {
+    <section className="sg-panel"><div className="sg-panel-heading"><div><h2>Comparación por establecimiento</h2><p>{item.isColaborativo ? "Producción aportada al objetivo comunal; no representa cumplimiento individual." : "Totales y estado al mismo período de evaluación."}</p></div><div className="sg-panel-actions"><button className="sg-button" aria-pressed={matriz} onClick={() => setMatriz(v => !v)}>{matriz ? "Ver comparación" : "Ver matriz mensual"}</button>{matriz && <Exportar path={rutaMatriz} disabled={!item.establecimientos.length} etiqueta="Exportar matriz a Excel" archivo={`matriz-mensual-${item.año}.xlsx`} excel />}</div></div>
+      <div className="sg-table-scroll"><table className="sg-table sg-est-table"><caption className="sg-sr">{matriz ? "Registros mensuales y serie P por establecimiento" : "Resultados por establecimiento"}</caption><thead><tr><th>Establecimiento</th>{matriz ? <>{meses.slice(0, e.mesCorte).map(m => <th key={m}>{m.slice(0, 3)}</th>)}<th>Acumulado</th></> : <><th>Sector</th><th>{item.isColaborativo ? "Producción aportada" : "Numerador"}</th>{!item.isColaborativo && <><th>Denominador</th><th>Resultado</th><th>Cumplimiento</th><th>Estado</th></>}</>}</tr></thead>
+        <tbody>{item.establecimientos.map(s => <tr key={s.id}><th scope="row">{s.nombre}</th>{matriz ? <>{meses.slice(0, e.mesCorte).map((m, index) => {
           const records = s.meses.filter(r => r.mes === index + 1);
-          return <td key={m}>{records.length ? records.map((r, j) => <div key={j}>{numero(r.numerador, 0)}{!item.isColaborativo && !item.isDenFijo ? ` / ${numero(r.denominador, 0)}` : ""}{(r.numeradorP !== 0 || r.denominadorP !== 0) && <small className="sg-serie">P: {numero(r.numeradorP, 0)}{!item.isColaborativo && !item.isDenFijo ? ` / ${numero(r.denominadorP, 0)}` : ""}</small>}</div>) : "—"}</td>;
+          return <td key={m}>{records.length ? records.map((r, j) => <div key={j}><ValorRegistroMatriz registro={r} mostrarDenominador={!item.isColaborativo} /></div>) : "—"}</td>;
         })}<td>{numero(s.evaluacion.numerador, 0)}{!item.isColaborativo ? ` / ${numero(s.evaluacion.denominador, 0)}` : ""}</td></> : <><td>{s.sector}</td><td>{numero(s.evaluacion.numerador, 0)}</td>{!item.isColaborativo && <><td>{numero(s.evaluacion.denominador, 0)}</td><td>{valor(s.evaluacion.resultado, item.isTasa)}</td><td><Cumplimiento value={s.evaluacion.cumplimiento} /></td><td><Estado e={s.evaluacion} /></td></>}</>}</tr>)}</tbody>
-        {matriz && item.establecimientos.length > 0 && <tfoot><tr><th scope="row">Total mensual</th>{meses.slice(0, e.mesEvaluacion).map((mes, index) => {
+        {matriz && item.establecimientos.length > 0 && <tfoot><tr><th scope="row">Total mensual</th>{meses.slice(0, e.mesCorte).map((mes, index) => {
           const registros = item.establecimientos.flatMap(s => s.meses.filter(r => r.mes === index + 1));
           const total = registros.reduce((suma, r) => ({
             numerador: suma.numerador + r.numerador, denominador: suma.denominador + r.denominador,
             numeradorP: suma.numeradorP + r.numeradorP, denominadorP: suma.denominadorP + r.denominadorP,
           }), { numerador: 0, denominador: 0, numeradorP: 0, denominadorP: 0 });
-          const mostrarDenominador = !item.isColaborativo && !item.isDenFijo;
-          return <td key={mes}>{registros.length ? <>{numero(total.numerador, 0)}{mostrarDenominador ? ` / ${numero(total.denominador, 0)}` : ""}
-            {registros.some(r => r.numeradorP !== 0 || r.denominadorP !== 0) && <small className="sg-serie">P: {numero(total.numeradorP, 0)}{mostrarDenominador ? ` / ${numero(total.denominadorP, 0)}` : ""}</small>}
-          </> : "—"}</td>;
+          return <td key={mes}>{registros.length ? <ValorRegistroMatriz registro={total} mostrarDenominador={!item.isColaborativo} /> : "—"}</td>;
         })}<td>{numero(e.numerador, 0)}{!item.isColaborativo ? ` / ${numero(e.denominador, 0)}` : ""}</td></tr></tfoot>}
       </table></div>
       {!item.establecimientos.length && <p className="sg-empty">No hay registros de establecimientos en el período evaluado.</p>}
-      {matriz && <p className="sg-note">Cada celda muestra numerador / denominador, o solo producción cuando corresponde. P identifica aportes de serie P; “—” indica ausencia de registros y 0 es producción registrada. El acumulado aplica las reglas del indicador y puede incorporar denominadores del año anterior.</p>}
+      {matriz && <p className="sg-note">Cada celda muestra numerador / denominador, o solo producción cuando corresponde. P identifica aportes de serie P; “—” indica ausencia de registros y 0 es producción registrada. El acumulado aplica las reglas del indicador y puede incorporar denominadores del año anterior. La exportación a Excel conserva esta misma matriz y contexto.</p>}
     </section>
-    <section className="sg-panel sg-analysis"><h2>Análisis y contexto</h2><ul>{item.analisis.map(text => <li key={text}>{text}</li>)}</ul>{item.detalle && <div className="sg-description"><h3>Descripción del indicador</h3><p>{item.detalle}</p></div>}</section>
+    <section hidden className="sg-panel sg-analysis"><h2>Análisis y contexto</h2><ul>{item.analisis.map(text => <li key={text}>{text}</li>)}</ul>{item.detalle && <div className="sg-description"><h3>Descripción del indicador</h3><p>{item.detalle}</p></div>}</section>
   </>;
 }
 
@@ -191,8 +199,8 @@ export default function SeguimientoPage({ vista }: { vista: Vista }) {
       {listaConvenios && <><section className="sg-summary"><div className="sg-kpi sg-kpi-primary"><span>Cumplimiento general</span><strong>{valor(listaConvenios.cumplimiento)}</strong><small>{listaConvenios.items.length} convenios</small></div><p className="sg-summary-note">Promedio simple del cumplimiento de los convenios. Incluye convenios sin indicadores con aporte cero.</p></section>
         <section className="sg-panel"><div className="sg-panel-heading"><h2>Convenios</h2></div><div className="sg-table-scroll"><table className="sg-table sg-convenio-table"><thead><tr><th>Convenio</th><th>Indicadores</th><th>Cumplimiento</th><th>Cumplidas</th><th>En curso</th><th>Atención</th><th>Sin evaluar</th></tr></thead><tbody>{listaConvenios.items.map(c => <tr key={c.id}><td className="sg-name"><Link href={`/Convenios/DetalleConvenio?${new URLSearchParams({ ...Object.fromEntries(contexto), id: String(c.id), ano: String(año), back: backActual })}`}>{c.nombre} <ArrowUpRight size={14} /></Link></td><td data-label="Indicadores">{c.indicadorCount}</td><td data-label="Cumplimiento"><Cumplimiento value={c.resumen.cumplimiento} /></td><td data-label="Cumplidas">{c.resumen.cumplidas}</td><td data-label="En curso">{c.resumen.enCurso}</td><td data-label="Atención">{c.resumen.criticos} críticos · {c.resumen.enRiesgo} en riesgo</td><td data-label="Sin evaluar">{c.resumen.sinDatos} sin datos · {c.resumen.sinDenominador + c.resumen.sinMeta} sin evaluación</td></tr>)}</tbody></table></div>{!listaConvenios.items.length && <p className="sg-empty">No hay convenios para esta consulta.</p>}</section></>}
       {(lista || convenio) && <IndicadoresTabla items={items} f={f} detalleHref={detalleHref} />}
-      {indicador && <Detalle item={indicador} />}
-      {criterios && <details className="sg-panel sg-criteria"><summary>Cómo interpretar estos resultados</summary><p>{criterios}</p><p>Las barras representan cumplimiento de la meta y se limitan visualmente a 100%. Los valores numéricos conservan el sobrecumplimiento.</p></details>}
+      {indicador && <Detalle item={indicador} matrizPath={`matrizIndicador/${indicador.id}?${contexto}`} />}
+      {criterios && <details hidden className="sg-panel sg-criteria"><summary>Cómo interpretar estos resultados</summary><p>{criterios}</p><p>Las barras representan cumplimiento de la meta y se limitan visualmente a 100%. Los valores numéricos conservan el sobrecumplimiento.</p></details>}
     </>}
   </div>;
 }

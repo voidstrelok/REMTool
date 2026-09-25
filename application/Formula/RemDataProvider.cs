@@ -37,7 +37,7 @@ namespace RemTools
         }
 
         // Si es false, no se carga el año anterior como fallback cuando aún no hay datos del año actual
-        private const bool UsarFallbackAñoAnterior = true;
+        private static readonly bool UsarFallbackAñoAnterior = true;
 
         public void CargarPrestaciones(int año, DateTime ahora)
         {
@@ -285,15 +285,23 @@ namespace RemTools
             }
 
             if (filters.TryGetValue("edad_min", out var min))
-                query = query.Where(x => x.Edad >= int.Parse(min.ToString())).ToList();
+                query = query.Where(x => x.Edad >= ParseFilterInteger(min, "edad_min")).ToList();
             if (filters.TryGetValue("edad_max", out var max))
-                query = query.Where(x => x.Edad <= int.Parse(max.ToString())).ToList();
+                query = query.Where(x => x.Edad <= ParseFilterInteger(max, "edad_max")).ToList();
             if (filters.TryGetValue("edad", out var edad))
-                query = query.Where(x => x.Edad == int.Parse(edad.ToString())).ToList();
+                query = query.Where(x => x.Edad == ParseFilterInteger(edad, "edad")).ToList();
             if (filters.TryGetValue("sexo", out var sexo))
                 query = query.Where(x => x.Genero == sexo.ToString()).ToList();
 
             return query.Count;
+        }
+
+        private static int ParseFilterInteger(object value, string filterName)
+        {
+            var text = Convert.ToString(value, System.Globalization.CultureInfo.CurrentCulture);
+            return int.TryParse(text, out var number)
+                ? number
+                : throw new InvalidOperationException($"El filtro '{filterName}' debe ser un numero entero.");
         }
 
         private decimal ResolveVariablePercapita(string variableName, Dictionary<string, object> filters, EvaluationContext ctx)
@@ -326,11 +334,11 @@ namespace RemTools
             }
 
             if (filters.TryGetValue("edad_min", out var min))
-                query = query.Where(x => x.Edad >= int.Parse(min.ToString())).ToList();
+                query = query.Where(x => x.Edad >= ParseFilterInteger(min, "edad_min")).ToList();
             if (filters.TryGetValue("edad_max", out var max))
-                query = query.Where(x => x.Edad <= int.Parse(max.ToString())).ToList();
+                query = query.Where(x => x.Edad <= ParseFilterInteger(max, "edad_max")).ToList();
             if (filters.TryGetValue("edad", out var edad))
-                query = query.Where(x => x.Edad == int.Parse(edad.ToString())).ToList();
+                query = query.Where(x => x.Edad == ParseFilterInteger(edad, "edad")).ToList();
             if (filters.TryGetValue("sexo", out var sexo))
                 query = query.Where(x => x.Sexo == sexo.ToString()).ToList();
 

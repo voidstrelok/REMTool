@@ -150,12 +150,17 @@ public static class EvaluadorSeguimiento
         var evaluacion = Evaluar(indicador, filas, corte, anteriores);
         RegistroSeguimiento Registro(ResultadoIndicador r) => new(r.Mes, r.Numerador,
             indicador.IsColaborativo ? 0m : indicador.IsDenFijo ? r.Denominador * (decimal)indicador.Meta : r.Denominador,
-            r.NumeradorP, indicador.IsColaborativo || indicador.IsDenFijo ? 0m : r.DenominadorP,
+            // La serie P es un desglose del registro, incluso cuando el indicador usa
+            // denominador fijo. Solo se omite para los colaborativos, cuyo denominador
+            // es comunal y no pertenece a cada establecimiento.
+            r.NumeradorP, indicador.IsColaborativo ? 0m : indicador.IsDenFijo ? r.DenominadorP * (decimal)indicador.Meta : r.DenominadorP,
             r.Establecimiento?.Nombre ?? "Establecimiento", r.Establecimiento?.id_sector ?? 0, r.id_establecimiento);
         var evolucion = detalle ? Enumerable.Range(1, evaluacion.MesEvaluacion)
             .Where(m => indicador.Mensual || m == 6 || m == 12 || evaluacion.Provisional && m == evaluacion.MesEvaluacion)
             .Select(m => Evaluar(indicador, filas, m, anteriores)).ToList() : [];
-        var establecimientos = detalle ? filas.Where(r => r.Mes <= evaluacion.MesEvaluacion)
+        // The matrix is an operational view, so it includes records through the selected cut.
+        // Semestral calculations still use their formal evaluation period.
+        var establecimientos = detalle ? filas.Where(r => r.Mes <= corte)
             .GroupBy(r => r.id_establecimiento).Select(g => new EstablecimientoSeguimiento(g.Key,
                 g.First().Establecimiento?.Nombre ?? "Establecimiento", g.First().Establecimiento?.Sector?.Nombre ?? "—",
                 Evaluar(indicador, g, corte, anteriores.Where(r => r.id_establecimiento == g.Key)),
@@ -199,7 +204,7 @@ public static class EvaluadorSeguimiento
             IsColaborativo = indicador.IsColaborativo, IsDenFijo = indicador.IsDenFijo,
             EsPeriodoOctubreSep = indicador.EsPeriodoOctubreSep, Detalle = indicador.Detalle, Peso = (decimal)indicador.Peso,
             Evaluacion = evaluacion, Evolucion = evolucion, Establecimientos = establecimientos, Analisis = analisis,
-            Resultados = detalle ? filas.Where(r => r.Mes <= evaluacion.MesEvaluacion).Select(Registro).ToList() : []
+            Resultados = detalle ? filas.Where(r => r.Mes <= corte).Select(Registro).ToList() : []
         };
     }
 }

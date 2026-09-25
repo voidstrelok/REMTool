@@ -32,3 +32,14 @@ shared/*
 tests/*
 tmp/*
 
+application/bin/
+application/obj/
+application/tmp/
+admin/bin/
+admin/obj/
+admin/tmp/
+admin/appsettings.json
+admin/wwwroot
+admin-ui/node_modules/
+admin-ui/.next/
+admin-ui/out/
