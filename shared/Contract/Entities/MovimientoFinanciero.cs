@@ -5,6 +5,8 @@ public class MovimientoFinanciero
     public int Id { get; set; }
     public int ConvenioFinancieroId { get; set; }
     public int? ItemPresupuestarioId { get; set; }
+    public int? SubItemPresupuestarioId { get; set; }
+    public int? ProveedorFinancieroId { get; set; }
     public DateOnly Fecha { get; set; }
     public string Descripcion { get; set; } = string.Empty;
     public decimal Monto { get; set; }
@@ -17,4 +19,6 @@ public class MovimientoFinanciero
     public DateTimeOffset FechaModificacion { get; set; }
     public ConvenioFinanciero ConvenioFinanciero { get; set; } = null!;
     public ItemPresupuestario? ItemPresupuestario { get; set; }
+    public SubItemPresupuestario? SubItemPresupuestario { get; set; }
+    public ProveedorFinanciero? ProveedorFinanciero { get; set; }
 }

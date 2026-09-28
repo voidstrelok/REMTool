@@ -16,7 +16,6 @@ public class ConvenioFinancieroEntityTypeConfiguration : IEntityTypeConfiguratio
         builder.Property(x => x.Descripcion).HasColumnName("descripcion");
         builder.Property(x => x.FechaInicio).HasColumnName("fecha_inicio");
         builder.Property(x => x.FechaTermino).HasColumnName("fecha_termino");
-        builder.Property(x => x.PresupuestoTotal).HasColumnName("presupuesto_total").HasPrecision(18, 2);
         builder.Property(x => x.Responsable).HasColumnName("responsable").HasMaxLength(150).IsRequired();
         builder.Property(x => x.Estado).HasColumnName("estado").HasMaxLength(20).IsRequired();
         builder.Property(x => x.FechaCreacion).HasColumnName("fecha_creacion");

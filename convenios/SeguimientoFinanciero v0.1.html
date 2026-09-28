@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seguimiento financiero de convenios</title>
+  <style>
+:root{--canvas:#f3f6f7;--surface:#fff;--surface-alt:#f7f9fa;--ink:#17242f;--navy:#18364d;--muted:#687b89;--line:#dce4e8;--primary:#176b87;--primary-dark:#10556d;--green:#20704b;--green-bg:#e7f4ed;--amber:#a75d10;--amber-bg:#fff1dc;--red:#a33131;--red-bg:#fceaea;--shadow:0 8px 26px rgba(20,47,64,.07)}
+*{box-sizing:border-box}html{background:var(--canvas)}body{margin:0;color:var(--ink);font:15px/1.5 "Segoe UI",Arial,sans-serif}.app-shell{width:min(1440px,100%);margin:auto;padding:36px 42px 64px}.view[hidden]{display:none!important}.page-header{display:flex;justify-content:space-between;align-items:flex-start;gap:28px;margin-bottom:26px}.page-header h1{margin:2px 0 7px;color:var(--navy);font-size:clamp(1.85rem,3.2vw,2.6rem);line-height:1.15;letter-spacing:-.035em}.eyebrow{margin:0;color:var(--primary);font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.lead{margin:0;color:var(--muted);font-size:.96rem}.header-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:9px}.button,.icon-button{font:inherit;cursor:pointer}.button{min-height:40px;padding:9px 13px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);font-size:.82rem;font-weight:700}.button:hover{background:var(--surface-alt);border-color:#b9c8cf}.button-primary{border-color:var(--primary);background:var(--primary);color:white}.button-primary:hover{border-color:var(--primary-dark);background:var(--primary-dark)}.button-small{min-height:34px;padding:6px 10px}.icon-button{display:inline-grid;width:34px;height:34px;padding:0;place-items:center;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--muted);font-size:1.1rem}.icon-button:hover{background:var(--surface-alt);color:var(--primary)}.icon-button.danger:hover{background:var(--red-bg);color:var(--red);border-color:#e7bcbc}.back-button{margin:0 0 18px;padding:0;border:0;background:none;color:var(--primary);font:inherit;font-size:.84rem;font-weight:750;cursor:pointer}.back-button:hover{text-decoration:underline}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #82c7d5;outline-offset:2px}.filter-bar{display:grid;grid-template-columns:1.1fr 100px 140px minmax(150px,1fr) minmax(180px,1.5fr) auto;align-items:end;gap:13px;margin-bottom:22px;padding:16px 18px;border:1px solid var(--line);border-radius:10px;background:var(--surface);box-shadow:0 2px 10px rgba(20,47,64,.03)}.filter-intro{display:grid;gap:1px;padding-bottom:4px;color:var(--navy)}.filter-intro span{color:var(--muted);font-size:.75rem}.filter-bar label,.form-grid label{display:grid;gap:5px;color:#526978;font-size:.72rem;font-weight:750}input,select,textarea{width:100%;min-height:40px;padding:9px 10px;border:1px solid #cbd7dd;border-radius:6px;background:#fff;color:var(--ink);font:inherit;font-size:.87rem}textarea{min-height:86px;resize:vertical}.kpi-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:22px}.detail-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}.kpi{position:relative;overflow:hidden;min-height:112px;padding:18px 19px;border:1px solid var(--line);border-radius:10px;background:var(--surface);box-shadow:0 3px 14px rgba(20,47,64,.04)}.kpi:before{position:absolute;inset:0 auto 0 0;width:4px;background:#9aabb4;content:""}.kpi-blue:before{background:var(--primary)}.kpi-amber:before{background:#d28227}.kpi-green:before{background:var(--green)}.kpi>span{display:block;color:var(--muted);font-size:.76rem}.kpi>strong{display:block;margin-top:10px;color:var(--navy);font-size:clamp(1.4rem,2.5vw,1.85rem);line-height:1.1;font-variant-numeric:tabular-nums}.surface{margin:20px 0;border:1px solid var(--line);border-radius:11px;background:var(--surface);box-shadow:var(--shadow);overflow:hidden}.surface-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line)}.surface-header h2{margin:0;color:var(--navy);font-size:1.05rem}.surface-header p{margin:3px 0 0;color:var(--muted);font-size:.76rem}.table-wrap{width:100%;overflow:auto}.data-table{width:100%;border-collapse:collapse}.data-table th,.data-table td{padding:13px 14px;border-bottom:1px solid #e6ecef;text-align:right;vertical-align:middle;font-size:.82rem;font-variant-numeric:tabular-nums}.data-table th{background:var(--surface-alt);color:#617583;font-size:.68rem;font-weight:750;letter-spacing:.045em;text-transform:uppercase;white-space:nowrap}.data-table th:first-child,.data-table td:first-child{text-align:left}.data-table tbody tr:last-child td{border-bottom:0}.data-table tbody tr:hover td{background:#f3f8f9}.data-table small{display:block;margin-top:4px;color:var(--muted);font-size:.7rem}.table-link{padding:0;border:0;background:none;color:var(--primary);font:inherit;font-weight:750;cursor:pointer}.table-link:hover{text-decoration:underline}.main-cell{min-width:210px;text-align:left!important;font-weight:650}.amount{color:var(--navy);font-weight:800;white-space:nowrap}.money-positive{color:var(--green);font-weight:750}.nowrap{white-space:nowrap}.actions{white-space:nowrap}.actions>*+*{margin-left:4px}.status{display:inline-flex;padding:4px 7px;border-radius:5px;background:#eef2f4;color:#536774;font-size:.67rem;font-weight:800}.status-activo{background:var(--green-bg);color:var(--green)}.status-cerrado,.status-inactivo{background:#edf0f2;color:#596b77}.tag{display:inline-flex;padding:4px 8px;border-radius:12px;background:#eaf3f5;color:#315e6d;font-size:.7rem;font-weight:700;white-space:nowrap}.progress-cell{min-width:104px}.progress-cell>span{display:block;margin-bottom:5px;font-weight:750}.progress{height:6px;overflow:hidden;border-radius:9px;background:#e1e8eb}.progress i{display:block;height:100%;border-radius:inherit;background:var(--primary)}.kpi .progress{margin-top:13px}.empty-state{display:grid;justify-items:center;gap:4px;padding:36px 20px;color:var(--muted);text-align:center}.empty-state strong{color:var(--navy)}dialog{width:min(700px,calc(100% - 24px));max-height:calc(100vh - 36px);padding:0;border:0;border-radius:12px;background:var(--surface);box-shadow:0 24px 80px rgba(12,35,50,.35)}dialog::backdrop{background:rgba(18,45,63,.62)}#formulario{padding:22px}.modal-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:19px}.modal-header h2{margin:2px 0 0;color:var(--navy);font-size:1.35rem}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 15px}.field-wide{grid-column:1/-1}.form-error{padding:10px 12px;border-radius:6px;background:var(--red-bg);color:var(--red);font-size:.8rem}.modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:21px;padding-top:17px;border-top:1px solid var(--line)}.toast{position:fixed;right:22px;bottom:22px;z-index:10;padding:11px 15px;border-radius:8px;background:var(--navy);color:#fff;box-shadow:var(--shadow);font-size:.82rem}.toast[hidden]{display:none}
+@media(max-width:1100px){.app-shell{padding:28px 24px 55px}.filter-bar{grid-template-columns:repeat(3,minmax(0,1fr))}.filter-intro{grid-column:1/-1}.detail-kpis{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.app-shell{padding:20px 12px 44px}.page-header{flex-direction:column;gap:16px}.page-header>.button{width:100%}.header-actions{width:100%;justify-content:stretch}.header-actions .button{flex:1}.filter-bar,.kpi-grid,.detail-kpis,.form-grid{grid-template-columns:1fr}.filter-intro,.field-wide{grid-column:auto}.filter-bar .button{width:100%}.data-table{min-width:760px}.kpi{min-height:96px}.modal-actions .button{flex:1}}
+.item-group+.item-group{margin-top:15px}.dashboard-filters{grid-template-columns:repeat(3,minmax(140px,1fr)) auto}.spend-list{padding:4px 20px 16px}.spend-list article{display:grid;grid-template-columns:minmax(180px,1fr) minmax(220px,2fr);gap:25px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}.spend-list article:last-child{border-bottom:0}.spend-list span{display:block;color:var(--muted);font-size:.75rem}.spend-value>strong{display:block;margin-bottom:7px;text-align:right;color:var(--navy)}.field-help{color:var(--muted);font-weight:400}@media(max-width:700px){.dashboard-filters,.spend-list article{grid-template-columns:1fr}.spend-value>strong{text-align:left}}
+.button-danger{border-color:#dfb4b4;background:var(--red-bg);color:var(--red)}.button-danger:hover{border-color:var(--red);background:#f8dede;color:#862323}
+
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <section id="vista-dashboard" class="view">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Gestión interna</p>
+          <h1>Seguimiento financiero</h1>
+          <p class="lead">Control informativo del presupuesto y ejecución de convenios.</p>
+        </div>
+        <div class="header-actions"><button id="ver-dashboard-gastos" class="button">Dashboard de gastos</button><button id="nuevo-convenio" class="button button-primary">+ Nuevo convenio</button></div>
+      </header>
+
+      <form id="filtros" class="filter-bar">
+        <div class="filter-intro"><strong>Convenios</strong><span>Filtra la vista general</span></div>
+        <label>Año<input id="f-anio" name="anio" type="number" min="2000" max="2100"></label>
+        <label>Estado<select id="f-estado" name="estado"><option value="">Todos</option><option>Activo</option><option>Cerrado</option></select></label>
+        <label>Responsable<input id="f-responsable" name="responsable" type="search" placeholder="Nombre"></label>
+        <label class="filter-search">Convenio<input id="f-nombre" name="nombre" type="search" placeholder="Buscar por nombre"></label>
+        <button class="button" type="submit">Aplicar</button>
+      </form>
+
+      <section id="totales" class="kpi-grid" aria-label="Resumen financiero"></section>
+      <section class="surface">
+        <header class="surface-header"><div><h2>Convenios</h2><p id="cantidad-convenios"></p></div></header>
+        <div class="table-wrap"><table class="data-table"><thead><tr><th>Convenio</th><th>Responsable</th><th>Presupuesto</th><th>Ejecutado</th><th>Disponible</th><th>Ejecución</th><th></th></tr></thead><tbody id="lista"></tbody></table></div>
+        <div id="vacio" class="empty-state" hidden><strong>Sin resultados</strong><span>No hay convenios para los filtros seleccionados.</span></div>
+      </section>
+    </section>
+
+    <section id="vista-detalle" class="view" hidden></section>
+    <section id="vista-items" class="view" hidden></section>
+    <section id="vista-gastos" class="view" hidden></section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="modal">
+    <form id="formulario">
+      <header class="modal-header"><div><p class="eyebrow">Seguimiento financiero</p><h2 id="modal-titulo"></h2></div><button id="cerrar-modal" class="icon-button" type="button" aria-label="Cerrar">×</button></header>
+      <div id="campos" class="form-grid"></div>
+      <p id="form-error" class="form-error" role="alert" hidden></p>
+      <footer class="modal-actions"><button id="cancelar-modal" class="button" type="button">Cancelar</button><button id="guardar" class="button button-primary" type="submit">Guardar</button></footer>
+    </form>
+  </dialog>
+
+  <script>
+/* js/config.js */
+window.CONVENIOS_CONFIG = { apiBase: "http://localhost:5198/api" };
+
+
+/* js/api.js */
+window.api = async (path, options = {}) => { const response = await fetch(`${CONVENIOS_CONFIG.apiBase.replace(/\/$/, "")}/${path.replace(/^\//, "")}`, { headers: { "Content-Type": "application/json", ...(options.headers || {}) }, ...options }); if (response.status === 204) return null; const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.message || data.title || "No fue posible completar la operación."); return data; };
+
+
+/* js/convenios.js */
+window.escapeHtml = value => String(value ?? "").replace(/[&<>'"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;" })[c]);
+window.clp = value => new Intl.NumberFormat("es-CL", { style:"currency", currency:"CLP", maximumFractionDigits:0 }).format(Number(value) || 0);
+window.pct = value => `${Number(value || 0).toLocaleString("es-CL", { maximumFractionDigits:1 })} %`;
+window.fechaCl = value => value ? new Intl.DateTimeFormat("es-CL").format(new Date(`${value}T12:00:00`)) : "—";
+window.input = (name, label, type="text", value="", required=false, attrs="") => `<label>${escapeHtml(label)}<input name="${name}" type="${type}" value="${escapeHtml(value)}" ${required ? "required" : ""} ${attrs}></label>`;
+window.select = (name, label, options, value="") => `<label>${escapeHtml(label)}<select name="${name}">${options.map(o => `<option value="${escapeHtml(o.value)}" ${String(o.value) === String(value) ? "selected" : ""}>${escapeHtml(o.label)}</option>`).join("")}</select></label>`;
+window.convenioCampos = (d={}) => input("nombre","Nombre","text",d.nombre,true) + input("codigo","Código", "text",d.codigo) + input("anio","Año","number",d.anio || new Date().getFullYear(),true,'min="2000" max="2100"') + input("responsable","Responsable","text",d.responsable,true) + input("fechaInicio","Fecha de inicio","date",d.fechaInicio,true) + input("fechaTermino","Fecha de término","date",d.fechaTermino,true) + select("estado","Estado",[{value:"Activo",label:"Activo"},{value:"Cerrado",label:"Cerrado"}],d.estado || "Activo") + `<label class="field-wide">Descripción<textarea name="descripcion">${escapeHtml(d.descripcion)}</textarea></label>`;
+
+
+/* js/movimientos.js */
+window.movimientoCampos = (m={}, items=[], proveedores=[]) => { const subs=items.flatMap(i=>i.subItems.filter(s=>s.activo||s.id===m.subItemPresupuestarioId).map(s=>({value:s.id,label:`${i.nombre} / ${s.nombre}`}))); return input("fecha","Fecha","date",m.fecha || new Date().toISOString().slice(0,10),true) + select("subItemPresupuestarioId","Subítem presupuestario",[{value:"",label:"Seleccionar…"},...subs],m.subItemPresupuestarioId) + input("descripcion","Descripción","text",m.descripcion,true) + input("monto","Monto","number",m.monto,true,'min="1" step="0.01"') + select("tipoDocumento","Tipo de documento",[{value:"",label:"Sin documento"},{value:"Factura",label:"Factura"},{value:"Orden de Compra",label:"Orden de Compra"}],m.tipoDocumento) + input("numeroDocumento","Número de documento","text",m.numeroDocumento) + `<label>Proveedor<input name="proveedor" type="text" value="${escapeHtml(m.proveedor)}" list="proveedores-list"><datalist id="proveedores-list">${proveedores.map(p=>`<option value="${escapeHtml(p)}"></option>`).join("")}</datalist><small class="field-help">Puedes elegir uno existente o escribir uno nuevo.</small></label>` + `<label class="field-wide">Observaciones<textarea name="observaciones">${escapeHtml(m.observaciones)}</textarea></label>`; };
+
+
+/* js/app.js */
+const $ = selector => document.querySelector(selector);
+const state = { lista: [], detalle: null, vista: "dashboard" };
+
+function mostrarVista(nombre) {
+  state.vista = nombre;
+  $("#vista-dashboard").hidden = nombre !== "dashboard";
+  $("#vista-detalle").hidden = nombre !== "detalle";
+  $("#vista-items").hidden = nombre !== "items";
+  $("#vista-gastos").hidden = nombre !== "gastos";
+  window.scrollTo({ top: 0, behavior: "instant" });
+}
+
+function toast(mensaje) {
+  const el = $("#toast"); el.textContent = mensaje; el.hidden = false;
+  clearTimeout(toast.timer); toast.timer = setTimeout(() => el.hidden = true, 2800);
+}
+
+function payload(form) {
+  const data = Object.fromEntries(new FormData(form));
+  ["presupuestoAsignado","monto","anio"].forEach(k => { if (k in data) data[k] = Number(data[k]); });
+  if (data.itemPresupuestarioId === "") data.itemPresupuestarioId = null;
+  else if (data.itemPresupuestarioId) data.itemPresupuestarioId = Number(data.itemPresupuestarioId);
+  if (data.subItemPresupuestarioId === "") data.subItemPresupuestarioId = null;
+  else if (data.subItemPresupuestarioId) data.subItemPresupuestarioId = Number(data.subItemPresupuestarioId);
+  return data;
+}
+
+function abrirModal(titulo, campos, guardar) {
+  const modal = $("#modal"), form = $("#formulario"), boton = $("#guardar"), error = $("#form-error");
+  $("#modal-titulo").textContent = titulo; $("#campos").innerHTML = campos; error.hidden = true;
+  const cerrar = () => { form.reset(); modal.close("cancel"); };
+  $("#cancelar-modal").onclick = cerrar; $("#cerrar-modal").onclick = cerrar;
+  form.onsubmit = async event => {
+    event.preventDefault(); if (!form.reportValidity()) return;
+    boton.disabled = true; boton.textContent = "Guardando…"; error.hidden = true;
+    try { await guardar(payload(form)); modal.close("saved"); await refrescarVista(); toast("Cambios guardados correctamente."); }
+    catch (e) { error.textContent = e.message; error.hidden = false; }
+    finally { boton.disabled = false; boton.textContent = "Guardar"; }
+  };
+  modal.showModal();
+}
+
+async function refrescarVista() {
+  await cargarDashboard();
+  if (state.detalle) {
+    const id = state.detalle.id; state.detalle = await api(`convenios-financieros/${id}`);
+    if (state.vista === "items") renderItems(); else renderDetalle();
+  }
+}
+
+async function cargarDashboard() {
+  const query = new URLSearchParams();
+  [["anio","f-anio"],["estado","f-estado"],["responsable","f-responsable"],["nombre","f-nombre"]].forEach(([key,id]) => { const value = $(`#${id}`).value.trim(); if (value) query.set(key,value); });
+  state.lista = await api(`convenios-financieros?${query}`);
+  const total = state.lista.reduce((a,x) => ({ presupuesto:a.presupuesto+x.presupuesto, ejecutado:a.ejecutado+x.ejecutado, disponible:a.disponible+x.disponible }), {presupuesto:0,ejecutado:0,disponible:0});
+  $("#totales").innerHTML = [
+    ["Presupuesto total",total.presupuesto,"kpi-blue"],["Ejecutado",total.ejecutado,"kpi-amber"],["Disponible",total.disponible,"kpi-green"]
+  ].map(([label,value,cls]) => `<article class="kpi ${cls}"><span>${label}</span><strong>${clp(value)}</strong></article>`).join("");
+  $("#cantidad-convenios").textContent = `${state.lista.length} convenio${state.lista.length === 1 ? "" : "s"} en esta vista`;
+  $("#vacio").hidden = state.lista.length > 0;
+  $("#lista").innerHTML = state.lista.map(c => `<tr><td><button class="table-link" data-convenio="${c.id}">${escapeHtml(c.nombre)}</button><small>${escapeHtml(c.codigo || `Año ${c.anio}`)}</small></td><td>${escapeHtml(c.responsable)}<small><span class="status status-${c.estado.toLowerCase()}">${escapeHtml(c.estado)}</span></small></td><td>${clp(c.presupuesto)}</td><td>${clp(c.ejecutado)}</td><td class="money-positive">${clp(c.disponible)}</td><td><div class="progress-cell"><span>${pct(c.porcentajeEjecucion)}</span><div class="progress"><i style="width:${Math.min(100,c.porcentajeEjecucion)}%"></i></div></div></td><td><button class="icon-button row-action" data-convenio="${c.id}" aria-label="Ver detalle">›</button></td></tr>`).join("");
+  document.querySelectorAll("[data-convenio]").forEach(b => b.onclick = () => abrirDetalle(b.dataset.convenio));
+}
+
+async function abrirDetalle(id) { state.detalle = await api(`convenios-financieros/${id}`); renderDetalle(); mostrarVista("detalle"); }
+
+function renderDetalle() {
+  const d=state.detalle,r=d.resumen;
+  $("#vista-detalle").innerHTML = `<header class="page-header detail-header"><div><button id="volver-dashboard" class="back-button">← Volver al dashboard</button><p class="eyebrow">Convenio ${d.anio}</p><h1>${escapeHtml(d.nombre)}</h1><p class="lead">${escapeHtml(d.responsable)} · <span class="status status-${d.estado.toLowerCase()}">${escapeHtml(d.estado)}</span></p></div><div class="header-actions"><button id="eliminar-convenio" class="button button-danger">Eliminar convenio</button><button id="editar-convenio" class="button">Editar convenio</button><button id="gestionar-items" class="button">Gestionar ítems</button><button id="nuevo-movimiento" class="button button-primary">+ Registrar gasto</button></div></header>
+  <section class="kpi-grid detail-kpis">${[["Presupuesto",r.presupuesto,"kpi-blue"],["Ejecutado",r.ejecutado,"kpi-amber"],["Disponible",r.disponible,"kpi-green"]].map(x=>`<article class="kpi ${x[2]}"><span>${x[0]}</span><strong>${clp(x[1])}</strong></article>`).join("")}<article class="kpi"><span>Ejecución</span><strong>${pct(r.porcentajeEjecucion)}</strong><div class="progress"><i style="width:${Math.min(100,r.porcentajeEjecucion)}%"></i></div></article></section>
+  <section class="surface"><header class="surface-header"><div><h2>Movimientos</h2><p>${d.movimientos.length} registro${d.movimientos.length===1?"":"s"} financiero${d.movimientos.length===1?"":"s"}</p></div></header><div class="table-wrap"><table class="data-table detail-table"><thead><tr><th>Fecha</th><th>Descripción</th><th>Ítem / Subítem</th><th>Documento</th><th>Proveedor</th><th>Monto</th><th></th></tr></thead><tbody>${d.movimientos.map(m=>`<tr><td class="nowrap">${fechaCl(m.fecha)}</td><td class="main-cell">${escapeHtml(m.descripcion)}</td><td><span class="tag">${escapeHtml(`${m.itemNombre||"—"} / ${m.subItemNombre||"Sin subítem"}`)}</span></td><td>${escapeHtml([m.tipoDocumento,m.numeroDocumento].filter(Boolean).join(" ")||"—")}</td><td>${escapeHtml(m.proveedor||"—")}</td><td class="amount">${clp(m.monto)}</td><td class="actions"><button class="icon-button" data-edit-mov="${m.id}" title="Editar">✎</button><button class="icon-button danger" data-delete-mov="${m.id}" title="Eliminar">×</button></td></tr>`).join("")}</tbody></table></div>${d.movimientos.length?"":`<div class="empty-state"><strong>Aún no hay movimientos</strong><span>Registra el primer gasto de este convenio.</span></div>`}</section>`;
+  $("#volver-dashboard").onclick=()=>{state.detalle=null;mostrarVista("dashboard")};
+  $("#eliminar-convenio").onclick=()=>eliminarConvenio(); $("#editar-convenio").onclick=()=>formConvenio(d); $("#gestionar-items").onclick=()=>{renderItems();mostrarVista("items")}; $("#nuevo-movimiento").onclick=()=>formMovimiento();
+  document.querySelectorAll("[data-edit-mov]").forEach(b=>b.onclick=()=>formMovimiento(d.movimientos.find(m=>m.id==b.dataset.editMov)));
+  document.querySelectorAll("[data-delete-mov]").forEach(b=>b.onclick=()=>eliminarMovimiento(b.dataset.deleteMov));
+}
+
+function renderItems() {
+  const d=state.detalle;
+  $("#vista-items").innerHTML=`<header class="page-header"><div><button id="volver-detalle" class="back-button">← Volver al convenio</button><p class="eyebrow">Distribución presupuestaria</p><h1>Ítems de ${escapeHtml(d.nombre)}</h1><p class="lead">El presupuesto de cada ítem corresponde a la suma de sus subítems.</p></div><button id="nuevo-item" class="button button-primary">+ Nuevo ítem</button></header>${d.items.map(i=>`<section class="surface item-group"><header class="surface-header"><div><h2>${escapeHtml(i.nombre)}</h2><p>${clp(i.ejecutado)} ejecutado de ${clp(i.presupuestoAsignado)} · Disponible ${clp(i.disponible)}</p></div><div class="header-actions"><span class="status status-${i.activo?"activo":"inactivo"}">${i.activo?"Activo":"Inactivo"}</span><button class="button button-small" data-new-subitem="${i.id}">+ Subítem</button><button class="button button-small" data-edit-item="${i.id}">Editar ítem</button><button class="button button-small button-danger" data-delete-item="${i.id}">Eliminar</button></div></header><div class="table-wrap"><table class="data-table"><thead><tr><th>Subítem</th><th>Presupuesto</th><th>Ejecutado</th><th>Disponible</th><th>Estado</th><th></th></tr></thead><tbody>${i.subItems.map(s=>`<tr><td class="main-cell">${escapeHtml(s.nombre)}</td><td class="amount">${clp(s.presupuestoAsignado)}</td><td class="amount">${clp(s.ejecutado)}</td><td class="money-positive">${clp(s.disponible)}</td><td><span class="status status-${s.activo?"activo":"inactivo"}">${s.activo?"Activo":"Inactivo"}</span></td><td class="actions"><button class="button button-small" data-edit-subitem="${s.id}" data-item="${i.id}">Editar</button><button class="button button-small button-danger" data-delete-subitem="${s.id}" data-item="${i.id}">Eliminar</button></td></tr>`).join("")}</tbody></table></div>${i.subItems.length?"":`<div class="empty-state"><strong>Sin subítems</strong><span>Crea un subítem y asigna su presupuesto para habilitar gastos en este ítem.</span></div>`}</section>`).join("")}${d.items.length?"":`<section class="surface"><div class="empty-state"><strong>Sin ítems presupuestarios</strong><span>Crea el primer ítem y luego agrega sus subítems con presupuesto.</span></div></section>`}`;
+  $("#volver-detalle").onclick=()=>{renderDetalle();mostrarVista("detalle")}; $("#nuevo-item").onclick=()=>formItem();
+  document.querySelectorAll("[data-edit-item]").forEach(b=>b.onclick=()=>formItem(d.items.find(i=>i.id==b.dataset.editItem)));
+  document.querySelectorAll("[data-delete-item]").forEach(b=>b.onclick=()=>eliminarItem(Number(b.dataset.deleteItem)));
+  document.querySelectorAll("[data-new-subitem]").forEach(b=>b.onclick=()=>formSubItem(Number(b.dataset.newSubitem)));
+  document.querySelectorAll("[data-edit-subitem]").forEach(b=>{const item=d.items.find(i=>i.id==b.dataset.item);b.onclick=()=>formSubItem(item.id,item.subItems.find(s=>s.id==b.dataset.editSubitem))});
+  document.querySelectorAll("[data-delete-subitem]").forEach(b=>b.onclick=()=>eliminarSubItem(Number(b.dataset.item),Number(b.dataset.deleteSubitem)));
+}
+
+function formConvenio(d=null) { abrirModal(d?"Editar convenio":"Nuevo convenio",convenioCampos(d||{}),p=>api(`convenios-financieros${d?`/${d.id}`:""}`,{method:d?"PUT":"POST",body:JSON.stringify(p)})); }
+function formItem(i=null) { abrirModal(i?"Editar ítem":"Nuevo ítem",input("nombre","Nombre","text",i?.nombre,true)+select("activo","Estado",[{value:"true",label:"Activo"},{value:"false",label:"Inactivo"}],String(i?.activo??true)),p=>{p.activo=p.activo==="true";return api(`convenios-financieros/${state.detalle.id}/items${i?`/${i.id}`:""}`,{method:i?"PUT":"POST",body:JSON.stringify(p)})}); }
+function formSubItem(itemId,s=null) { abrirModal(s?"Editar subítem":"Nuevo subítem",input("nombre","Nombre","text",s?.nombre,true)+input("presupuestoAsignado","Presupuesto asignado","number",s?.presupuestoAsignado,true,'min="0.01" step="0.01"')+select("activo","Estado",[{value:"true",label:"Activo"},{value:"false",label:"Inactivo"}],String(s?.activo??true)),p=>{p.activo=p.activo==="true";return api(`convenios-financieros/${state.detalle.id}/items/${itemId}/subitems${s?`/${s.id}`:""}`,{method:s?"PUT":"POST",body:JSON.stringify(p)})}); }
+async function formMovimiento(m=null) { const proveedores=await api("convenios-financieros/proveedores"); abrirModal(m?"Editar gasto":"Registrar gasto",movimientoCampos(m||{},state.detalle.items,proveedores),p=>api(m?`convenios-financieros/movimientos/${m.id}`:`convenios-financieros/${state.detalle.id}/movimientos`,{method:m?"PUT":"POST",body:JSON.stringify(p)})); }
+async function eliminarMovimiento(id) { if(!confirm("¿Eliminar este movimiento? Esta acción no se puede deshacer."))return;try{await api(`convenios-financieros/movimientos/${id}`,{method:"DELETE"});await refrescarVista();toast("Movimiento eliminado.")}catch(e){alert(e.message)} }
+async function eliminarConvenio() { if(!confirm(`¿Eliminar el convenio "${state.detalle.nombre}"? Esta acción no se puede deshacer.`))return;try{await api(`convenios-financieros/${state.detalle.id}`,{method:"DELETE"});state.detalle=null;await cargarDashboard();mostrarVista("dashboard");toast("Convenio eliminado.")}catch(e){alert(e.message)} }
+async function eliminarItem(id) { const item=state.detalle.items.find(x=>x.id===id);if(!confirm(`¿Eliminar el ítem "${item.nombre}"? Esta acción no se puede deshacer.`))return;try{await api(`convenios-financieros/${state.detalle.id}/items/${id}`,{method:"DELETE"});await refrescarVista();toast("Ítem eliminado.")}catch(e){alert(e.message)} }
+async function eliminarSubItem(itemId,subItemId) { const item=state.detalle.items.find(x=>x.id===itemId),sub=item.subItems.find(x=>x.id===subItemId);if(!confirm(`¿Eliminar el subítem "${sub.nombre}"? Esta acción no se puede deshacer.`))return;try{await api(`convenios-financieros/${state.detalle.id}/items/${itemId}/subitems/${subItemId}`,{method:"DELETE"});await refrescarVista();toast("Subítem eliminado.")}catch(e){alert(e.message)} }
+
+async function abrirDashboardGastos() {
+  mostrarVista("gastos");
+  const convenios=await api("convenios-financieros");
+  const options=convenios.map(c=>`<option value="${c.id}">${escapeHtml(c.nombre)}</option>`).join("");
+  const anioInicial=$("#f-anio").value || new Date().getFullYear();
+  $("#vista-gastos").innerHTML=`<header class="page-header"><div><button id="volver-gastos" class="back-button">← Volver a convenios</button><p class="eyebrow">Análisis de ejecución</p><h1>Dashboard de gastos</h1><p class="lead">Consulta cuánto se ha gastado por período y convenio.</p></div></header><form id="filtros-gastos" class="filter-bar dashboard-filters"><label>Año<input name="anio" type="number" value="${anioInicial}" min="2000" max="2100" required></label><label>Mes<select name="mes"><option value="">Todos</option>${["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"].map((m,i)=>`<option value="${i+1}">${m}</option>`).join("")}</select></label><label>Convenio<select name="convenioId"><option value="">Todos</option>${options}</select></label><button class="button button-primary">Actualizar</button></form><div id="dashboard-resultado"></div>`;
+  $("#volver-gastos").onclick=()=>mostrarVista("dashboard"); $("#filtros-gastos").onsubmit=e=>{e.preventDefault();cargarDashboardGastos(new FormData(e.currentTarget))};
+  await cargarDashboardGastos(new FormData($("#filtros-gastos")));
+}
+async function cargarDashboardGastos(data) {
+  const q=new URLSearchParams();for(const [k,v] of data)if(v)q.set(k,v);const d=await api(`convenios-financieros/dashboard?${q}`),max=Math.max(1,...d.convenios.map(x=>x.ejecutado));
+  $("#dashboard-resultado").innerHTML=`<section class="kpi-grid"><article class="kpi kpi-amber"><span>Gasto del período</span><strong>${clp(d.ejecutado)}</strong></article><article class="kpi kpi-blue"><span>Movimientos</span><strong>${d.cantidadMovimientos}</strong></article><article class="kpi"><span>Convenios con gasto</span><strong>${d.convenios.length}</strong></article></section><section class="surface"><header class="surface-header"><div><h2>Gasto por convenio</h2><p>Comparación para el período seleccionado</p></div></header><div class="spend-list">${d.convenios.map(x=>`<article><div><strong>${escapeHtml(x.convenio)}</strong><span>${x.cantidadMovimientos} movimiento${x.cantidadMovimientos===1?"":"s"}</span></div><div class="spend-value"><strong>${clp(x.ejecutado)}</strong><div class="progress"><i style="width:${x.ejecutado/max*100}%"></i></div></div></article>`).join("")}</div>${d.convenios.length?"":`<div class="empty-state"><strong>Sin gastos</strong><span>No hay movimientos en el período seleccionado.</span></div>`}</section>`;
+}
+
+$("#filtros").onsubmit=e=>{e.preventDefault();cargarDashboard().catch(x=>alert(x.message))};
+$("#nuevo-convenio").onclick=()=>formConvenio();
+$("#ver-dashboard-gastos").onclick=()=>abrirDashboardGastos();
+$("#f-anio").value=new Date().getFullYear();
+cargarDashboard().catch(e=>alert(e.message));
+
+  </script>
+</body>
+</html>

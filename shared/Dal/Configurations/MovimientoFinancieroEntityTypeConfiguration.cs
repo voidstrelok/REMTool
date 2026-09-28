@@ -12,6 +12,8 @@ public class MovimientoFinancieroEntityTypeConfiguration : IEntityTypeConfigurat
         builder.Property(x => x.Id).HasColumnName("id").ValueGeneratedOnAdd();
         builder.Property(x => x.ConvenioFinancieroId).HasColumnName("convenio_financiero_id");
         builder.Property(x => x.ItemPresupuestarioId).HasColumnName("item_presupuestario_id");
+        builder.Property(x => x.SubItemPresupuestarioId).HasColumnName("sub_item_presupuestario_id");
+        builder.Property(x => x.ProveedorFinancieroId).HasColumnName("proveedor_financiero_id");
         builder.Property(x => x.Fecha).HasColumnName("fecha");
         builder.Property(x => x.Descripcion).HasColumnName("descripcion").HasMaxLength(300).IsRequired();
         builder.Property(x => x.Monto).HasColumnName("monto").HasPrecision(18, 2);
@@ -25,5 +27,7 @@ public class MovimientoFinancieroEntityTypeConfiguration : IEntityTypeConfigurat
         builder.HasIndex(x => new { x.ConvenioFinancieroId, x.Fecha });
         builder.HasOne(x => x.ConvenioFinanciero).WithMany(x => x.Movimientos).HasForeignKey(x => x.ConvenioFinancieroId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(x => x.ItemPresupuestario).WithMany(x => x.Movimientos).HasForeignKey(x => x.ItemPresupuestarioId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.SubItemPresupuestario).WithMany(x => x.Movimientos).HasForeignKey(x => x.SubItemPresupuestarioId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.ProveedorFinanciero).WithMany(x => x.Movimientos).HasForeignKey(x => x.ProveedorFinancieroId).OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seguimiento financiero de convenios</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section id="vista-dashboard" class="view">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Gestión interna</p>
+          <h1>Seguimiento financiero</h1>
+          <p class="lead">Control informativo del presupuesto y ejecución de convenios.</p>
+        </div>
+        <div class="header-actions"><button id="ver-dashboard-gastos" class="button">Dashboard de gastos</button><button id="nuevo-convenio" class="button button-primary">+ Nuevo convenio</button></div>
+      </header>
+
+      <form id="filtros" class="filter-bar">
+        <div class="filter-intro"><strong>Convenios</strong><span>Filtra la vista general</span></div>
+        <label>Año<input id="f-anio" name="anio" type="number" min="2000" max="2100"></label>
+        <label>Estado<select id="f-estado" name="estado"><option value="">Todos</option><option>Activo</option><option>Cerrado</option></select></label>
+        <label>Responsable<input id="f-responsable" name="responsable" type="search" placeholder="Nombre"></label>
+        <label class="filter-search">Convenio<input id="f-nombre" name="nombre" type="search" placeholder="Buscar por nombre"></label>
+        <button class="button" type="submit">Aplicar</button>
+      </form>
+
+      <section id="totales" class="kpi-grid" aria-label="Resumen financiero"></section>
+      <section class="surface">
+        <header class="surface-header"><div><h2>Convenios</h2><p id="cantidad-convenios"></p></div></header>
+        <div class="table-wrap"><table class="data-table"><thead><tr><th>Convenio</th><th>Responsable</th><th>Presupuesto</th><th>Ejecutado</th><th>Disponible</th><th>Ejecución</th><th></th></tr></thead><tbody id="lista"></tbody></table></div>
+        <div id="vacio" class="empty-state" hidden><strong>Sin resultados</strong><span>No hay convenios para los filtros seleccionados.</span></div>
+      </section>
+    </section>
+
+    <section id="vista-detalle" class="view" hidden></section>
+    <section id="vista-items" class="view" hidden></section>
+    <section id="vista-gastos" class="view" hidden></section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="modal">
+    <form id="formulario">
+      <header class="modal-header"><div><p class="eyebrow">Seguimiento financiero</p><h2 id="modal-titulo"></h2></div><button id="cerrar-modal" class="icon-button" type="button" aria-label="Cerrar">×</button></header>
+      <div id="campos" class="form-grid"></div>
+      <p id="form-error" class="form-error" role="alert" hidden></p>
+      <footer class="modal-actions"><button id="cancelar-modal" class="button" type="button">Cancelar</button><button id="guardar" class="button button-primary" type="submit">Guardar</button></footer>
+    </form>
+  </dialog>
+
+  <script src="js/config.js"></script><script src="js/api.js"></script><script src="js/convenios.js"></script><script src="js/movimientos.js"></script><script src="js/app.js"></script>
+</body>
+</html>

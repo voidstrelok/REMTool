@@ -9,7 +9,6 @@ public class ConvenioFinanciero
     public string? Descripcion { get; set; }
     public DateOnly FechaInicio { get; set; }
     public DateOnly FechaTermino { get; set; }
-    public decimal PresupuestoTotal { get; set; }
     public string Responsable { get; set; } = string.Empty;
     public string Estado { get; set; } = "Activo";
     public DateTimeOffset FechaCreacion { get; set; }

@@ -23,7 +23,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<RemToolDataContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("PostgreSQL"),
-        npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "REMTool")));
+        npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "REMTool")
+                        .MigrationsAssembly("RemTool")));
 
 builder.Services.AddScoped<DataController>();
 builder.Services.AddScoped<REMController>();
@@ -31,6 +32,7 @@ builder.Services.AddScoped<IIndicadorService, IndicadorService>();
 builder.Services.AddScoped<SeguimientoService>();
 builder.Services.AddScoped<IRemAnalyzer, RemAnalyzerService>();
 builder.Services.AddScoped<ConstruirRemService>();
+builder.Services.AddScoped<ConvenioFinancieroService>();
 
 QuestPDF.Settings.License = LicenseType.Community;
 
@@ -41,10 +43,9 @@ builder.Services.AddCors(options =>
                           .AllowAnyHeader()
                           .AllowAnyMethod());
     options.AddPolicy("CorsPolicy",
-        builder => builder.WithOrigins("https://estadisticas.apsmontepatria.cl/")
+        builder => builder.WithOrigins("https://estadisticas.apsmontepatria.cl/", "null")
                           .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .AllowCredentials());                  
+                          .AllowAnyMethod());
 });
 
 
