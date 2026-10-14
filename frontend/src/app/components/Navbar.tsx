@@ -164,8 +164,8 @@ function NavbarContent() {
         </Sheet>
       </div>
 
-      <div className="border-t px-4 py-1 sm:px-6" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-        <div className="max-w-[1500px] mx-auto"><InfoActualizacion /></div>
+      <div className="border-t py-1" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+        <div className="max-w-[1500px] mx-auto px-4 sm:px-6"><InfoActualizacion /></div>
       </div>
     </header>
   );

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OfficeOpenXml;
@@ -7,6 +8,7 @@ using RemTool;
 using RemTool.Shared;
 using RemTool.Controllers;
 using RemTool.Services;
+using RemTool.Dal;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
@@ -25,6 +27,19 @@ builder.Services.AddDbContext<RemToolDataContext>(options =>
         builder.Configuration.GetConnectionString("PostgreSQL"),
         npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "REMTool")
                         .MigrationsAssembly("RemTool")));
+
+var configuredFinanzasConnectionString = builder.Configuration.GetConnectionString("ConveniosFinancieros")
+    ?? "Data Source=Data/convenios-financieros.db";
+var finanzasConnectionBuilder = new SqliteConnectionStringBuilder(configuredFinanzasConnectionString);
+if (!Path.IsPathRooted(finanzasConnectionBuilder.DataSource))
+    finanzasConnectionBuilder.DataSource = Path.GetFullPath(
+        Path.Combine(builder.Environment.ContentRootPath, finanzasConnectionBuilder.DataSource));
+var finanzasDataDirectory = Path.GetDirectoryName(finanzasConnectionBuilder.DataSource);
+if (!string.IsNullOrWhiteSpace(finanzasDataDirectory)) Directory.CreateDirectory(finanzasDataDirectory);
+var finanzasConnectionString = finanzasConnectionBuilder.ToString();
+builder.Services.AddDbContext<ConveniosFinancierosDbContext>(options =>
+    options.UseSqlite(finanzasConnectionString,
+        sqlite => sqlite.MigrationsAssembly("RemTool")));
 
 builder.Services.AddScoped<DataController>();
 builder.Services.AddScoped<REMController>();
@@ -64,6 +79,28 @@ using (var scope = app.Services.CreateScope())
         await db.Database.MigrateAsync();
         logger.LogInformation("Migraciones aplicadas correctamente.");
     }
+}
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ConveniosFinancierosDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    var pending = await db.Database.GetPendingMigrationsAsync();
+    if (pending.Any())
+    {
+        logger.LogInformation("Aplicando {Count} migración/es de convenios financieros en SQLite: {Migrations}",
+            pending.Count(), string.Join(", ", pending));
+        await db.Database.MigrateAsync();
+        logger.LogInformation("Base SQLite de convenios financieros actualizada correctamente.");
+    }
+
+    await db.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE);");
+    await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=DELETE;");
+
+    await ConveniosFinancierosDataMigrator.ImportarDesdePostgreSqlSiEstaVaciaAsync(
+        db,
+        builder.Configuration.GetConnectionString("PostgreSQL"),
+        logger);
 }
 
 // Configure the HTTP request pipeline.

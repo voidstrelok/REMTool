@@ -1,6 +1,7 @@
 using System.Data;
 using Microsoft.EntityFrameworkCore;
 using RemTool.DTO;
+using RemTool.Dal;
 using RemTool.Shared;
 
 namespace RemTool.Services;
@@ -8,28 +9,28 @@ namespace RemTool.Services;
 public sealed class FinanzasValidacionException(string message) : Exception(message);
 public sealed class FinanzasDependenciaException(string message) : Exception(message);
 
-public sealed class ConvenioFinancieroService(RemToolDataContext db)
+public sealed class ConvenioFinancieroService(ConveniosFinancierosDbContext db)
 {
     public async Task<IReadOnlyList<ConvenioFinancieroResumenDto>> ListarAsync(int? anio, string? estado, string? responsable, string? nombre, CancellationToken ct)
     {
         var query = db.ConvenioFinanciero.AsNoTracking().AsQueryable();
         if (anio.HasValue) query = query.Where(x => x.Anio == anio);
         if (!string.IsNullOrWhiteSpace(estado)) query = query.Where(x => x.Estado == estado);
-        if (!string.IsNullOrWhiteSpace(responsable)) query = query.Where(x => EF.Functions.ILike(x.Responsable, $"%{responsable.Trim()}%"));
-        if (!string.IsNullOrWhiteSpace(nombre)) query = query.Where(x => EF.Functions.ILike(x.Nombre, $"%{nombre.Trim()}%"));
+        if (!string.IsNullOrWhiteSpace(responsable)) query = query.Where(x => EF.Functions.Like(x.Responsable, $"%{responsable.Trim()}%"));
+        if (!string.IsNullOrWhiteSpace(nombre)) query = query.Where(x => EF.Functions.Like(x.Nombre, $"%{nombre.Trim()}%"));
 
         var convenios = await query.OrderByDescending(x => x.Anio).ThenBy(x => x.Nombre).ToListAsync(ct);
         var ids = convenios.Select(x => x.Id).ToArray();
-        var presupuestos = await db.SubItemPresupuestario.AsNoTracking()
+        var presupuestos = (await db.SubItemPresupuestario.AsNoTracking()
             .Where(x => ids.Contains(x.ItemPresupuestario.ConvenioFinancieroId))
-            .GroupBy(x => x.ItemPresupuestario.ConvenioFinancieroId)
-            .Select(x => new { Id = x.Key, Monto = x.Sum(y => y.PresupuestoAsignado) })
-            .ToDictionaryAsync(x => x.Id, x => x.Monto, ct);
-        var ejecutados = await db.MovimientoFinanciero.AsNoTracking()
+            .Select(x => new { Id = x.ItemPresupuestario.ConvenioFinancieroId, Monto = x.PresupuestoAsignado })
+            .ToListAsync(ct))
+            .GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.Sum(y => y.Monto));
+        var ejecutados = (await db.MovimientoFinanciero.AsNoTracking()
             .Where(x => ids.Contains(x.ConvenioFinancieroId))
-            .GroupBy(x => x.ConvenioFinancieroId)
-            .Select(x => new { Id = x.Key, Monto = x.Sum(y => y.Monto) })
-            .ToDictionaryAsync(x => x.Id, x => x.Monto, ct);
+            .Select(x => new { Id = x.ConvenioFinancieroId, x.Monto })
+            .ToListAsync(ct))
+            .GroupBy(x => x.Id).ToDictionary(x => x.Key, x => x.Sum(y => y.Monto));
 
         return convenios.Select(x => Resumen(x, presupuestos.GetValueOrDefault(x.Id), ejecutados.GetValueOrDefault(x.Id))).ToList();
     }
@@ -84,7 +85,7 @@ public sealed class ConvenioFinancieroService(RemToolDataContext db)
         entity.Nombre = request.Nombre.Trim(); entity.Codigo = Limpio(request.Codigo); entity.Anio = request.Anio; entity.Descripcion = Limpio(request.Descripcion); entity.FechaInicio = request.FechaInicio; entity.FechaTermino = request.FechaTermino; entity.Responsable = request.Responsable.Trim(); entity.Estado = request.Estado;
         await db.SaveChangesAsync(ct);
         var presupuesto = await PresupuestoConvenioAsync(id, ct);
-        var ejecutado = await db.MovimientoFinanciero.Where(x => x.ConvenioFinancieroId == id).SumAsync(x => (decimal?)x.Monto, ct) ?? 0m;
+        var ejecutado = (await db.MovimientoFinanciero.Where(x => x.ConvenioFinancieroId == id).Select(x => x.Monto).ToListAsync(ct)).Sum();
         return Resumen(entity, presupuesto, ejecutado);
     }
 
@@ -113,7 +114,7 @@ public sealed class ConvenioFinancieroService(RemToolDataContext db)
         if (item is null) return null;
         var subItem = subItemId.HasValue ? await db.SubItemPresupuestario.SingleOrDefaultAsync(x => x.Id == subItemId && x.ItemPresupuestarioId == itemId, ct) : null;
         if (subItemId.HasValue && subItem is null) return null;
-        var ejecutado = subItem is null ? 0m : await db.MovimientoFinanciero.Where(x => x.SubItemPresupuestarioId == subItem.Id).SumAsync(x => (decimal?)x.Monto, ct) ?? 0m;
+        var ejecutado = subItem is null ? 0m : (await db.MovimientoFinanciero.Where(x => x.SubItemPresupuestarioId == subItem.Id).Select(x => x.Monto).ToListAsync(ct)).Sum();
         if (request.PresupuestoAsignado < ejecutado) throw new FinanzasValidacionException("El presupuesto del subítem no puede ser inferior a lo ya ejecutado.");
         if (subItem is null) { subItem = new SubItemPresupuestario { ItemPresupuestarioId = itemId }; db.SubItemPresupuestario.Add(subItem); }
         subItem.Nombre = request.Nombre.Trim();
@@ -138,13 +139,13 @@ public sealed class ConvenioFinancieroService(RemToolDataContext db)
         if ((!subItem.Activo || !subItem.ItemPresupuestario.Activo) && movimiento?.SubItemPresupuestarioId != subItem.Id) throw new FinanzasValidacionException("No se puede registrar un gasto en un subítem inactivo.");
 
         var sinMovimientoActual = db.MovimientoFinanciero.Where(x => !movimientoId.HasValue || x.Id != movimientoId);
-        var ejecutadoSubItem = await sinMovimientoActual.Where(x => x.SubItemPresupuestarioId == subItem.Id).SumAsync(x => (decimal?)x.Monto, ct) ?? 0m;
+        var ejecutadoSubItem = (await sinMovimientoActual.Where(x => x.SubItemPresupuestarioId == subItem.Id).Select(x => x.Monto).ToListAsync(ct)).Sum();
         if (ejecutadoSubItem + request.Monto > subItem.PresupuestoAsignado) throw new FinanzasValidacionException("El gasto supera el saldo disponible del subítem.");
-        var presupuestoItem = await db.SubItemPresupuestario.Where(x => x.ItemPresupuestarioId == subItem.ItemPresupuestarioId).SumAsync(x => (decimal?)x.PresupuestoAsignado, ct) ?? 0m;
-        var ejecutadoItem = await sinMovimientoActual.Where(x => x.ItemPresupuestarioId == subItem.ItemPresupuestarioId).SumAsync(x => (decimal?)x.Monto, ct) ?? 0m;
+        var presupuestoItem = (await db.SubItemPresupuestario.Where(x => x.ItemPresupuestarioId == subItem.ItemPresupuestarioId).Select(x => x.PresupuestoAsignado).ToListAsync(ct)).Sum();
+        var ejecutadoItem = (await sinMovimientoActual.Where(x => x.ItemPresupuestarioId == subItem.ItemPresupuestarioId).Select(x => x.Monto).ToListAsync(ct)).Sum();
         if (ejecutadoItem + request.Monto > presupuestoItem) throw new FinanzasValidacionException("El gasto supera el saldo disponible del ítem.");
         var presupuestoConvenio = await PresupuestoConvenioAsync(convenioId, ct);
-        var ejecutadoConvenio = await sinMovimientoActual.Where(x => x.ConvenioFinancieroId == convenioId).SumAsync(x => (decimal?)x.Monto, ct) ?? 0m;
+        var ejecutadoConvenio = (await sinMovimientoActual.Where(x => x.ConvenioFinancieroId == convenioId).Select(x => x.Monto).ToListAsync(ct)).Sum();
         if (ejecutadoConvenio + request.Monto > presupuestoConvenio) throw new FinanzasValidacionException("El gasto supera el saldo disponible del convenio.");
 
         var now = DateTimeOffset.UtcNow;
@@ -193,19 +194,21 @@ public sealed class ConvenioFinancieroService(RemToolDataContext db)
     }
 
     public Task<int?> ObtenerMovimientoConvenioAsync(int id, CancellationToken ct) => db.MovimientoFinanciero.AsNoTracking().Where(x => x.Id == id).Select(x => (int?)x.ConvenioFinancieroId).SingleOrDefaultAsync(ct);
-    public Task<List<string>> ListarProveedoresAsync(string? buscar, CancellationToken ct) { var query = db.ProveedorFinanciero.AsNoTracking().AsQueryable(); if (!string.IsNullOrWhiteSpace(buscar)) query = query.Where(x => EF.Functions.ILike(x.Nombre, $"%{buscar.Trim()}%")); return query.OrderBy(x => x.Nombre).Select(x => x.Nombre).ToListAsync(ct); }
+    public Task<List<string>> ListarProveedoresAsync(string? buscar, CancellationToken ct) { var query = db.ProveedorFinanciero.AsNoTracking().AsQueryable(); if (!string.IsNullOrWhiteSpace(buscar)) query = query.Where(x => EF.Functions.Like(x.Nombre, $"%{buscar.Trim()}%")); return query.OrderBy(x => x.Nombre).Select(x => x.Nombre).ToListAsync(ct); }
 
     public async Task<DashboardFinancieroDto> DashboardAsync(int anio, int? mes, int? convenioId, CancellationToken ct)
     {
         var query = db.MovimientoFinanciero.AsNoTracking().Where(x => x.Fecha.Year == anio);
         if (mes.HasValue) query = query.Where(x => x.Fecha.Month == mes);
         if (convenioId.HasValue) query = query.Where(x => x.ConvenioFinancieroId == convenioId);
-        var agrupados = await query.GroupBy(x => new { x.ConvenioFinancieroId, x.ConvenioFinanciero.Nombre }).Select(g => new { g.Key.ConvenioFinancieroId, g.Key.Nombre, Ejecutado = g.Sum(x => x.Monto), CantidadMovimientos = g.Count() }).OrderByDescending(x => x.Ejecutado).ToListAsync(ct);
-        var rows = agrupados.Select(x => new DashboardConvenioDto(x.ConvenioFinancieroId, x.Nombre, x.Ejecutado, x.CantidadMovimientos)).ToList();
+        var movimientos = await query.Select(x => new { x.ConvenioFinancieroId, Nombre = x.ConvenioFinanciero.Nombre, x.Monto }).ToListAsync(ct);
+        var rows = movimientos.GroupBy(x => new { x.ConvenioFinancieroId, x.Nombre })
+            .Select(g => new DashboardConvenioDto(g.Key.ConvenioFinancieroId, g.Key.Nombre, g.Sum(x => x.Monto), g.Count()))
+            .OrderByDescending(x => x.Ejecutado).ToList();
         return new(anio, mes, convenioId, rows.Sum(x => x.Ejecutado), rows.Sum(x => x.CantidadMovimientos), rows);
     }
 
-    private async Task<decimal> PresupuestoConvenioAsync(int convenioId, CancellationToken ct) => await db.SubItemPresupuestario.Where(x => x.ItemPresupuestario.ConvenioFinancieroId == convenioId).SumAsync(x => (decimal?)x.PresupuestoAsignado, ct) ?? 0m;
+    private async Task<decimal> PresupuestoConvenioAsync(int convenioId, CancellationToken ct) => (await db.SubItemPresupuestario.Where(x => x.ItemPresupuestario.ConvenioFinancieroId == convenioId).Select(x => x.PresupuestoAsignado).ToListAsync(ct)).Sum();
     private static void ValidarConvenio(ConvenioFinancieroRequest request) { if (request.FechaTermino < request.FechaInicio) throw new FinanzasValidacionException("La fecha de término no puede ser anterior a la fecha de inicio."); }
     private static string? Limpio(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     private static ConvenioFinancieroResumenDto Resumen(ConvenioFinanciero x, decimal presupuesto, decimal ejecutado) => new(x.Id, x.Nombre, x.Codigo, x.Anio, x.Responsable, x.Estado, presupuesto, ejecutado, presupuesto - ejecutado, presupuesto == 0 ? 0 : Math.Round(ejecutado / presupuesto * 100, 2));

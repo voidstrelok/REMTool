@@ -57,10 +57,22 @@ export function retornoSeguro(value: string | null, fallback: string) {
   try { if (decoded.startsWith("%2F")) decoded = decodeURIComponent(decoded); } catch { return fallback; }
   return /^\/(Indicadores|Convenios)(?:\/|\?|$)/.test(decoded) ? decoded : fallback;
 }
+// Grupos del resumen: el filtro de estado acepta uno o varios estados separados por coma.
+export const estadosAtencion = "Critico,EnRiesgo";
+export const estadosSinEvaluar = "SinDatos,SinDenominador,SinMeta";
+const prioridadEstado: Record<Estado, number> = { Critico: 0, EnRiesgo: 1, SinDatos: 2, SinDenominador: 2, SinMeta: 2, EnCurso: 3, Cumplida: 4 };
 export function seleccionarIndicadores(items: Indicador[], buscar: string, estado: string, orden: string) {
   const normalizar = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es");
-  return items.filter(i => normalizar(i.nombre).includes(normalizar(buscar)) && (!estado || i.evaluacion.estado === estado))
+  const estados = estado ? estado.split(",") : [];
+  return items.filter(i => normalizar(i.nombre).includes(normalizar(buscar)) && (!estados.length || estados.includes(i.evaluacion.estado)))
     .sort((a, b) => {
+      if (orden === "prioridad") {
+        const d = prioridadEstado[a.evaluacion.estado] - prioridadEstado[b.evaluacion.estado];
+        if (d) return d;
+        const av = a.evaluacion.cumplimiento, bv = b.evaluacion.cumplimiento;
+        if (av != null && bv != null && av !== bv) return av - bv;
+        return a.orden - b.orden || a.id - b.id;
+      }
       if (orden === "brecha" || orden === "cumplimiento") {
         // Brechas of different units are not comparable; keep percentages and rates in separate groups.
         if (orden === "brecha" && a.isTasa !== b.isTasa) return Number(a.isTasa) - Number(b.isTasa);

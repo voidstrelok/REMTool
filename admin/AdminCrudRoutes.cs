@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RemTool.Shared;
+using RemTools;
 
 public static class AdminCrudRoutes
 {
@@ -13,8 +14,8 @@ public static class AdminCrudRoutes
             indicators = await db.Indicador.AsNoTracking().OrderByDescending(x => x.Año).ThenBy(x => x.Orden).Select(x => new { x.Id, x.Nombre, x.Año }).ToListAsync(ct)
         }));
         api.MapGet("/rules", async (RemToolDataContext db, CancellationToken ct) => Results.Ok(await db.Regla.AsNoTracking().Include(x => x.TipoRegla).Include(x => x.VersionREM).ThenInclude(x => x.SerieRem).OrderBy(x => x.Id).Select(x => new { x.Id, x.id_version, x.IdTipoRegla, x.Expresion, x.Mensaje, version = x.VersionREM.Nombre, serie = x.VersionREM.SerieRem.Nombre, tipo = x.TipoRegla.Nombre }).ToListAsync(ct)));
-        api.MapPost("/rules", async (RuleCommand command, RemToolDataContext db, CancellationToken ct) => { Validate(command.Expresion, command.Mensaje); var x = new Regla { id_version = command.VersionId, IdTipoRegla = command.RuleTypeId, Expresion = command.Expresion.Trim(), Mensaje = command.Mensaje.Trim() }; db.Add(x); await db.SaveChangesAsync(ct); return Results.Ok(new { x.Id }); });
-        api.MapPut("/rules/{id:int}", async (int id, RuleCommand command, RemToolDataContext db, CancellationToken ct) => { Validate(command.Expresion, command.Mensaje); var x = await db.Regla.FindAsync([id], ct) ?? throw new KeyNotFoundException("Regla no encontrada."); x.id_version = command.VersionId; x.IdTipoRegla = command.RuleTypeId; x.Expresion = command.Expresion.Trim(); x.Mensaje = command.Mensaje.Trim(); await db.SaveChangesAsync(ct); return Results.NoContent(); });
+        api.MapPost("/rules", async (RuleCommand command, RemToolDataContext db, CancellationToken ct) => { ValidateRule(command); var x = new Regla { id_version = command.VersionId, IdTipoRegla = command.RuleTypeId, Expresion = command.Expresion.Trim(), Mensaje = command.Mensaje.Trim() }; db.Add(x); await db.SaveChangesAsync(ct); return Results.Ok(new { x.Id }); });
+        api.MapPut("/rules/{id:int}", async (int id, RuleCommand command, RemToolDataContext db, CancellationToken ct) => { ValidateRule(command); var x = await db.Regla.FindAsync([id], ct) ?? throw new KeyNotFoundException("Regla no encontrada."); x.id_version = command.VersionId; x.IdTipoRegla = command.RuleTypeId; x.Expresion = command.Expresion.Trim(); x.Mensaje = command.Mensaje.Trim(); await db.SaveChangesAsync(ct); return Results.NoContent(); });
         api.MapDelete("/rules/{id:int}", async (int id, RemToolDataContext db, CancellationToken ct) => { var x = await db.Regla.FindAsync([id], ct) ?? throw new KeyNotFoundException("Regla no encontrada."); db.Remove(x); await db.SaveChangesAsync(ct); return Results.NoContent(); });
         api.MapGet("/summary-points", async (RemToolDataContext db, CancellationToken ct) => Results.Ok(await db.PuntoResumen.AsNoTracking().Include(x => x.SerieRem).OrderBy(x => x.Categoria).ThenBy(x => x.Nombre).Select(x => new { x.Id, x.Nombre, x.Categoria, x.Expresion, x.IdSerieRem, serie = x.SerieRem.Nombre }).ToListAsync(ct)));
         api.MapPost("/summary-points", async (SummaryPointCommand command, RemToolDataContext db, CancellationToken ct) => { Validate(command.Nombre, command.Expresion); var x = new PuntoResumen { Nombre = command.Nombre.Trim(), Categoria = command.Categoria.Trim(), Expresion = command.Expresion.Trim(), IdSerieRem = command.SeriesId }; db.Add(x); await db.SaveChangesAsync(ct); return Results.Ok(new { x.Id }); });
@@ -35,6 +36,12 @@ public static class AdminCrudRoutes
         api.MapPost("/indicators", async (IndicatorCommand command, RemToolDataContext db, CancellationToken ct) => Results.Ok(new { id = await SaveIndicator(null, command, db, ct) }));
         api.MapPut("/indicators/{id:int}", async (int id, IndicatorCommand command, RemToolDataContext db, CancellationToken ct) => { await SaveIndicator(id, command, db, ct); return Results.NoContent(); });
         api.MapDelete("/indicators/{id:int}", async (int id, RemToolDataContext db, CancellationToken ct) => { var x = await db.Indicador.FindAsync([id], ct) ?? throw new KeyNotFoundException("Indicador no encontrado."); db.Remove(x); await db.SaveChangesAsync(ct); return Results.NoContent(); });
+    }
+    private static void ValidateRule(RuleCommand command)
+    {
+        Validate(command.Expresion, command.Mensaje);
+        var result = ReglaExpressionService.Validate(command.Expresion);
+        if (!result.IsValid) throw new ArgumentException(result.Message);
     }
     private static void Validate(string first, string second) { if (string.IsNullOrWhiteSpace(first) || string.IsNullOrWhiteSpace(second)) throw new ArgumentException("Los campos obligatorios están vacíos."); }
     private static async Task<int> SaveConvenio(int? id, ConvenioCommand command, RemToolDataContext db, CancellationToken ct) { if (string.IsNullOrWhiteSpace(command.Nombre)) throw new ArgumentException("El nombre es obligatorio."); if (await db.Convenio.AnyAsync(x => x.Id != id && x.Nombre == command.Nombre.Trim(), ct)) throw new ArgumentException("Ya existe un convenio con ese nombre."); var x = id is null ? new Convenio() : await db.Convenio.FindAsync([id.Value], ct) ?? throw new KeyNotFoundException("Convenio no encontrado."); x.Nombre = command.Nombre.Trim(); if (id is null) db.Add(x); await db.SaveChangesAsync(ct); var selected = command.IndicatorIds.Distinct().ToHashSet(); var current = await db.IndicadorConvenio.Where(y => y.id_convenio == x.Id).ToListAsync(ct); db.RemoveRange(current.Where(y => !selected.Contains(y.id_indicador))); foreach (var indicatorId in selected.Except(current.Select(y => y.id_indicador))) db.IndicadorConvenio.Add(new IndicadorConvenio { id_convenio = x.Id, id_indicador = indicatorId }); await db.SaveChangesAsync(ct); return x.Id; }

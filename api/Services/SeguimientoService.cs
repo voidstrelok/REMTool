@@ -92,9 +92,13 @@ public static class EvaluadorSeguimiento
     public static List<IndicadorSeguimiento> Seleccionar(IReadOnlyList<IndicadorSeguimiento> items, string? buscar, string? estado, string? orden)
     {
         var cultura = CultureInfo.GetCultureInfo("es-CL").CompareInfo;
+        // El filtro de estado admite varios estados separados por coma (grupos del resumen).
+        var estados = string.IsNullOrEmpty(estado) ? null : estado.Split(',');
         var query = items.Where(i => (string.IsNullOrEmpty(buscar) || cultura.IndexOf(i.Nombre, buscar, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) >= 0)
-            && (string.IsNullOrEmpty(estado) || i.Evaluacion.Estado == estado));
-        return orden == "brecha" ? query.OrderBy(i => i.IsTasa).ThenBy(i => i.Evaluacion.Brecha == null).ThenBy(i => i.Evaluacion.Brecha).ThenBy(i => i.Orden).ToList()
+            && (estados == null || estados.Contains(i.Evaluacion.Estado)));
+        static int Prioridad(string e) => e switch { "Critico" => 0, "EnRiesgo" => 1, "EnCurso" => 3, "Cumplida" => 4, _ => 2 };
+        return orden == "prioridad" ? query.OrderBy(i => Prioridad(i.Evaluacion.Estado)).ThenBy(i => i.Evaluacion.Cumplimiento == null).ThenBy(i => i.Evaluacion.Cumplimiento).ThenBy(i => i.Orden).ThenBy(i => i.Id).ToList()
+            : orden == "brecha" ? query.OrderBy(i => i.IsTasa).ThenBy(i => i.Evaluacion.Brecha == null).ThenBy(i => i.Evaluacion.Brecha).ThenBy(i => i.Orden).ToList()
             : orden == "cumplimiento" ? query.OrderBy(i => i.Evaluacion.Cumplimiento == null).ThenBy(i => i.Evaluacion.Cumplimiento).ThenBy(i => i.Orden).ToList()
             : query.OrderBy(i => i.Orden).ThenBy(i => i.Id).ToList();
     }

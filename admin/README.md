@@ -13,10 +13,10 @@ Ejecute `dotnet run --project .\admin\RemTool.Admin.csproj`. El host sirve `admi
 Para actualizar la interfaz React:
 
 ```powershell
-cd .\admin-ui
-npm install
-npm run build
-Copy-Item .\out\* ..\admin\wwwroot -Recurse -Force
+    cd .\admin-ui
+    npm install
+    npm run build
+    Copy-Item .\out\* ..\admin\wwwroot -Recurse -Force
 ```
 
 ## Publicacion Windows

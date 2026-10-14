@@ -139,13 +139,6 @@ export const NAVIGATION_SECTIONS: readonly NavigationSection[] = [
         icon: Newspaper,
       },
       {
-        id: "consolidados-excel",
-        label: "Consolidados Excel",
-        href: "/Consolidados",
-        description: "Descargue los consolidados para filtrar por establecimiento, mes y sector en Excel.",
-        icon: FolderOpen,
-      },
-      {
         id: "repositorio-rem",
         label: "Repositorio REM",
         href: "https://drive.google.com/drive/folders/1vlCWcZMrdayOv5n8-ev1PstQCQIoSQCT?usp=sharing",

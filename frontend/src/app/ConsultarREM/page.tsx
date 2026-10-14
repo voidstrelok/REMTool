@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, Database, Loader2, Search } from "lucide-react";
 import "./ConsultarREM.css";
 import Breadcrumbs from "../components/Breadcrumbs";
+import TablaRem from "./TablaRem";
 
 const API = process.env.NEXT_PUBLIC_API ?? "";
 
@@ -603,15 +604,12 @@ export default function ConsultarREMPage() {
                     </div>
                     <span className="consulta-rem-tabla-hint">Valores consolidados</span>
                   </div>
-                  <div
-                    className="consulta-rem-tabla"
-                    dangerouslySetInnerHTML={{
-                      __html: prepararTablaHtml(
-                        tabla.html,
-                        tabla.valores,
-                        resultado.reporteEncontrado,
-                      ),
-                    }}
+                  <TablaRem
+                    html={prepararTablaHtml(
+                      tabla.html,
+                      tabla.valores,
+                      resultado.reporteEncontrado,
+                    )}
                   />
                 </article>
               ))}

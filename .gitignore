@@ -43,3 +43,6 @@ admin/wwwroot
 admin-ui/node_modules/
 admin-ui/.next/
 admin-ui/out/
+api/Data/*.db
+api/Data/*.db-shm
+api/Data/*.db-wal

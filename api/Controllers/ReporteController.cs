@@ -35,7 +35,7 @@ public class ReporteController(RemToolDataContext db, SeguimientoService seguimi
         }
         var contexto = await Contexto(sectorId, establecimientoId);
         if (!string.IsNullOrEmpty(buscar)) contexto += $" · Búsqueda: {buscar}";
-        if (!string.IsNullOrEmpty(estado)) contexto += $" · Estado: {SeguimientoPdf.Estado(estado)}";
+        if (!string.IsNullOrEmpty(estado)) contexto += $" · Estado: {string.Join(", ", estado.Split(',').Select(SeguimientoPdf.Estado))}";
         var pdf = SeguimientoPdf.Generar(titulo, contexto, ano,
             items.FirstOrDefault()?.Evaluacion.MesCorte ?? mesCorte, EvaluadorSeguimiento.Seleccionar(items, buscar, estado, orden), ResumenSeguimiento.Crear(items, tipoIndicador != 1));
         return File(pdf, "application/pdf", $"indicadores-{tipoIndicador}-{ano}.pdf");

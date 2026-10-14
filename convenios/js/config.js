@@ -1,1 +1,1 @@
-window.CONVENIOS_CONFIG = { apiBase: "http://localhost:5198/api" };
+window.CONVENIOS_CONFIG = { apiBase: "https://estadisticas.apsmontepatria.cl/api" };
