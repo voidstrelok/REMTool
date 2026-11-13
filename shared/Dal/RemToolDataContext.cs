@@ -42,6 +42,7 @@ namespace RemTool.Shared
         public virtual DbSet<FiltroEstablecimiento> FiltroEstablecimiento { get; set; }
         public virtual DbSet<PuntoResumen> PuntoResumen { get; set; }
         public virtual DbSet<Informativo> Informativo { get; set; }
+        public virtual DbSet<InformeRem> InformeRem { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -71,6 +72,7 @@ namespace RemTool.Shared
             modelBuilder.ApplyConfiguration(new FiltroEstablecimientoEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new PuntoResumenEntityTypeConfiguration());
             modelBuilder.ApplyConfiguration(new InformativoEntityTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new InformeRemEntityTypeConfiguration());
             base.OnModelCreating(modelBuilder);
         }
     }

@@ -89,12 +89,25 @@ public sealed class ConsultaREMController : ControllerBase
             .OrderByDescending(anio => anio.Anio)
             .ToList();
 
+        var informes = await _db.InformeRem
+            .AsNoTracking()
+            .Where(informe => informe.IdSerieRem == serieId)
+            .OrderBy(informe => informe.Nombre)
+            .Select(informe => new InformeRemOptionDto
+            {
+                Id = informe.Id,
+                Nombre = informe.Nombre,
+                SeccionIds = informe.SeccionIds
+            })
+            .ToListAsync(cancellationToken);
+
         return Ok(new OpcionesConsultaRemDto
         {
             Serie = serie,
             Hojas = hojas,
             Secciones = secciones,
-            Anios = anios
+            Anios = anios,
+            Informes = informes
         });
     }
 
@@ -106,7 +119,7 @@ public sealed class ConsultaREMController : ControllerBase
         [FromQuery] long[] establecimientoIds,
         [FromQuery] long? sectorId,
         [FromQuery] int? hojaId,
-        [FromQuery] long? seccionId,
+        [FromQuery] long[] seccionIds,
         CancellationToken cancellationToken)
     {
         if (serieId <= 0)
@@ -139,8 +152,8 @@ public sealed class ConsultaREMController : ControllerBase
 
         if (hojaId.HasValue)
             seccionesQuery = seccionesQuery.Where(s => s.VersionHoja!.IdHoja == hojaId.Value);
-        if (seccionId.HasValue)
-            seccionesQuery = seccionesQuery.Where(s => s.Id == seccionId.Value);
+        if (seccionIds is { Length: > 0 })
+            seccionesQuery = seccionesQuery.Where(s => seccionIds.Contains(s.Id));
 
         var secciones = await seccionesQuery
             .Include(s => s.VersionHoja!)
@@ -411,6 +424,14 @@ public sealed class ConsultaREMController : ControllerBase
         public List<HojaOptionDto> Hojas { get; init; } = [];
         public List<SeccionOptionDto> Secciones { get; init; } = [];
         public List<AnioConsultaRemDto> Anios { get; init; } = [];
+        public List<InformeRemOptionDto> Informes { get; init; } = [];
+    }
+
+    public sealed class InformeRemOptionDto
+    {
+        public int Id { get; init; }
+        public string Nombre { get; init; } = string.Empty;
+        public List<long> SeccionIds { get; init; } = [];
     }
 
     public sealed class AnioConsultaRemDto

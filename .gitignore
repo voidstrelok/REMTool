@@ -46,3 +46,5 @@ admin-ui/out/
 api/Data/*.db
 api/Data/*.db-shm
 api/Data/*.db-wal
+graphify-out/
+graphify-out/converted/Manual de usuario REMTool_ed243292.md

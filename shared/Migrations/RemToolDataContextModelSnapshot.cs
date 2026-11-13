@@ -519,6 +519,38 @@ namespace RemTool.Shared.Migrations
                     b.ToTable("informativo", "REMTool");
                 });
 
+            modelBuilder.Entity("RemTool.Shared.InformeRem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("IdSerieRem")
+                        .HasColumnType("bigint")
+                        .HasColumnName("id_serie_rem");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(180)
+                        .HasColumnType("character varying(180)")
+                        .HasColumnName("nombre");
+
+                    b.Property<List<long>>("SeccionIds")
+                        .IsRequired()
+                        .HasColumnType("bigint[]")
+                        .HasColumnName("seccion_ids");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdSerieRem", "Nombre")
+                        .IsUnique();
+
+                    b.ToTable("informe_rem", "REMTool");
+                });
+
             modelBuilder.Entity("RemTool.Shared.Parametros", b =>
                 {
                     b.Property<int>("Id")
@@ -1145,6 +1177,17 @@ namespace RemTool.Shared.Migrations
                     b.Navigation("Convenio");
 
                     b.Navigation("Indicador");
+                });
+
+            modelBuilder.Entity("RemTool.Shared.InformeRem", b =>
+                {
+                    b.HasOne("RemTool.Shared.SerieRem", "SerieRem")
+                        .WithMany()
+                        .HasForeignKey("IdSerieRem")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SerieRem");
                 });
 
             modelBuilder.Entity("RemTool.Shared.PercapitaSsc", b =>

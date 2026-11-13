@@ -51,6 +51,12 @@ interface SeccionOption {
   orden: number;
 }
 
+interface InformeOption {
+  id: number;
+  nombre: string;
+  seccionIds: number[];
+}
+
 interface TablaConsulta {
   seccionId: number;
   hojaId: number;
@@ -195,6 +201,67 @@ function MultiSelectField({
   );
 }
 
+function AgregarSeccion({
+  secciones,
+  excluidas,
+  cargando,
+  onAgregar,
+}: {
+  secciones: SeccionOption[];
+  excluidas: Set<number>;
+  cargando: boolean;
+  onAgregar: (id: number) => void;
+}) {
+  const [busqueda, setBusqueda] = useState("");
+  const texto = busqueda.trim().toLocaleLowerCase();
+  const coincidencias = texto
+    ? secciones
+      .filter((seccion) => !excluidas.has(seccion.id)
+        && `${seccion.hojaCodigo} ${seccion.hoja} ${seccion.nombre} ${seccion.codigo}`
+          .toLocaleLowerCase().includes(texto))
+      .slice(0, 30)
+    : [];
+
+  return (
+    <div className="consulta-rem-filtro mt-4">
+      <span className="consulta-rem-filtro-label">Agregar sección</span>
+      <div className="consulta-rem-multiselect-tools" style={{ padding: 0, border: "none" }}>
+        <input
+          type="search"
+          value={busqueda}
+          onChange={(event) => setBusqueda(event.target.value)}
+          onKeyDown={(event) => { if (event.key === "Escape") setBusqueda(""); }}
+          placeholder="Buscar sección por hoja, nombre o código..."
+          aria-label="Buscar sección para agregar"
+          disabled={cargando}
+        />
+        {cargando && <Loader2 size={15} className="animate-spin" />}
+      </div>
+      {texto && (
+        <div className="consulta-rem-multiselect-menu">
+          <div className="consulta-rem-multiselect-options">
+            {coincidencias.length === 0 ? (
+              <span className="consulta-rem-multiselect-empty">Sin coincidencias</span>
+            ) : coincidencias.map((seccion) => (
+              <button
+                type="button"
+                key={seccion.id}
+                className="consulta-rem-multiselect-option w-full text-left"
+                onClick={() => {
+                  setBusqueda("");
+                  onAgregar(seccion.id);
+                }}
+              >
+                <span>{`${seccion.hojaCodigo || seccion.hoja} · ${seccion.nombre || seccion.codigo}`}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function prepararTablaHtml(
   html: string,
   valores: Record<string, string>,
@@ -230,6 +297,8 @@ export default function ConsultarREMPage() {
   const [establecimientos, setEstablecimientos] = useState<EstablecimientoOption[]>([]);
   const [hojas, setHojas] = useState<HojaOption[]>([]);
   const [secciones, setSecciones] = useState<SeccionOption[]>([]);
+  const [informes, setInformes] = useState<InformeOption[]>([]);
+  const [informeId, setInformeId] = useState("");
   const [anios, setAnios] = useState<AnioOption[]>([]);
   const [serieId, setSerieId] = useState("");
   const [anio, setAnio] = useState("");
@@ -237,11 +306,14 @@ export default function ConsultarREMPage() {
   const [establecimientoIds, setEstablecimientoIds] = useState<string[]>([]);
   const [meses, setMeses] = useState<string[]>([]);
   const [hojaId, setHojaId] = useState("");
-  const [seccionId, setSeccionId] = useState("");
+  const [seccionIds, setSeccionIds] = useState<string[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [loadingQuery, setLoadingQuery] = useState(false);
   const [error, setError] = useState("");
   const [resultado, setResultado] = useState<ConsultaResponse | null>(null);
+  const [agregando, setAgregando] = useState(false);
+  // Parámetros de la última consulta, para agregar secciones con los mismos filtros.
+  const ultimaConsulta = useRef<URLSearchParams | null>(null);
 
   useEffect(() => {
     let activo = true;
@@ -281,6 +353,8 @@ export default function ConsultarREMPage() {
     if (!serieId) {
       setHojas([]);
       setSecciones([]);
+      setInformes([]);
+      setInformeId("");
       setAnios([]);
       setAnio("");
       setMeses([]);
@@ -310,6 +384,8 @@ export default function ConsultarREMPage() {
             { numeric: true, sensitivity: "base" },
           )));
         setSecciones(Array.isArray(data.secciones) ? data.secciones : []);
+        setInformes(Array.isArray(data.informes) ? data.informes : []);
+        setInformeId("");
         const aniosDisponibles: AnioOption[] = Array.isArray(data.anios)
           ? data.anios
             .map((opcion: { anio?: number; meses?: number[] }) => ({
@@ -324,7 +400,7 @@ export default function ConsultarREMPage() {
         setAnio(aniosDisponibles.length > 0 ? String(aniosDisponibles[0].anio) : "");
         setMeses([]);
         setHojaId("");
-        setSeccionId("");
+        setSeccionIds([]);
       })
       .catch((reason) => {
         if (activo) {
@@ -375,17 +451,47 @@ export default function ConsultarREMPage() {
 
       if (sectorId) params.set("sectorId", sectorId);
       if (hojaId) params.set("hojaId", hojaId);
-      if (seccionId) params.set("seccionId", seccionId);
+      seccionIds.forEach((id) => params.append("seccionIds", id));
 
       const response = await fetch(`${API}consultarREM?${params.toString()}`);
       if (!response.ok) throw new Error(await response.text());
 
       setResultado(await response.json() as ConsultaResponse);
+      ultimaConsulta.current = params;
     } catch (reason) {
       setResultado(null);
       setError(reason instanceof Error ? reason.message : "No se pudo consultar el REM.");
     } finally {
       setLoadingQuery(false);
+    }
+  };
+
+  const agregarSeccion = async (seccionId: number) => {
+    if (!ultimaConsulta.current) return;
+
+    const params = new URLSearchParams(ultimaConsulta.current);
+    params.delete("hojaId");
+    params.delete("seccionIds");
+    params.append("seccionIds", String(seccionId));
+
+    setAgregando(true);
+    setError("");
+    try {
+      const response = await fetch(`${API}consultarREM?${params.toString()}`);
+      if (!response.ok) throw new Error(await response.text());
+      const data = await response.json() as ConsultaResponse;
+      setResultado((actual) => actual && {
+        ...actual,
+        tablas: [
+          ...actual.tablas,
+          ...data.tablas.filter((tabla) =>
+            !actual.tablas.some((t) => t.seccionId === tabla.seccionId)),
+        ],
+      });
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "No se pudo agregar la sección.");
+    } finally {
+      setAgregando(false);
     }
   };
 
@@ -501,7 +607,8 @@ export default function ConsultarREMPage() {
               value={hojaId}
               onChange={(event) => {
                 setHojaId(event.target.value);
-                setSeccionId("");
+                setSeccionIds([]);
+                setInformeId("");
               }}
               disabled={loadingOptions || hojas.length === 0}
               className="px-3 py-2 rounded-lg text-sm disabled:opacity-60"
@@ -519,22 +626,39 @@ export default function ConsultarREMPage() {
           </label>
 
           <label className="flex flex-col gap-1 text-xs font-medium" style={{ color: "var(--text-light)" }}>
-            Sección
+            Informe predefinido
             <select
-              value={seccionId}
-              onChange={(event) => setSeccionId(event.target.value)}
-              disabled={loadingOptions || seccionesFiltradas.length === 0}
+              value={informeId}
+              onChange={(event) => {
+                const informe = informes.find((item) => String(item.id) === event.target.value);
+                setInformeId(event.target.value);
+                setHojaId("");
+                setSeccionIds(informe ? informe.seccionIds.map(String) : []);
+              }}
+              disabled={loadingOptions || informes.length === 0}
               className="px-3 py-2 rounded-lg text-sm disabled:opacity-60"
               style={selectStyle()}
             >
-              <option value="">Todas las secciones</option>
-              {seccionesFiltradas.map((seccion) => (
-                <option key={seccion.id} value={seccion.id}>
-                  {seccion.nombre || seccion.codigo}
-                </option>
+              <option value="">{informes.length > 0 ? "Ninguno" : "Sin informes para la serie"}</option>
+              {informes.map((informe) => (
+                <option key={informe.id} value={informe.id}>{informe.nombre}</option>
               ))}
             </select>
           </label>
+
+          <MultiSelectField
+            label="Secciones"
+            placeholder="Todas las secciones"
+            values={seccionIds}
+            onChange={(values) => {
+              setSeccionIds(values);
+              setInformeId("");
+            }}
+            options={seccionesFiltradas.map((seccion) => ({
+              value: String(seccion.id),
+              label: `${seccion.hojaCodigo || seccion.hoja} · ${seccion.nombre || seccion.codigo}`,
+            }))}
+          />
         </div>
 
         <div className="flex items-center justify-end gap-3 flex-wrap mt-4">
@@ -585,6 +709,13 @@ export default function ConsultarREMPage() {
               {resultado.reporteEncontrado ? "Datos consolidados" : "Sólo estructura"}
             </span>
           </div>
+
+          <AgregarSeccion
+            secciones={secciones}
+            excluidas={new Set(resultado.tablas.map((tabla) => tabla.seccionId))}
+            cargando={agregando}
+            onAgregar={agregarSeccion}
+          />
 
           {resultado.tablas.length === 0 ? (
             <div className="consulta-rem-vacio">
