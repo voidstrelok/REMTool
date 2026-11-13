@@ -28,7 +28,7 @@ publicaciones/consolidados/*
 !publicaciones/consolidados/.gitkeep
 tests/**/bin/
 tests/**/obj/
-shared/*
+shared/tmp/
 tests/*
 tmp/*
 
