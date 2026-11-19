@@ -34,8 +34,8 @@ namespace RemTools
 
             using (var dialog = new OpenFileDialog
             {
-                Title = "Seleccionar diccionario de códigos para " + versionArchivo,
-                Filter = "REM (*.xlsm)|*.xlsm",
+                Title = "Seleccionar diccionario (códigos o glosa) para " + versionArchivo,
+                Filter = "Diccionario (*.xlsm;*.xlsx;*.xls)|*.xlsm;*.xlsx;*.xls",
                 Multiselect = false
             })
             {
@@ -44,11 +44,28 @@ namespace RemTools
                 dirDiccionario = dialog.FileName;
             }
 
-            using var workbookDiccionario = new ExcelPackage(dirDiccionario);
-            var hojaNombreDiccionario = workbookDiccionario.Workbook.Worksheets["NOMBRE"]
-                ?? throw new InvalidOperationException("El diccionario no contiene la hoja NOMBRE.");
-            var versionArchivoCodigos = hojaNombreDiccionario.Cells["A9"].Value?.ToString() ?? string.Empty;
-            if (!versionArchivoCodigos.Equals(versionArchivo, StringComparison.Ordinal))
+            RemDiccionario diccionarioAbierto;
+            try
+            {
+                diccionarioAbierto = RemDiccionario.Abrir(dirDiccionario);
+            }
+            catch (InvalidOperationException ex)
+            {
+                MessageBox.Show(ex.Message, "Diccionario no válido");
+                return;
+            }
+
+            using var diccionario = diccionarioAbierto;
+            if (diccionario.EsGlosa)
+            {
+                // La glosa no trae hoja NOMBRE: se valida por serie.
+                if (!diccionario.Serie.Equals(serie, StringComparison.OrdinalIgnoreCase))
+                {
+                    MessageBox.Show($"La glosa es de la serie '{diccionario.Serie}' y la plantilla base de la serie '{serie}'.", "Error de series");
+                    return;
+                }
+            }
+            else if (!diccionario.Version.Equals(versionArchivo, StringComparison.Ordinal))
             {
                 MessageBox.Show("La versión del archivo de códigos no coincide con la versión del archivo base.", "Error de versiones");
                 return;
@@ -74,10 +91,29 @@ namespace RemTools
 
                 var estructura = RemStructureImporter.Build(
                     workbookBase,
-                    workbookDiccionario,
+                    diccionario,
                     parametrosJson,
                     versionArchivo,
                     serie);
+
+                if (estructura.Advertencias.Count > 0)
+                {
+                    Console.WriteLine($"[Estructura] {estructura.Advertencias.Count} advertencia(s):");
+                    foreach (var advertencia in estructura.Advertencias)
+                        Console.WriteLine("  - " + advertencia);
+
+                    var continuar = MessageBox.Show(
+                        $"Se encontraron {estructura.Advertencias.Count} advertencia(s) (detalle en consola).\n\n"
+                        + string.Join("\n", estructura.Advertencias.Take(10))
+                        + (estructura.Advertencias.Count > 10 ? "\n..." : string.Empty)
+                        + "\n\n¿Deseas continuar con la carga?",
+                        "Advertencias de estructura",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning,
+                        MessageBoxDefaultButton.Button2);
+                    if (continuar != DialogResult.Yes)
+                        return;
+                }
 
                 ExportarMapaCompatibilidad(estructura);
 
@@ -86,6 +122,15 @@ namespace RemTools
                 var año = int.Parse(Console.ReadLine() ?? throw new InvalidOperationException("Año no informado."));
                 Console.Write("MES: ");
                 var mes = int.Parse(Console.ReadLine() ?? throw new InvalidOperationException("Mes no informado."));
+
+                if (diccionario.EsGlosa && diccionario.Year != año
+                    && MessageBox.Show(
+                        $"La glosa corresponde al año {diccionario.Year} y se ingresó {año}. ¿Continuar?",
+                        "Año distinto",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning,
+                        MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+                    return;
 
                 if (!CargarEstructuraEnBdd(estructura, año, mes))
                     return;

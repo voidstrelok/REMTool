@@ -13,6 +13,196 @@ internal sealed class RemStructureDefinition
     public string Serie { get; init; } = string.Empty;
     public List<RemSectionDefinition> Sections { get; } = new();
     public Dictionary<string, string> TitulosHojas { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public List<string> Advertencias { get; } = new();
+}
+
+internal sealed record GlosaPrestacion(
+    string Codigo,
+    string Nombre,
+    string Hoja,
+    int Linea,
+    int Inicio,
+    int Fin,
+    string Referencia);
+
+/// <summary>
+/// Diccionario de una versión REM en cualquiera de sus dos formatos:
+/// - Matriz (DICCIONARIO CODIGOS ≤2026): copia de la planilla desplazada +1
+///   columna, con el código en A y COLnn en cada celda de datos.
+/// - Glosa (DICCIONARIO GLOSA 2027): una fila por prestación con hoja,
+///   linea (fila base) e inicio/fin (columnas base, índice 0).
+/// </summary>
+internal sealed class RemDiccionario : IDisposable
+{
+    public ExcelPackage? Matriz { get; private init; }
+    public Dictionary<string, GlosaPrestacion>? Glosa { get; private init; }
+    public string Version { get; private init; } = string.Empty;
+    public string Serie { get; private init; } = string.Empty;
+    public int Year { get; private init; }
+    public bool EsGlosa => Glosa is not null;
+
+    public static string Clave(string hoja, int fila) => $"{hoja.Trim().ToUpperInvariant()}|{fila}";
+
+    public static RemDiccionario Abrir(string ruta)
+    {
+        if (ruta.EndsWith(".xls", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException(
+                "El formato .xls no es compatible. Abre el diccionario en Excel y guárdalo como .xlsx.");
+
+        var package = new ExcelPackage(new FileInfo(ruta));
+        var primera = package.Workbook.Worksheets.FirstOrDefault()
+            ?? throw new InvalidOperationException("El diccionario no contiene hojas.");
+
+        var columnas = LeerEncabezados(primera);
+        if (columnas.ContainsKey("linea") && columnas.ContainsKey("inicio") && columnas.ContainsKey("fin"))
+        {
+            try
+            {
+                return LeerGlosa(primera, columnas);
+            }
+            finally
+            {
+                package.Dispose();
+            }
+        }
+
+        var hojaNombre = package.Workbook.Worksheets["NOMBRE"];
+        if (hojaNombre is null)
+        {
+            package.Dispose();
+            throw new InvalidOperationException(
+                "Formato de diccionario no reconocido: no es una glosa (codigo/hoja/linea/inicio/fin) ni contiene la hoja NOMBRE.");
+        }
+
+        return new RemDiccionario
+        {
+            Matriz = package,
+            Version = hojaNombre.Cells["A9"].Value?.ToString() ?? string.Empty
+        };
+    }
+
+    private static RemDiccionario LeerGlosa(ExcelWorksheet hoja, Dictionary<string, int> columnas)
+    {
+        foreach (var requerida in new[] { "codigo", "texto", "serie", "year", "hoja", "linea", "inicio", "fin" })
+            if (!columnas.ContainsKey(requerida))
+                throw new InvalidOperationException($"La glosa no contiene la columna '{requerida}'.");
+
+        var glosa = new Dictionary<string, GlosaPrestacion>(StringComparer.OrdinalIgnoreCase);
+        var codigos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var series = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var years = new HashSet<int>();
+        var ultimaFila = hoja.Dimension?.End.Row ?? 1;
+
+        for (var fila = 2; fila <= ultimaFila; fila++)
+        {
+            var codigo = TextoCodigo(hoja.Cells[fila, columnas["codigo"]].Value);
+            if (string.IsNullOrWhiteSpace(codigo))
+                continue;
+
+            var referencia = $"{hoja.Name}!{fila}";
+            int Entero(string columna) =>
+                TryEntero(hoja.Cells[fila, columnas[columna]].Value, out var valor)
+                    ? valor
+                    : throw new InvalidOperationException($"Glosa {referencia}: '{columna}' no es numérico.");
+
+            var item = new GlosaPrestacion(
+                codigo,
+                Convert.ToString(hoja.Cells[fila, columnas["texto"]].Value, CultureInfo.InvariantCulture)?.Trim() ?? string.Empty,
+                Convert.ToString(hoja.Cells[fila, columnas["hoja"]].Value, CultureInfo.InvariantCulture)?.Trim() ?? string.Empty,
+                Entero("linea"),
+                Entero("inicio"),
+                Entero("fin"),
+                referencia);
+
+            if (item.Fin < item.Inicio || item.Inicio < 0)
+                throw new InvalidOperationException($"Glosa {referencia}: rango de columnas inválido ({item.Inicio}..{item.Fin}).");
+            if (!codigos.Add(codigo))
+                throw new InvalidOperationException($"Glosa {referencia}: código '{codigo}' duplicado.");
+            if (!glosa.TryAdd(Clave(item.Hoja, item.Linea), item))
+                throw new InvalidOperationException($"Glosa {referencia}: la fila {item.Hoja}!{item.Linea} ya tiene otra prestación.");
+
+            series.Add(NormalizarSerie(Convert.ToString(hoja.Cells[fila, columnas["serie"]].Value, CultureInfo.InvariantCulture)));
+            if (TryEntero(hoja.Cells[fila, columnas["year"]].Value, out var year))
+                years.Add(year);
+        }
+
+        if (glosa.Count == 0)
+            throw new InvalidOperationException("La glosa no contiene prestaciones.");
+        if (series.Count != 1 || years.Count != 1)
+            throw new InvalidOperationException(
+                $"La glosa mezcla series ({string.Join(", ", series)}) o años ({string.Join(", ", years)}).");
+
+        return new RemDiccionario { Glosa = glosa, Serie = series.Single(), Year = years.Single() };
+    }
+
+    // Los encabezados varían entre series (CodigoPrestacion/CODIGOS, Year/año,
+    // TextoPrestacion/DESCRIPCION) y SBS trae otro orden: se ubican por nombre.
+    private static Dictionary<string, int> LeerEncabezados(ExcelWorksheet hoja)
+    {
+        var columnas = new Dictionary<string, int>();
+        var ultimaColumna = Math.Min(hoja.Dimension?.End.Column ?? 0, 50);
+        for (var columna = 1; columna <= ultimaColumna; columna++)
+        {
+            var nombre = Normalizar(hoja.Cells[1, columna].Text);
+            var clave = nombre switch
+            {
+                _ when nombre.StartsWith("codigo") => "codigo",
+                "textoprestacion" or "descripcion" or "glosa" => "texto",
+                "year" or "ano" => "year",
+                "serie" or "hoja" or "linea" or "inicio" or "fin" => nombre,
+                _ => null
+            };
+            if (clave is not null)
+                columnas.TryAdd(clave, columna);
+        }
+
+        return columnas;
+    }
+
+    public static string NormalizarSerie(string? valor)
+    {
+        var texto = (valor ?? string.Empty).Trim().ToUpperInvariant();
+        return texto.StartsWith("SERIE ", StringComparison.Ordinal) ? texto[6..].Trim() : texto;
+    }
+
+    private static string Normalizar(string texto)
+    {
+        var builder = new StringBuilder();
+        foreach (var caracter in texto.Normalize(NormalizationForm.FormD))
+            if (char.IsLetterOrDigit(caracter) && CharUnicodeInfo.GetUnicodeCategory(caracter) != UnicodeCategory.NonSpacingMark)
+                builder.Append(char.ToLowerInvariant(caracter));
+        return builder.ToString();
+    }
+
+    // Los códigos llegan como texto, entero o double (18010100.0).
+    private static string TextoCodigo(object? valor) => valor switch
+    {
+        null => string.Empty,
+        double d => ((long)d).ToString(CultureInfo.InvariantCulture),
+        decimal m => ((long)m).ToString(CultureInfo.InvariantCulture),
+        IConvertible c when valor is not string => Convert.ToInt64(c, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture),
+        _ => valor.ToString()!.Trim()
+    };
+
+    private static bool TryEntero(object? valor, out int resultado)
+    {
+        resultado = 0;
+        if (valor is null)
+            return false;
+        if (valor is string s)
+            return int.TryParse(s.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out resultado);
+        try
+        {
+            resultado = Convert.ToInt32(valor, CultureInfo.InvariantCulture);
+            return true;
+        }
+        catch (Exception ex) when (ex is FormatException or InvalidCastException or OverflowException)
+        {
+            return false;
+        }
+    }
+
+    public void Dispose() => Matriz?.Dispose();
 }
 
 internal sealed class RemSectionDefinition
@@ -83,7 +273,7 @@ internal static class RemStructureImporter
 
     public static RemStructureDefinition Build(
         ExcelPackage workbookBase,
-        ExcelPackage workbookDiccionario,
+        RemDiccionario diccionario,
         JsonNode parametrosJson,
         string version,
         string serie)
@@ -96,6 +286,7 @@ internal static class RemStructureImporter
 
         var result = new RemStructureDefinition { Version = version, Serie = serie };
         var orden = 0;
+        var glosaUsada = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var tablaNode in tablas)
         {
@@ -110,13 +301,18 @@ internal static class RemStructureImporter
             if (string.IsNullOrWhiteSpace(hojaNombre) || string.IsNullOrWhiteSpace(rango))
                 throw new InvalidOperationException("Existe una tabla sin hoja o rango en el archivo de parámetros.");
 
-            var hojaDiccionario = workbookDiccionario.Workbook.Worksheets[hojaNombre]
-                ?? throw new InvalidOperationException($"No se encontró la hoja '{hojaNombre}' en el diccionario.");
+            var hojaDiccionario = diccionario.EsGlosa
+                ? null
+                : diccionario.Matriz!.Workbook.Worksheets[hojaNombre]
+                    ?? throw new InvalidOperationException($"No se encontró la hoja '{hojaNombre}' en el diccionario.");
             var hojaBase = workbookBase.Workbook.Worksheets[hojaNombre]
                 ?? throw new InvalidOperationException($"No se encontró la hoja '{hojaNombre}' en la plantilla base.");
 
-            var rangoDiccionario = hojaDiccionario.Cells[rango];
-            var rangoBase = ConstruirRangoBase(hojaBase, rangoDiccionario);
+            // Matriz: el rango del JSON está en coordenadas del diccionario
+            // (planilla base desplazada +1 columna). Glosa: el rango del JSON
+            // está directamente en coordenadas de la planilla base.
+            var rangoDiccionario = (hojaDiccionario ?? hojaBase).Cells[rango];
+            var rangoBase = ConstruirRangoBase(hojaBase, rangoDiccionario, diccionario.EsGlosa ? 0 : 1);
             if (string.IsNullOrWhiteSpace(rangoBase))
                 throw new InvalidOperationException($"No se pudo construir el rango base para la tabla '{hojaNombre}:{rango}'.");
 
@@ -125,7 +321,7 @@ internal static class RemStructureImporter
             var tituloHoja = TextoCelda(hojaBase.Cells[6, 1]);
             if (!string.IsNullOrWhiteSpace(tituloHoja))
                 result.TitulosHojas[hojaNombre] = tituloHoja;
-            var tituloDiccionario = ExtraerTitulo(hojaDiccionario, rangoDiccionario);
+            var tituloDiccionario = hojaDiccionario is null ? string.Empty : ExtraerTitulo(hojaDiccionario, rangoDiccionario);
             var tituloBase = ExtraerTitulo(hojaBase, rangoBaseExcel);
             var titulo = string.IsNullOrWhiteSpace(tituloBase) ? tituloDiccionario : tituloBase;
 
@@ -161,16 +357,64 @@ internal static class RemStructureImporter
                     FilaOrigen = fila
                 };
 
-                var codigo = fila >= primeraFilaPrestacion
-                    ? TextoCelda(hojaDiccionario.Cells[fila, rangoDiccionario.Start.Column])
-                    : string.Empty;
-                var tienePrestacion = EsCodigoPrestacion(codigo);
+                GlosaPrestacion? glosa = null;
+                string codigo;
+                bool tienePrestacion;
+                if (diccionario.EsGlosa)
+                {
+                    var clave = RemDiccionario.Clave(hojaNombre, fila);
+                    if (diccionario.Glosa!.TryGetValue(clave, out glosa) && !glosaUsada.Add(clave))
+                        result.Advertencias.Add($"{glosa.Codigo} ({hojaNombre}!{fila}) está cubierta por más de una sección del JSON.");
+                    codigo = glosa?.Codigo ?? string.Empty;
+                    tienePrestacion = glosa is not null;
+                }
+                else
+                {
+                    codigo = fila >= primeraFilaPrestacion
+                        ? TextoCelda(hojaDiccionario!.Cells[fila, rangoDiccionario.Start.Column])
+                        : string.Empty;
+                    tienePrestacion = EsCodigoPrestacion(codigo);
+                }
+
+                if (glosa is not null
+                    && (glosa.Inicio + 1 < rangoBaseExcel.Start.Column || glosa.Fin + 1 > rangoBaseExcel.End.Column))
+                    result.Advertencias.Add(
+                        $"{glosa.Codigo} ({hojaNombre}!{fila}): columnas {glosa.Inicio + 1}..{glosa.Fin + 1} exceden la sección {rangoBase}.");
 
                 for (var columnaBase = rangoBaseExcel.Start.Column; columnaBase <= rangoBaseExcel.End.Column; columnaBase++)
                 {
                     var columnaDiccionario = columnaBase + 1;
-                    var tieneCorrespondenciaDiccionario = columnaDiccionario >= rangoDiccionario.Start.Column
-                        && columnaDiccionario <= rangoDiccionario.End.Column;
+                    bool tieneCorrespondenciaDiccionario;
+                    string textoDiccionario;
+                    string celdaDiccionario;
+                    bool esColumnaPosteriorAlOffset;
+                    if (diccionario.EsGlosa)
+                    {
+                        // La glosa sólo da la ventana inicio..fin (índice 0). El
+                        // COLnn se numera por posición dentro de la ventana,
+                        // incluyendo columnas bloqueadas, igual que el diccionario
+                        // matriz: las fórmulas de indicadores dependen de ello.
+                        var indice = columnaBase - 1;
+                        tieneCorrespondenciaDiccionario = glosa is not null && indice >= glosa.Inicio && indice <= glosa.Fin;
+                        textoDiccionario = tieneCorrespondenciaDiccionario
+                            ? $"COL{(indice - glosa!.Inicio + 1).ToString("D2", CultureInfo.InvariantCulture)}"
+                            : string.Empty;
+                        celdaDiccionario = tieneCorrespondenciaDiccionario ? glosa!.Referencia : string.Empty;
+                        esColumnaPosteriorAlOffset = true;
+                    }
+                    else
+                    {
+                        tieneCorrespondenciaDiccionario = columnaDiccionario >= rangoDiccionario.Start.Column
+                            && columnaDiccionario <= rangoDiccionario.End.Column;
+                        textoDiccionario = tieneCorrespondenciaDiccionario
+                            ? TextoCelda(hojaDiccionario!.Cells[fila, columnaDiccionario])
+                            : string.Empty;
+                        celdaDiccionario = tieneCorrespondenciaDiccionario
+                            ? hojaDiccionario!.Cells[fila, columnaDiccionario].Address
+                            : string.Empty;
+                        esColumnaPosteriorAlOffset = columnaDiccionario >= primeraColumnaPrestacion;
+                    }
+
                     var merge = merges.TryGetValue((fila, columnaBase), out var mergeInfo)
                         ? mergeInfo
                         : null;
@@ -180,11 +424,7 @@ internal static class RemStructureImporter
                     var cellBase = hojaBase.Cells[fila, columnaBase];
                     var textoBase = TextoCelda(cellBase);
                     var formula = cellBase.Formula?.Trim() ?? string.Empty;
-                    var textoDiccionario = tieneCorrespondenciaDiccionario
-                        ? TextoCelda(hojaDiccionario.Cells[fila, columnaDiccionario])
-                        : string.Empty;
                     var editable = EsEditable(cellBase, textoBase);
-                    var esColumnaPosteriorAlOffset = columnaDiccionario >= primeraColumnaPrestacion;
                     var esColumnaDeDatos = string.IsNullOrWhiteSpace(textoDiccionario)
                         || CodigoColumnaRegex.IsMatch(textoDiccionario.Trim());
                     var dependenciasTotal = ExtraerDependenciasTotal(
@@ -215,9 +455,7 @@ internal static class RemStructureImporter
                         FilaOrigen = fila,
                         ColumnaOrigen = columnaBase,
                         Valor = textoBase,
-                        CeldaDiccionario = tieneCorrespondenciaDiccionario
-                            ? hojaDiccionario.Cells[fila, columnaDiccionario].Address
-                            : string.Empty,
+                        CeldaDiccionario = celdaDiccionario,
                         CeldaBase = cellBase.Address,
                         RowSpan = merge?.RowSpan ?? 1,
                         ColSpan = merge?.ColSpan ?? 1,
@@ -241,7 +479,7 @@ internal static class RemStructureImporter
                         {
                             Orden = row.Coordenadas.Count + 1,
                             CodigoColumna = codigoColumna,
-                            CeldaDiccionario = hojaDiccionario.Cells[fila, columnaDiccionario].Address,
+                            CeldaDiccionario = celdaDiccionario,
                             CeldaBase = cellBase.Address,
                             Celda = cellDefinition
                         });
@@ -251,12 +489,14 @@ internal static class RemStructureImporter
                 if (tienePrestacion)
                 {
                     row.CodigoPrestacion = codigo;
-                    row.NombrePrestacion = ExtraerNombrePrestacion(
-                        hojaDiccionario,
+                    row.NombrePrestacion = glosa?.Nombre ?? ExtraerNombrePrestacion(
+                        hojaDiccionario!,
                         fila,
                         rangoDiccionario.Start.Column,
                         rangoDiccionario.End.Column);
                     row.TipoFila = "Prestacion";
+                    if (row.Coordenadas.Count == 0)
+                        result.Advertencias.Add($"{codigo} ({hojaNombre}!{fila}) no tiene celdas de captura.");
                 }
                 else
                 {
@@ -268,6 +508,10 @@ internal static class RemStructureImporter
 
             result.Sections.Add(section);
         }
+
+        if (diccionario.EsGlosa)
+            foreach (var (_, item) in diccionario.Glosa!.Where(par => !glosaUsada.Contains(par.Key)))
+                result.Advertencias.Add($"{item.Codigo} ({item.Hoja}!{item.Linea}) no queda dentro de ninguna sección del JSON.");
 
         return result;
     }
@@ -400,10 +644,10 @@ internal static class RemStructureImporter
             : (0, 0);
     }
 
-    private static string ConstruirRangoBase(ExcelWorksheet hojaBase, ExcelRangeBase rangoDiccionario)
+    private static string ConstruirRangoBase(ExcelWorksheet hojaBase, ExcelRangeBase rangoDiccionario, int desplazamiento)
     {
-        var startColumn = Math.Max(1, rangoDiccionario.Start.Column - 1);
-        var endColumn = rangoDiccionario.End.Column - 1;
+        var startColumn = Math.Max(1, rangoDiccionario.Start.Column - desplazamiento);
+        var endColumn = rangoDiccionario.End.Column - desplazamiento;
         if (startColumn < 1 || endColumn < 1)
             return string.Empty;
 

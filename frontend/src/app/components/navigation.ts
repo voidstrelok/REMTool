@@ -8,6 +8,7 @@ import {
   FileImage,
   FolderOpen,
   Layers3,
+  Lock,
   Newspaper,
   Search,
   Settings,
@@ -137,6 +138,14 @@ export const NAVIGATION_SECTIONS: readonly NavigationSection[] = [
         href: "/Informativos",
         description: "Noticias, avisos e información de interés.",
         icon: Newspaper,
+      },
+      {
+        id: "panel-interno",
+        label: "Panel interno",
+        href: "/Interno",
+        description: "Herramientas internas del departamento (requiere usuario).",
+        icon: Lock,
+        badge: "Nuevo",
       },
       {
         id: "repositorio-rem",

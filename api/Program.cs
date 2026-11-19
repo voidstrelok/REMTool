@@ -1,3 +1,6 @@
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication.BearerToken;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -48,6 +51,23 @@ builder.Services.AddScoped<SeguimientoService>();
 builder.Services.AddScoped<IRemAnalyzer, RemAnalyzerService>();
 builder.Services.AddScoped<ConstruirRemService>();
 builder.Services.AddScoped<ConvenioFinancieroService>();
+
+// Panel interno (/api/interno): token bearer nativo de .NET 8. [Authorize] exige además que el usuario siga activo.
+// ponytail: claves de Data Protection en el contenedor; un redeploy invalida los tokens (re-login). Persistir claves si molesta.
+builder.Services.AddAuthentication(BearerTokenDefaults.AuthenticationScheme)
+    .AddBearerToken(o => o.BearerTokenExpiration = TimeSpan.FromHours(8));
+builder.Services.AddAuthorization(o => o.DefaultPolicy = new AuthorizationPolicyBuilder(BearerTokenDefaults.AuthenticationScheme)
+    .RequireAuthenticatedUser()
+    .RequireAssertion(async ctx => ctx.Resource is HttpContext http && await http.RequestServices.GetRequiredService<RemToolDataContext>().Database
+        .SqlQuery<int>($"""SELECT 1 AS "Value" FROM "REMTool".usuario_interno WHERE usuario = {ctx.User.Identity!.Name} AND activo""").AnyAsync())
+    .Build());
+// ponytail: partición por IP; detrás de un proxy no confiable puede colapsar a una sola IP (10 intentos/min globales).
+builder.Services.AddRateLimiter(o =>
+{
+    o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    o.AddPolicy("login", ctx => RateLimitPartition.GetFixedWindowLimiter(ctx.Connection.RemoteIpAddress?.ToString() ?? "",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
+});
 
 QuestPDF.Settings.License = LicenseType.Community;
 
@@ -125,6 +145,8 @@ if (app.Environment.IsDevelopment())
 else
     app.UseCors("CorsPolicy");
 
+app.UseRateLimiter();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

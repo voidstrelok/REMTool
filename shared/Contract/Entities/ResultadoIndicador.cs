@@ -23,5 +23,8 @@ namespace RemTool.Shared
         public decimal NumeradorP { get; set; }
 
         public decimal DenominadorP { get; set; }
+
+        /// <summary>Cargado a mano desde el panel admin; el cálculo automático no lo sobrescribe.</summary>
+        public bool EsManual { get; set; }
     }
 }

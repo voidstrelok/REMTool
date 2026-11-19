@@ -15,14 +15,28 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
     <PackageReference Include="EPPlus" Version="8.5.1" />
   </ItemGroup>
-  <Target Name="BuildAdminUi" BeforeTargets="ComputeFilesToPublish">
-    <Exec Command="npm install --ignore-scripts" WorkingDirectory="$(MSBuildProjectDirectory)\..\admin-ui" />
-    <Exec Command="npm run build" WorkingDirectory="$(MSBuildProjectDirectory)\..\admin-ui" />
+  <!-- Compila admin-ui y lo copia a wwwroot en cada build/publish, sólo si cambió algo en admin-ui.
+       Omitir con: dotnet build -p:SkipAdminUi=true -->
+  <PropertyGroup>
+    <AdminUiDir>$(MSBuildProjectDirectory)\..\admin-ui</AdminUiDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <AdminUiSource Include="$(AdminUiDir)\src\**\*;$(AdminUiDir)\package.json;$(AdminUiDir)\package-lock.json;$(AdminUiDir)\next.config.ts;$(AdminUiDir)\tsconfig.json" />
+  </ItemGroup>
+  <Target Name="BuildAdminUi" BeforeTargets="BeforeBuild" Condition="'$(SkipAdminUi)' != 'true'"
+          Inputs="@(AdminUiSource)" Outputs="$(MSBuildProjectDirectory)\wwwroot\index.html">
+    <Exec Command="npm install --ignore-scripts --no-audit --no-fund" WorkingDirectory="$(AdminUiDir)" />
+    <Exec Command="npm run build" WorkingDirectory="$(AdminUiDir)" />
+    <!-- ponytail: no se borran chunks viejos de wwwroot/_next (el SDK ya los listó y fallaría); limpiar a mano si crece. -->
     <ItemGroup>
-      <AdminUiBuildOutput Include="$(MSBuildProjectDirectory)\..\admin-ui\out\**\*" />
+      <AdminUiBuildOutput Include="$(AdminUiDir)\out\**\*" />
     </ItemGroup>
     <Copy SourceFiles="@(AdminUiBuildOutput)"
-          DestinationFiles="@(AdminUiBuildOutput -> '$(MSBuildProjectDirectory)\wwwroot\%(RecursiveDir)%(Filename)%(Extension)')"
-          SkipUnchangedFiles="true" />
+          DestinationFiles="@(AdminUiBuildOutput -> '$(MSBuildProjectDirectory)\wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <!-- wwwroot se evaluó antes de este target: se vuelve a listar para que build/publish vean los archivos nuevos. -->
+    <ItemGroup>
+      <Content Remove="wwwroot\**" />
+      <Content Include="wwwroot\**" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
   </Target>
 </Project>

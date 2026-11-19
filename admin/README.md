@@ -8,16 +8,7 @@ Copie `appsettings.example.json` a `%LOCALAPPDATA%\REMTool\adminsettings.json` y
 
 ## Desarrollo
 
-Ejecute `dotnet run --project .\admin\RemTool.Admin.csproj`. El host sirve `admin/wwwroot`, que se sincroniza con el ultimo export de `admin-ui`.
-
-Para actualizar la interfaz React:
-
-```powershell
-    cd .\admin-ui
-    npm install
-    npm run build
-    Copy-Item .\out\* ..\admin\wwwroot -Recurse -Force
-```
+Ejecute `dotnet run --project .\admin\RemTool.Admin.csproj` (o F5 en Visual Studio). Cada build compila `admin-ui` y lo copia a `admin/wwwroot` automaticamente, solo si cambio algo en `admin-ui`. Requiere Node.js. Para omitirlo: `dotnet build -p:SkipAdminUi=true`.
 
 ## Publicacion Windows
 

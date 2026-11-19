@@ -47,3 +47,41 @@ button:disabled:not(.danger) { cursor: not-allowed; }
 .rlActions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding-top: .3rem; border-top: 1px solid #edf1f6; }
 @media (max-width: 900px) { .rlBody { grid-template-columns: 1fr; } .rlEditor { position: static; } .rlRow { grid-template-columns: 1fr; } .rlList { max-height: 360px; } }
 .listFilters { display: grid; gap: .4rem; margin: .6rem 0; }.listFilters select, .listFilters input { width: 100%; padding: .45rem .55rem; border: 1px solid #cfd8e3; border-radius: 8px; font: inherit; font-size: .85rem; background: #fff; }
+
+/* ---- Indicadores / Convenios ---- */
+.rlEditor { max-height: calc(100vh - 2rem); overflow: auto; }
+.rlEditor small { color: #7b8798; font-weight: 500; }
+.rlRow.three { grid-template-columns: 1.4fr 1.4fr 1fr; }
+.rlItemName { font-weight: 600; line-height: 1.3; }
+.rlFilters.flat { padding: 0; border: 0; }
+fieldset.block { display: grid; gap: .8rem; margin: 0; padding: 1rem; }
+button.sm { padding: .38rem .7rem; font-size: .82rem; }
+button.link { padding: 0; color: #176b87; background: none; box-shadow: none; text-decoration: underline; font-weight: 600; } button.link:hover { background: none; box-shadow: none; transform: none; }
+.hint { margin: 0; color: #7b8798; font-size: .82rem; } .err { color: #b02a3a !important; font-size: .82rem; font-weight: 600; }
+.okText { color: #14663f; } .warnText { color: #9a6200; }
+.withHint { display: flex; align-items: center; gap: .5rem; } .withHint em { min-width: 4.5rem; color: #176b87; font-style: normal; font-weight: 700; }
+.optGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: .5rem; }
+.rlEditor .opt { display: flex; align-items: flex-start; gap: .55rem; padding: .6rem .7rem; border: 1px solid #dfe7ef; border-radius: 10px; font-weight: 500; cursor: pointer; } .opt.on { border-color: #176b87; background: #eef7f9; } .opt input { width: auto; margin-top: .2rem; accent-color: #168795; } .opt span { display: grid; gap: .15rem; } .opt small { font-size: .76rem; line-height: 1.3; }
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+.chip { padding: .35rem .75rem; border: 1px solid #cfdbe6; border-radius: 99px; color: #34506a; background: #fff; box-shadow: none; font-size: .82rem; font-weight: 600; } .chip:hover { color: #145f7d; background: #eef7f9; box-shadow: none; transform: none; } .chip.on { color: #0f4c63; border-color: #176b87; background: #dcf0f4; }
+.rlActions.sticky { position: sticky; bottom: -1.4rem; margin: 0 -1.4rem -1.4rem; padding: .8rem 1.4rem; background: #fff; z-index: 2; }
+.pickBar { display: flex; align-items: center; gap: .5rem; color: #7b8798; font-size: .82rem; } .pickBar span { margin-right: auto; }
+.pickList { display: grid; max-height: 320px; overflow: auto; padding: .3rem .6rem; border: 1px solid #e3eaf1; border-radius: 9px; }
+.pickList .check { align-items: flex-start; font-size: .88rem; } .pickList .check input { margin-top: .25rem; }
+/* Editor de fórmulas */
+.fx { display: grid; gap: .7rem; }
+.fxBar { display: flex; align-items: center; gap: .5rem; }
+.seg { display: inline-flex; padding: 3px; border-radius: 10px; background: #eef3f8; } .seg button { padding: .35rem .85rem; color: #526174; background: transparent; box-shadow: none; font-size: .84rem; } .seg button:hover { background: #e0eef2; box-shadow: none; transform: none; } .seg button.on { color: #fff; background: #176b87; }
+.fxParts { display: grid; gap: .8rem; } .fxParts section { display: grid; gap: .5rem; padding: .8rem; border: 1px solid #e3eaf1; border-radius: 11px; background: #fbfdfe; } .fxParts h4 { margin: 0; color: #1e3b56; font: 600 .95rem "Outfit", sans-serif; }
+.fxRow { display: flex; align-items: center; gap: .45rem; } .fxRow.wrap { flex-wrap: wrap; }
+.fxRow input, .fxRow select { width: auto; padding: .4rem .55rem; font-size: .86rem; } .fxRow .code { width: 9.5rem; } .fxType { width: 9.5rem !important; color: #506178; background: #f4f7fa; }
+.rlEditor label.inline { display: flex; align-items: center; gap: .3rem; min-width: 0; font-size: .8rem; font-weight: 600; } label.inline input { width: 4.6rem; }
+.fxOp { display: grid; gap: .45rem; }
+.fxArgs { display: grid; gap: .3rem; margin: 0; padding: 0 0 0 .9rem; border-left: 2px solid #cfe6ea; list-style: none; } .fxArgs > li { display: flex; align-items: flex-start; gap: .35rem; } .fxArgs > li > :last-child { flex: 1; }
+.sym { width: 1rem; padding-top: .45rem; color: #176b87; text-align: center; font-weight: 700; } .fxArgs > li:first-child { padding-left: 1.35rem; }
+button.x { width: 1.9rem; height: 1.9rem; flex: 0 0 auto; padding: 0; color: #9b2433; background: transparent; box-shadow: none; font-size: 1.1rem; } button.x:hover { background: #fde8eb; box-shadow: none; transform: none; }
+.fxAdd { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; padding-left: .9rem; } .fxAdd input { flex: 1; min-width: 220px; width: auto; padding: .4rem .55rem; font-size: .84rem; }
+.fxPreview { display: grid; gap: .25rem; margin: 0; } .fxPreview span { color: #506178; font-size: .78rem; font-weight: 700; } .fxPreview code { padding: .5rem .7rem; border-radius: 8px; color: #0f3a4f; background: #e4f1f4; font: .82rem "Cascadia Mono", Consolas, monospace; word-break: break-word; }
+.fxIssues { margin: 0; padding: .55rem .8rem .55rem 1.8rem; border-radius: 9px; color: #9b2433; background: #fde8eb; font-size: .84rem; }
+.fxNote { margin: 0; padding: .55rem .8rem; border-radius: 9px; color: #8a5a00; background: #fff1cf; font-size: .86rem; }
+@media (max-width: 900px) { .rlRow.three { grid-template-columns: 1fr; } .rlEditor { max-height: none; } }

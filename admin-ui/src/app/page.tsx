@@ -3,10 +3,14 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { api, Catalog, Rule } from "./lib/api";
 import RulesPanel from "./components/RulesPanel";
+import IndicatorsPanel, { Indicator, Convenio } from "./components/IndicatorsPanel";
+import ConveniosPanel from "./components/ConveniosPanel";
+import ManualResultsPanel from "./components/ManualResultsPanel";
+import PercapitaPanel from "./components/PercapitaPanel";
+import FonasaPanel from "./components/FonasaPanel";
+import UsuariosInternosPanel from "./components/UsuariosInternosPanel";
 
-type Indicator = { id: number; nombre: string; formula: string; meta: number; peso: number; mensual: boolean; orden: number; detalle?: string | null; isDenFijo: boolean; isTasa: boolean; formulaDenFijo?: string | null; tipoindicador?: number | null; esPeriodoOctubreSep: boolean; isColaborativo: boolean; [key: string]: unknown };
 type SummaryPoint = { id: number; nombre: string; categoria: string; expresion: string; idSerieRem: number; serie: string };
-type Convenio = { id: number; nombre: string; indicatorIds: number[] };
 type InformeRem = { id: number; nombre: string; idSerieRem: number; serie: string; seccionIds: number[] };
 type SeccionRem = { id: number; hoja: string; nombre: string; codigo: string; version: string };
 type Filter = { id: number; id_establecimiento: number; id_indicador?: number | null; tipo: number; establishment: string; indicator?: string | null };
@@ -15,8 +19,6 @@ type Informativo = { id: number; tipo: number; titulo: string; contenido: string
 
 const yearKey = "a\u00f1o";
 const nowYear = new Date().getFullYear();
-const emptyIndicator = { nombre: "", formula: "", year: nowYear, meta: 0, peso: 0, mensual: false, orden: 0, detalle: "", isDenFijo: false, isTasa: false, formulaDenFijo: "", tipoIndicador: null as number | null, esPeriodoOctubreSep: false, isColaborativo: false };
-const emptyRule = { versionId: 0, ruleTypeId: 0, expresion: "", mensaje: "" };
 const emptyPoint = { nombre: "", categoria: "", expresion: "", seriesId: 0 };
 const emptyFilter = { establishmentId: 0, indicatorId: null as number | null, tipo: 0 };
 
@@ -51,14 +53,18 @@ export default function Home() {
     catch (error) { setMessage(error instanceof Error ? error.message : "No se pudo completar la operación."); }
     finally { setBusy(false); }
   };
-  const nav = [["operations", "Operaciones"], ["indicators", "Indicadores"], ["rules", "Reglas"], ["points", "Puntos de resumen"], ["convenios", "Convenios"], ["remReports", "Informes REM"], ["filters", "Filtros por establecimiento"], ["information", "Informativos"], ["reports", "Registros"], ["consolidations", "Consolidados"]];
+  const nav = [["operations", "Operaciones"], ["indicators", "Indicadores"], ["manualResults", "Carga manual"], ["percapita", "Per cápita SSC"], ["fonasa", "Inscritos Fonasa"], ["rules", "Reglas"], ["points", "Puntos de resumen"], ["convenios", "Convenios"], ["remReports", "Informes REM"], ["filters", "Filtros por establecimiento"], ["information", "Informativos"], ["reports", "Registros"], ["consolidations", "Consolidados"], ["usuariosInternos", "Usuarios internos"]];
   return <main>
     <header className="appHeader"><div className="brand"><span className="brandMark">R</span><div><p className="eyebrow">ADMINISTRACIÓN LOCAL · 127.0.0.1</p><h1>REM Tool</h1><p>Configuración y operaciones resguardadas en este equipo.</p></div></div><p className="status" aria-live="polite"><span />{message}</p></header>
     <nav aria-label="Áreas de administración">{nav.map(([key, label]) => <Button key={key} className={area === key ? "active" : ""} onClick={() => setArea(key)}>{label}</Button>)}</nav>
-    {area === "indicators" && <IndicatorPanel items={indicators} busy={busy} run={run} />}
+    {area === "indicators" && <IndicatorsPanel items={indicators} convenios={convenios} catalog={catalog} busy={busy} run={run} />}
+    {area === "manualResults" && <ManualResultsPanel catalog={catalog} busy={busy} run={run} />}
+    {area === "fonasa" && <FonasaPanel busy={busy} run={run} />}
+    {area === "usuariosInternos" && <UsuariosInternosPanel busy={busy} run={run} />}
+    {area === "percapita" && <PercapitaPanel busy={busy} run={run} />}
     {area === "rules" && <RulesPanel items={rules} catalog={catalog} busy={busy} run={run} />}
     {area === "points" && <PointsPanel items={points} catalog={catalog} busy={busy} run={run} />}
-    {area === "convenios" && <ConveniosPanel items={convenios} catalog={catalog} busy={busy} run={run} />}
+    {area === "convenios" && <ConveniosPanel items={convenios} indicators={indicators} catalog={catalog} busy={busy} run={run} />}
     {area === "remReports" && <InformesRemPanel catalog={catalog} busy={busy} run={run} />}
     {area === "filters" && <FiltersPanel items={filters} catalog={catalog} busy={busy} run={run} />}
     {area === "information" && <InformationPanel items={informativos} busy={busy} run={run} />}
@@ -68,26 +74,11 @@ export default function Home() {
   </main>;
 }
 
-function IndicatorPanel({ items, busy, run }: { items: Indicator[]; busy: boolean; run: (a: () => Promise<void>, s: string) => Promise<void> }) {
-  const [selected, setSelected] = useState<Indicator | null>(null); const [draft, setDraft] = useState(emptyIndicator);
-  const choose = (item: Indicator) => { setSelected(item); setDraft({ nombre: item.nombre, formula: item.formula, year: Number(item[yearKey]), meta: item.meta, peso: item.peso, mensual: item.mensual, orden: item.orden, detalle: item.detalle ?? "", isDenFijo: item.isDenFijo, isTasa: item.isTasa, formulaDenFijo: item.formulaDenFijo ?? "", tipoIndicador: item.tipoindicador ?? null, esPeriodoOctubreSep: item.esPeriodoOctubreSep, isColaborativo: item.isColaborativo }); };
-  const submit = (event: FormEvent) => { event.preventDefault(); void run(async () => { JSON.parse(draft.formula); await api(selected ? `/indicators/${selected.id}` : "/indicators", { method: selected ? "PUT" : "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(draft) }); setSelected(null); setDraft(emptyIndicator); }, "Indicador guardado."); };
-  return <section className="workspace"><List title="Indicadores" items={items} selected={selected?.id} label={x => <>{x.nombre}<small><Year item={x} /> / #{x.id}</small></>} onNew={() => { setSelected(null); setDraft(emptyIndicator); }} onSelect={choose} />
-    <form onSubmit={submit} className="editor"><h2>{selected ? "Editar indicador" : "Nuevo indicador"}</h2><Fields value={draft} setValue={setDraft} fields={[["nombre", "Nombre"], ["year", "Año", "number"], ["meta", "Meta", "number"], ["peso", "Peso", "number"], ["orden", "Orden", "number"], ["detalle", "Detalle"]]} /><label>Fórmula JSON<textarea value={draft.formula} onChange={e => setDraft({ ...draft, formula: e.target.value })} required /></label><label>Fórmula de denominador fijo<textarea value={draft.formulaDenFijo} onChange={e => setDraft({ ...draft, formulaDenFijo: e.target.value })} /></label><Checks value={draft} setValue={setDraft} keys={[["mensual", "Mensual"], ["isDenFijo", "Denominador fijo"], ["isTasa", "Tasa"], ["esPeriodoOctubreSep", "Período oct. - sep."], ["isColaborativo", "Colaborativo"]]} /><Button disabled={busy}>Guardar indicador</Button>{selected && <Button type="button" className="danger" disabled={busy} onClick={() => { if (confirm(`¿Eliminar ${selected.nombre}?`)) void run(() => api(`/indicators/${selected.id}`, { method: "DELETE" }).then(() => undefined), "Indicador eliminado."); }}>Eliminar</Button>}</form></section>;
-}
-
 function PointsPanel({ items, catalog, busy, run }: { items: SummaryPoint[]; catalog: Catalog | null; busy: boolean; run: (a: () => Promise<void>, s: string) => Promise<void> }) {
   const [selected, setSelected] = useState<SummaryPoint | null>(null); const [draft, setDraft] = useState(emptyPoint);
   const choose = (x: SummaryPoint) => { setSelected(x); setDraft({ nombre: x.nombre, categoria: x.categoria, expresion: x.expresion, seriesId: x.idSerieRem }); };
   const submit = (e: FormEvent) => { e.preventDefault(); void run(async () => { await api(selected ? `/summary-points/${selected.id}` : "/summary-points", { method: selected ? "PUT" : "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(draft) }); setSelected(null); setDraft(emptyPoint); }, "Punto de resumen guardado."); };
   return <section className="workspace"><List title="Puntos de resumen" items={items} selected={selected?.id} label={x => <>{x.nombre}<small>{x.categoria} / {x.serie}</small></>} onNew={() => { setSelected(null); setDraft(emptyPoint); }} onSelect={choose} /><form onSubmit={submit} className="editor"><h2>{selected ? "Editar punto de resumen" : "Nuevo punto de resumen"}</h2><Fields value={draft} setValue={setDraft} fields={[["nombre", "Nombre"], ["categoria", "Categoría"]]} /><Select label="Serie" value={draft.seriesId} onChange={v => setDraft({ ...draft, seriesId: Number(v) })} options={catalog?.series ?? []} /><label>Expresión<textarea required value={draft.expresion} onChange={e => setDraft({ ...draft, expresion: e.target.value })} /></label><Button disabled={busy}>Guardar punto</Button>{selected && <DeleteButton name="el punto de resumen" busy={busy} onDelete={() => run(() => api(`/summary-points/${selected.id}`, { method: "DELETE" }).then(() => undefined), "Punto de resumen eliminado.")} />}</form></section>;
-}
-
-function ConveniosPanel({ items, catalog, busy, run }: { items: Convenio[]; catalog: Catalog | null; busy: boolean; run: (a: () => Promise<void>, s: string) => Promise<void> }) {
-  const [selected, setSelected] = useState<Convenio | null>(null); const [name, setName] = useState(""); const [ids, setIds] = useState<number[]>([]);
-  const choose = (x: Convenio) => { setSelected(x); setName(x.nombre); setIds(x.indicatorIds); };
-  const submit = (e: FormEvent) => { e.preventDefault(); void run(async () => { await api(selected ? `/convenios/${selected.id}` : "/convenios", { method: selected ? "PUT" : "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ nombre: name, indicatorIds: ids }) }); setSelected(null); setName(""); setIds([]); }, "Convenio guardado."); };
-  return <section className="workspace"><List title="Convenios" items={items} selected={selected?.id} label={x => <>{x.nombre}<small>{x.indicatorIds.length} indicadores</small></>} onNew={() => { setSelected(null); setName(""); setIds([]); }} onSelect={choose} /><form onSubmit={submit} className="editor"><h2>{selected ? "Editar convenio" : "Nuevo convenio"}</h2><label>Nombre<input value={name} required onChange={e => setName(e.target.value)} /></label><fieldset><legend>Indicadores</legend>{(catalog?.indicators ?? []).map(x => <label className="check" key={x.id}><input type="checkbox" checked={ids.includes(x.id)} onChange={e => setIds(e.target.checked ? [...ids, x.id] : ids.filter(id => id !== x.id))} />{x.nombre} (<Year item={x} />)</label>)}</fieldset><Button disabled={busy}>Guardar convenio</Button>{selected && <DeleteButton name="el convenio" busy={busy} onDelete={() => run(() => api(`/convenios/${selected.id}`, { method: "DELETE" }).then(() => undefined), "Convenio eliminado.")} />}</form></section>;
 }
 
 function InformesRemPanel({ catalog, busy, run }: { catalog: Catalog | null; busy: boolean; run: (a: () => Promise<void>, s: string) => Promise<void> }) {

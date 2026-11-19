@@ -55,6 +55,11 @@ namespace RemTool.Shared
                 .HasDefaultValue(0m);
 
             builder
+                .Property(x => x.EsManual)
+                .HasColumnName("es_manual")
+                .HasDefaultValue(false);
+
+            builder
                 .ToTable("resultado_indicador", "REMTool");
         }
     }

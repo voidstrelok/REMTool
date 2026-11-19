@@ -43,6 +43,8 @@ app.UseStaticFiles();
 
 var api = app.MapGroup("/admin-api");
 api.MapCrud();
+api.MapFonasa();
+api.MapUsuariosInternos();
 api.MapGet("/status", (LocalPathPolicy paths) => Results.Ok(new { localOnly = true, publicationsDirectory = paths.PublicationsDirectory }));
 
 api.MapPost("/rules/validate", (ExpressionRequest request) => Results.Ok(ReglaExpressionService.Validate(request.Expression ?? string.Empty)));
