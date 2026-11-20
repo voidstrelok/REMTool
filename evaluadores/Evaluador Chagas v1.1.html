@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Evaluador · Programa de Chagas</title>
+<style>
+:root{
+  --bg:#f3f5f8; --card:#fff; --ink:#1b2530; --muted:#5a6a7a; --line:#d3dae2;
+  --brand:#1d4f7c; --brand-soft:#e6eff8;
+  --ok:#17703f; --ok-soft:#e1f3e8; --bad:#b0281f; --bad-soft:#fbe5e2;
+  --neu:#4a5866; --neu-soft:#eceff3; --warn:#7a5200; --warn-soft:#fff2d1;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:70px}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+h2{font-size:1.1rem;margin:0 0 .8rem}
+h3{font-size:.95rem;margin:1.2rem 0 .5rem;color:var(--brand)}
+.muted{color:var(--muted)}
+
+/* ---------- barra superior ---------- */
+/* Escritorio/tablet: la fila 1 (evaluación y exportar) se desplaza; solo pestañas y avance quedan fijas */
+.top{display:contents}
+.row1,.row2{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;padding:10px 18px}
+.row1{background:#fff;border-bottom:1px solid var(--line)}
+.row2{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 1px 4px rgba(0,0,0,.06);padding-top:8px;padding-bottom:0}
+.brand{display:flex;flex-direction:column;line-height:1.2}
+.brand strong{font-size:1.05rem;color:var(--brand)}
+.brand .sub{font-size:.78rem;color:var(--muted)}
+.evsel{display:flex;gap:6px;align-items:center;flex:1 1 320px;min-width:260px}
+.evsel select{flex:1;min-width:0;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.exp{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--brand);background:var(--brand);color:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;white-space:nowrap}
+.btn:hover{filter:brightness(1.1)}
+.btn.ghost{background:#fff;color:var(--brand)}
+.btn.danger{background:#fff;color:var(--bad);border-color:#e4b3ae}
+.btn.sm{padding:5px 10px;font-size:.88rem;margin-top:8px}
+.ico{border:1px solid var(--line);background:#fff;border-radius:8px;width:32px;height:32px;cursor:pointer;color:var(--bad)}
+#tabs{display:flex;gap:4px;flex-wrap:wrap}
+#tabs button{border:1px solid var(--line);background:#fff;border-radius:8px 8px 0 0;padding:7px 12px;cursor:pointer;color:var(--muted)}
+#tabs button.on{background:var(--brand-soft);color:var(--brand);border-color:var(--brand);font-weight:600}
+#chips{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.chip{background:var(--brand-soft);border-radius:999px;padding:3px 11px;font-size:.85rem}
+.chip small{color:var(--muted)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+#saveStatus{font-size:.8rem;color:var(--muted);min-width:130px;text-align:right}
+#saveStatus.err{color:var(--bad);font-weight:600}
+
+/* ---------- contenido ---------- */
+main{max-width:1000px;margin:18px auto 80px;padding:0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px 14px}
+label.f{display:flex;flex-direction:column;gap:3px;font-size:.85rem;color:var(--muted)}
+label.f input,label.f textarea,.obs,.caserow input,.ptable input{
+  border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fff;color:var(--ink);width:100%}
+textarea{resize:vertical;min-height:38px;overflow:hidden}
+input:focus,textarea:focus,select:focus,button:focus-visible{outline:2px solid #6aa5da;outline-offset:1px}
+.ptable{width:100%;border-collapse:collapse;margin-top:4px}
+.ptable th{text-align:left;font-size:.8rem;color:var(--muted);font-weight:600;padding:4px 6px}
+.ptable td{padding:3px 4px}
+.ptable td:last-child{width:40px}
+
+details.dim{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:14px;overflow:hidden}
+details.dim>summary{cursor:pointer;padding:12px 16px;font-weight:700;background:var(--brand-soft);color:var(--brand);display:flex;gap:10px;align-items:center;list-style:none}
+details.dim>summary::-webkit-details-marker{display:none}
+details.dim>summary::before{content:"▸";transition:transform .15s}
+details.dim[open]>summary::before{transform:rotate(90deg)}
+.dnum{background:var(--brand);color:#fff;border-radius:6px;padding:0 8px;font-size:.85rem}
+.dstat{margin-left:auto;font-weight:500;font-size:.85rem;color:var(--muted)}
+.crit{padding:14px 16px;border-top:1px solid var(--line)}
+.crit-head{display:flex;gap:10px;align-items:flex-start}
+.cn{flex:none;background:var(--neu-soft);border-radius:6px;min-width:28px;text-align:center;font-weight:700;padding:1px 6px}
+.ct{margin:0;font-weight:600}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px 18px;margin:8px 0 10px 38px;font-size:.86rem}
+.meta div{min-width:0}
+.meta dt{font-size:.74rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+.meta dd{margin:0}
+.seg{display:flex;flex-wrap:wrap;gap:6px;margin-left:38px}
+.segb{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 13px;cursor:pointer}
+.segb:hover{background:var(--neu-soft)}
+.segb.on.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.segb.on.bad{background:var(--bad);border-color:var(--bad);color:#fff}
+.segb.on.neu{background:var(--neu);border-color:var(--neu);color:#fff}
+.obs{margin:10px 0 0 38px;width:calc(100% - 38px)}
+.casos{margin:12px 0 0 38px;padding:10px 12px;background:#f7f9fb;border:1px dashed var(--line);border-radius:10px}
+.casos-h{display:flex;justify-content:space-between;gap:10px;font-size:.85rem;font-weight:600;color:var(--brand);margin-bottom:6px}
+.casos-h small{font-weight:400;color:var(--muted)}
+.caso{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:start;margin-bottom:8px}
+.caso textarea{border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fff;width:100%}
+.caso .badge{margin-top:4px}
+.caserow{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.badge{flex:none;background:var(--neu-soft);border-radius:6px;padding:3px 9px;font-size:.85rem;min-width:64px;text-align:center}
+.caseans{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 6px 38px}
+.caseans .seg{margin-left:0}
+.clabel{min-width:110px;font-size:.88rem;font-weight:600}
+
+table.res{width:100%;border-collapse:collapse;margin-bottom:6px}
+table.res th,table.res td{border-bottom:1px solid var(--line);padding:9px 8px;text-align:left}
+table.res th{font-size:.8rem;color:var(--muted)}
+table.res td.n{text-align:center;width:110px}
+table.res td.p{width:240px}
+table.res tr.tot td{font-weight:700;background:var(--neu-soft)}
+.bar{height:9px;background:var(--neu-soft);border-radius:6px;overflow:hidden;display:inline-block;width:130px;vertical-align:middle;margin-right:8px}
+.bar i{display:block;height:100%;background:var(--brand)}
+.warns{margin:0;padding-left:20px}
+.warns li{margin:3px 0}
+.note{background:var(--warn-soft);border-radius:8px;padding:8px 12px;font-size:.86rem;color:var(--warn);margin-top:10px}
+label.f select{border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fff;color:var(--ink);width:100%}
+.menu-btn,.tfull-m,.sub.mob{display:none}
+.tn::after{content:" ·";margin-right:.35em}
+.tshort{display:none}
+.metad>summary{display:none}
+.support{max-width:1000px;margin:0 auto 40px;padding:14px 18px;border-top:1px solid var(--line);color:var(--muted);font-size:.9rem}
+.support h2{font-size:.85rem;text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px;color:var(--brand)}
+.support p{margin:0}
+.support a{color:var(--brand);font-weight:600}
+
+/* ---------- móvil ---------- */
+@media (max-width:700px){
+  html{scroll-padding-top:100px}
+  body{font-size:16px;padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+  input,select,textarea{font-size:16px!important}
+  .top{display:block;position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .row1{padding:8px 12px;gap:6px 10px;flex-wrap:wrap;border-bottom:0}
+  .row2{position:static;box-shadow:none;border-bottom:0;padding:0 12px 8px;gap:4px 8px}
+  .brand{flex:1;min-width:0}
+  .brand strong{font-size:1rem}
+  .brand .sub.desk{display:none}
+  .brand .sub.mob{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .menu-btn{display:inline-block;padding:8px 14px}
+  .evsel,.exp{display:none;flex:1 1 100%;min-width:0}
+  .top.menu-open .evsel{display:flex}
+  .top.menu-open .exp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .top.menu-open .btn{padding:11px 10px}
+  .evsel{flex-wrap:wrap;gap:8px}
+  .evsel select{padding:10px 8px;flex:1 1 100%}
+  .evsel .btn{flex:1}
+  #chips{margin-left:0;gap:6px;flex:1}
+  .chip{font-size:.8rem;padding:2px 9px}
+  #saveStatus{display:none;min-width:0;flex:1 1 100%;text-align:left}
+  .top.menu-open #saveStatus{display:block}
+  /* pestañas abajo */
+  #tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;border-top:1px solid var(--line);
+        display:grid;grid-template-columns:repeat(5,1fr);gap:0;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 8px rgba(0,0,0,.08)}
+  #tabs button{border:0;border-top:3px solid transparent;border-radius:0;background:#fff;padding:7px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.72rem;line-height:1.1;min-height:58px}
+  #tabs button.on{background:#fff;border-top-color:var(--brand);color:var(--brand)}
+  .tn{font-size:1.05rem;font-weight:700}
+  .tn::after{content:""}
+  .tfull{display:none}
+  .tshort{display:inline}
+  main{margin:10px auto 20px;padding:0 10px}
+  .card{padding:14px;border-radius:10px;margin-bottom:12px}
+  h2{font-size:1.02rem}
+  /* personas como tarjetas */
+  .ptable thead{display:none}
+  .ptable tr{display:block;border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:10px;position:relative}
+  .ptable td{display:block;width:auto!important;padding:3px 0}
+  .ptable td::before{content:attr(data-label);display:block;font-size:.75rem;color:var(--muted);margin-bottom:2px}
+  .ptable td:last-child{text-align:right}
+  .ptable td:last-child::before{content:""}
+  .ptable input{padding:10px}
+  .btn.sm{width:100%;margin:6px 0 0!important;padding:11px}
+  /* criterios */
+  details.dim>summary{flex-wrap:wrap;padding:12px}
+  .dstat{flex:1 1 100%;margin-left:0;font-size:.8rem}
+  .crit{padding:12px}
+  .cn{min-width:26px;font-size:.9rem}
+  .meta{display:block;margin:6px 0 10px}
+  .metad{margin:6px 0 10px;border:1px solid var(--line);border-radius:8px;background:#fafbfc}
+  .metad>summary{display:block;cursor:pointer;padding:9px 12px;font-size:.85rem;color:var(--brand);font-weight:600}
+  .metad .meta{margin:0;padding:0 12px 10px}
+  .meta div{margin-bottom:6px}
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-left:0}
+  .seg.n3{grid-template-columns:repeat(3,1fr)}
+  .segb{min-height:46px;border-radius:12px;padding:8px 6px;font-size:.95rem}
+  .obs{margin:10px 0 0;width:100%;padding:10px}
+  .casos{margin:12px 0 0;padding:10px}
+  .casos-h{flex-wrap:wrap}
+  .caso{grid-template-columns:1fr auto}
+  .caso .badge{grid-column:1/-1;justify-self:start;margin-top:0}
+  .caso textarea{padding:10px}
+  .casos .btn.sm{margin-top:2px!important}
+  .caseans{display:block;margin:10px 0 0}
+  .caseans .clabel{display:block;margin-bottom:6px;min-width:0}
+  .caserow input{padding:10px}
+  .ico{width:42px;height:42px}
+  /* resultados */
+  table.res th,table.res td{padding:9px 3px;font-size:.88rem}
+  table.res td.n{width:58px}
+  table.res td.p{width:auto}
+  .bar{display:block;width:100%;margin:0 0 3px}
+}
+@media (min-width:701px){ .metad{margin:0} }
+
+/* ---------- impresión ---------- */
+#printRoot{display:none}
+@page{size:A4;margin:16mm 14mm 18mm;@bottom-center{content:counter(page);font:9pt Arial}}
+@media print{
+  body{background:#fff}
+  #app{display:none!important}
+  #printRoot{display:block}
+}
+.pdoc{font:10pt/1.35 Calibri,Arial,sans-serif;color:#000}
+.pdoc.pagebreak{break-before:page}
+.pdoc .ph{margin-bottom:14px}
+.pdoc h1{font-size:12.5pt;text-align:center;flex:1;margin:0;line-height:1.3}
+.pdoc .psec{background:#e3e6ea;border:1px solid #444;padding:4px 8px;font-weight:700;margin-top:12px;break-after:avoid}
+.pdoc .psub{border:1px solid #444;border-top:0;padding:4px 8px;font-weight:700;break-after:avoid}
+.pdoc table{width:100%;border-collapse:collapse}
+.pdoc th,.pdoc td{border:1px solid #444;padding:3px 6px;vertical-align:top;text-align:left}
+.pdoc table.kv th{width:32%;font-weight:400}
+.pdoc thead th{background:#f1f3f5;text-align:center}
+.pdoc tr{break-inside:avoid}
+.pdoc .dimrow td{background:#e3e6ea;font-weight:700}
+.pdoc .dimrow,.pdoc .dimrow td{break-after:avoid;page-break-after:avoid}
+.pdoc .grp{break-inside:avoid}
+.pdoc .c{text-align:center}
+.pdoc .box{border:1px solid #444;padding:8px;min-height:60px;white-space:normal}
+.pdoc td.sig{height:34px}
+.pdoc small{font-weight:400}
+.pdoc .pcasos{margin-top:4px;padding-top:3px;border-top:1px dotted #777;font-size:9pt}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="row1">
+      <div class="brand"><strong>Evaluador · Programa de Chagas</strong><span class="sub desk">Autoevaluación de cumplimiento normativo (APS sin tratamiento antiparasitario)</span><span class="sub mob" id="curTitle"></span></div>
+      <button class="btn ghost menu-btn" data-act="menu" aria-expanded="false" aria-controls="evSelect">☰ Menú</button>
+      <div class="evsel">
+        <select id="evSelect" aria-label="Evaluación guardada"></select>
+        <button class="btn ghost" data-act="new" title="Crear una evaluación nueva">+ Nueva</button>
+        <button class="btn danger" data-act="del" title="Eliminar la evaluación actual">Eliminar</button>
+      </div>
+      <div class="exp">
+        <button class="btn" data-act="pdf">Exportar PDF</button>
+        <button class="btn" data-act="xlsx">Exportar XLSX</button>
+        <button class="btn ghost" data-act="jsonexp" title="Descargar un respaldo de esta evaluación">Respaldo .json</button>
+        <button class="btn ghost" data-act="jsonimp" title="Cargar un respaldo .json">Importar</button>
+        <input type="file" id="fileImp" accept=".json,application/json" hidden>
+      </div>
+    </div>
+    <div class="row2">
+      <nav id="tabs" role="tablist"></nav>
+      <div id="chips"></div>
+      <div id="saveStatus" role="status" aria-live="polite"></div>
+    </div>
+  </header>
+  <main id="view"></main>
+  <footer class="support" aria-labelledby="supTitle">
+    <h2 id="supTitle">Soporte y contacto</h2>
+    <p>DESAM Monte Patria · <a href="mailto:ricardocontreras@mpatria.cl">ricardocontreras@mpatria.cl</a></p>
+  </footer>
+</div>
+<div id="printRoot"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   DATOS DEL FORMATO (editable): criterios, regulación y verificación
+   ===================================================================== */
+const NG = 'Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas.';
+const DEC = 'Decreto 7/2019 y Ordinario B51/N° 4203';
+const OBJ_A = 'Constatar el cumplimiento de la regulación ministerial relativa a prevención y control de Enfermedad de Chagas en establecimiento de APS de la Región de Coquimbo.';
+const OBJ_B = 'Constatar el cumplimiento de la regulación ministerial en relación a la gestante y proceso diagnóstico del recién nacido, hijo/a de madre con Enfermedad de Chagas, en el establecimiento de salud, en relación a caso de gestante específica confirmada.';
+const TITLE_A = 'FISCALIZACIÓN<br>CUMPLIMIENTO DE REGULACIÓN MINISTERIAL RELATIVA A LA PREVENCIÓN Y CONTROL DE ENFERMEDAD DE CHAGAS EN ESTABLECIMIENTOS DE ATENCIÓN PRIMARIA SIN PRESTACIÓN DE TRATAMIENTO ANTIPARASITARIO';
+const TITLE_B = 'ACTA DE VISITA<br>FISCALIZACIÓN Y AUDITORÍA<br>GESTANTE Y PROCESO DIAGNÓSTICO DE RN/LACTANTES HIJOS/AS DE MADRES CON ENFERMEDAD DE CHAGAS, EN CONTEXTO DE CUMPLIMIENTO DE NORMATIVA.';
+
+const DIMS = [
+  {id:'I', name:'Pesquisa', short:'Pesquisa', items:[
+    {n:1, t:'Se realiza tamizaje para detección de T. cruzi a toda gestante.', reg:NG+' Pág. 33.', proc:'Revisar base de datos de gestantes y ficha clínica.'},
+    {n:2, t:'Se realiza búsqueda activa de casos en mujeres en edad fértil (no embarazadas) con factores de riesgo, en periodo preconcepcional y seguimiento en el Programa de la Mujer.', reg:NG+' Pág. 63.', proc:'Revisar base de datos de mujeres en control preconcepcional y ficha clínica.'},
+    {n:3, t:'Se realiza estudio a familiares y personas con nexo epidemiológico de un caso confirmado de Enfermedad de Chagas.', reg:NG+' Pág 31. Manual de Procedimientos para la atención de pacientes con Enfermedad de Chagas 2017. Pág 49.', proc:'Revisar estudio de contacto de 5 casos confirmados con entrega de resultado.'},
+    {n:4, t:'Se realiza búsqueda activa de casos en todo RN/lactante hijo de madre con Enfermedad de Chagas conforme a algoritmo diagnóstico.', reg:NG+' Pág. 31, 34 y 75.', proc:'Aplicación de pauta específica (ver Pauta B).'},
+    {n:5, t:'Si usuario que requiere toma de muestra para examen de Chagas, rechaza la realización de los exámenes respectivos, queda registro en ficha clínica con nombre, RUN y firma del usuario.', reg:NG+' Pág. 41.', proc:'Revisar constancia de nombre, RUN y firma en 3 a 5 casos de usuarios que rechazan examen.'}
+  ]},
+  {id:'II', name:'Diagnóstico de laboratorio', short:'Diagnóstico de laboratorio', items:[
+    {n:6, t:'El diagnóstico de laboratorio de la infección por T. cruzi por medio de pesquisa de anticuerpos solo es informado al paciente después de realizada la confirmación.', reg:NG+' Pág. 37 y 78.', proc:'Verificar en laboratorio procedimiento respecto al resultado de tamizaje reactivo.'}
+  ]},
+  {id:'III', name:'Notificación', short:'Notificación', items:[
+    {n:7, t:'Los casos confirmados de Enfermedad de Chagas en mayores de 2 años, son notificados como Chagas crónico en Sistema de notificación vigente.', reg:DEC, proc:'Revisar base de datos de casos confirmados de Enfermedad de Chagas en el año evaluado, pertenecientes a pacientes de Hospital respectivo y verificar su condición respecto a notificación.'},
+    {n:8, t:'Los recién nacidos hijos de madres con Enfermedad de Chagas son notificados como Enfermedad de Chagas agudo en EPIVIGILA (sospecha o confirmación según corresponda).', reg:DEC, proc:'Revisar base de datos y libro de partos de recién nacidos hijos de madre con Enfermedad de Chagas, nacidos en el año evaluado en Hospital respectivo y verificar su condición respecto a notificación.'},
+    {n:9, t:'Los casos de Enfermedad de Chagas agudo no RN son notificados en sistema EPIVIGILA.', reg:DEC, proc:'Revisar los casos notificados como Chagas agudo no RN en EPIVIGILA y verificar que efectivamente sean casos sospechosos o confirmados de Chagas agudo, además revisar si existen casos confirmados de Chagas agudo no RN.'}
+  ]},
+  {id:'IV', name:'Información', short:'Información', items:[
+    {n:10, t:'Las personas confirmadas para Enfermedad de Chagas son informadas de su condición.', reg:NG+' Pág. 41.', proc:'Revisar base de datos de casos confirmados de Enfermedad de Chagas en el año evaluado, pertenecientes a pacientes de Hospital respectivo, seleccionar 5 casos en forma aleatoria y verificar si fueron informadas de su condición, revisando ficha clínica.'},
+    {n:11, t:'Las personas confirmadas para Enfermedad de Chagas son informadas de su condición realizando educación que incluya aspectos como: sobre las características de la enfermedad, medidas de prevención, objetivo de sus controles y seguimiento futuro, síntomas que debiera conocer, como señales de consulta de urgencias.', reg:NG+' Pág. 41.', proc:'Revisión de ficha clínica de 5 usuarios.'},
+    {n:12, t:'Todo paciente diagnosticado debe ser informado del riesgo que conlleva una eventual inmunodepresión secundaria (cáncer u otras) que puede generar diseminación de la infección, cuadros graves y potencialmente letales.', reg:NG+' Pág. 32.', proc:'Revisión de ficha clínica de 5 usuarios u otra evidencia.'}
+  ]},
+  {id:'V', name:'Derivaciones para tratamiento y seguimiento', short:'Tratamiento', items:[
+    {n:13, t:'Se realiza o refuerza referencia oportuna al tratamiento de casos de puérperas post lactancia.', reg:NG+' Pág. 44, 63.', proc:'Revisar registro de mujeres confirmadas para Enfermedad con parto en los dos años previos al evaluado respecto a tratamiento.'},
+    {n:14, t:'Las personas menores 18 años son derivadas para inicio de tratamiento.', reg:NG+' Pág. 44.', proc:'Revisión de interconsultas en menores de 18 años.'},
+    {n:15, t:'Recién nacidos con Chagas congénito son derivados para inicio tratamiento.', reg:NG+' Pág. 44.', proc:'Revisión de casos de Chagas congénito.'},
+    {n:16, t:'Personas que pertenecen a otros grupos prioritarios o de mayor beneficio del tratamiento son derivadas para tratamiento antiparasitario.', reg:NG, proc:'Revisión de datos de notificados respecto a derivación.'},
+    {n:17, t:'Los usuarios tratados realizan control médico anual durante por lo menos 10 años. Si la persona tiene enfermedades crónicas, el control se incorpora al control habitual dentro del control integral.', reg:NG+' Pág. 50.', proc:'Revisión de base de datos de usuarios tratados.'},
+    {n:18, t:'Todos los usuarios sin tratamiento mantienen controles anuales con el objetivo de pesquisar en forma precoz las manifestaciones de la etapa crónica y sus complicaciones.', reg:NG+' Pág. 51.', proc:'Revisión de base de datos de usuarios no tratados.'}
+  ]},
+  {id:'VI', name:'Roles y organización', short:'Roles y organización', noCasos:true, items:[
+    {n:19, t:'La Dirección del establecimiento ha nombrado un profesional responsable de la coordinación.', reg:NG+' Pág 61.', proc:'Revisar documento de nombramiento.'},
+    {n:20, t:'Existe diagnóstico de situación del establecimiento.', reg:NG+' Pág 61.', proc:'Revisión documental.'},
+    {n:21, t:'Existe un plan de gestión local.', reg:NG+' Pág 61.', proc:'Revisión documental.'},
+    {n:22, t:'Establecimiento realiza envío periódico y oportuno de la información de actividades realizadas a su servicio de salud.', reg:NG+' Pág 61.', proc:'Revisar REM y reporte semestral de indicadores programáticos a Servicio de Salud.'},
+    {n:23, t:'El equipo de trabajo en Enfermedad de Chagas cuenta con capacitación avalada por Servicio de Salud.', reg:NG+' Pág 61.', proc:'Verificar registros de capacitación del médico, enfermera, matrona y TENS del Programa de Chagas.'}
+  ]}
+];
+
+const PB = {
+  gest:[
+    {n:1, id:'G1', t:'Examen de Chagas fue solicitado en primer control de gestación', v:'Ficha clínica'},
+    {n:2, id:'G2', t:'Caso de la gestante/madre está notificado según Decreto 7', v:'Registro EPIVIGILA o registros antiguos de notificaciones en FILEMAKER, ISALUD'},
+    {n:3, id:'G3', t:'Caso gestante fue derivado a poli ARO', v:'Registro en FC e interconsulta'},
+    {n:4, id:'G4', t:'Usuaria fue derivada a tratamiento una vez finalizado periodo de lactancia.', v:'Registro en FC e interconsulta'}
+  ],
+  rn:[
+    {n:1, id:'R1', t:'Se realizó seguimiento al recién nacido hijo de madre con enfermedad de Chagas conforme indica regulación MINSAL', v:'Resultados de exámenes y registros de citaciones en casos de inasistencia'},
+    {n:2, id:'R2', t:'RN lactante fue notificado en EPIVIGILA como Chagas agudo.', v:'Registro EPIVIGILA'},
+    {n:3, id:'R3', t:'Se realizó estudio de contactos a los otros hijos de la gestante', v:'Registros de tarjetón y resultados de laboratorio'},
+    {n:4, id:'R4', t:'Se realizó estudio de contacto a otros familiares consanguíneos línea materna o que comparten nexo epidemiológico.', v:'Registros de tarjetón y resultados de laboratorio'},
+    {n:5, id:'R5', t:'De confirmarse como caso Chagas el lactante, se deriva a tratamiento', v:'Registros de FC e interconsulta'}
+  ]
+};
+
+const OPTS_A = [{v:'1',label:'Cumple · 1',cls:'ok'},{v:'0',label:'No cumple · 0',cls:'bad'},{v:'NA',label:'NA',cls:'neu'},{v:'NE',label:'No evaluado',cls:'neu'}];
+const OPTS_B = [{v:'1',label:'Sí · 1',cls:'ok'},{v:'0',label:'No · 0',cls:'bad'},{v:'NA',label:'NA',cls:'neu'}];
+const VAL_A = {'1':'1','0':'0','NA':'NA','NE':'No evaluado','':''};
+const PCOLS = [['nombre','Nombre'],['cargo','Cargo'],['correo','Correo electrónico'],['fono','Fono contacto']];
+const FCOLS = [['nombre','Nombre'],['cargo','Cargo'],['inst','Institución']];
+const BLANK = {
+  prof:()=>({nombre:'',cargo:'',correo:'',fono:''}),
+  part:()=>({nombre:'',cargo:'',correo:'',fono:''}),
+  firmas:()=>({nombre:'',cargo:'',inst:''})
+};
+const MAX_CASOS = 5; /* detalle de casos por criterio (Pauta A, sin efecto en el puntaje) */
+const LS_KEY = 'chagas_evaluador_v1';
+const LS_LOGO = 'chagas_evaluador_logo_v1'; /* en desuso: solo se borra si quedó guardado */
+const ESTABLECIMIENTOS = [
+  'Centro de Salud Familiar El Palqui',
+  'Posta de Salud Rural Mialqui',
+  'Posta de Salud Rural Chilecito',
+  'Posta de Salud Rural Hacienda Valdivia',
+  'Posta de Salud Rural Rapel',
+  'Centro de Salud Familiar Monte Patria',
+  'SAR Monte Patria',
+  'SUR El Palqui',
+  'Clínica Dental Móvil Monte Patria',
+  'Posta de Salud Rural Ramadas de Tulahuén',
+  'Posta de Salud Rural Tulahuén',
+  'Posta de Salud Rural Pedregal',
+  'Centro de Salud Familiar Carén',
+  'Posta de Salud Rural El Maitén',
+  'Centro de Salud Familiar Chañaral Alto',
+  'Posta de Salud Rural Huatulame'
+];
+
+/* =====================================================================
+   UTILIDADES
+   ===================================================================== */
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nl = s => esc(s).replace(/\n/g,'<br>');
+const uid = () => Math.random().toString(36).slice(2,9);
+const today = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const fmtDate = iso => { const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||''); return m? m[3]+'-'+m[2]+'-'+m[1] : (iso||''); };
+const slug = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+const debounce = (fn,ms) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; };
+const clone = o => JSON.parse(JSON.stringify(o));
+
+/* =====================================================================
+   MODELO Y PUNTAJE
+   ===================================================================== */
+function newEval(){
+  const A = {};
+  DIMS.forEach(d=>d.items.forEach(i=>{ A[i.n]={v:'',obs:'',casos:[]}; }));
+  return {
+    id: uid(), created: Date.now(), updated: Date.now(),
+    gen: {fecha: today(), responsable:'', periodo:'', objA: OBJ_A, objB: OBJ_B},
+    estab: {nombre:''},
+    prof:[BLANK.prof()], part:[BLANK.part()],
+    A: A,
+    B: {gest:[{id:uid(),nombre:''},{id:uid(),nombre:''}], rn:[{id:uid(),nombre:''},{id:uid(),nombre:''}], ans:{}, obs:{}},
+    comA:'', comB:'',
+    firmas:[BLANK.firmas()]
+  };
+}
+function normalize(ev){
+  const d = newEval();
+  ev.id = ev.id || d.id;
+  ev.gen = Object.assign({}, d.gen, ev.gen||{});
+  ev.estab = Object.assign({}, d.estab, ev.estab||{});
+  ['prof','part','firmas'].forEach(k=>{ if(!Array.isArray(ev[k])) ev[k]=d[k]; });
+  ev.A = ev.A || {};
+  Object.keys(d.A).forEach(k=>{
+    if(!ev.A[k]) ev.A[k]={v:'',obs:'',casos:[]};
+    else if(!Array.isArray(ev.A[k].casos)) ev.A[k].casos=[];
+    else ev.A[k].casos=ev.A[k].casos.slice(0,MAX_CASOS);
+  });
+  ev.B = ev.B || {};
+  ['gest','rn'].forEach(k=>{ if(!Array.isArray(ev.B[k])) ev.B[k]=d.B[k]; });
+  ev.B.ans = ev.B.ans || {}; ev.B.obs = ev.B.obs || {};
+  ev.comA = ev.comA||''; ev.comB = ev.comB||'';
+  ev.created = ev.created||Date.now(); ev.updated = ev.updated||Date.now();
+  return ev;
+}
+/* Redondeo estándar a 1 decimal. Devuelve null si no hay puntaje que aplique. */
+function pct(obt, apl){ return apl>0 ? Math.round(obt/apl*1000)/10 : null; }
+function fmtPct(p){ if(p===null||p===undefined) return '—'; return (p%1===0? String(p) : p.toFixed(1).replace('.',','))+'%'; }
+
+/* Pauta A: 1 → aplica y obtiene; 0 → aplica; NA / No evaluado / sin responder → no cuentan. */
+function scoreA(ev){
+  const dims = DIMS.map(d=>{
+    let ap=0, ob=0, resp=0;
+    d.items.forEach(i=>{
+      const v = (ev.A[i.n]||{}).v||'';
+      if(v==='1'){ ap++; ob++; } else if(v==='0'){ ap++; }
+      if(v!=='') resp++;
+    });
+    return {id:d.id, name:d.name, short:d.short, aplica:ap, obtenido:ob, pct:pct(ob,ap), respondidos:resp, total:d.items.length};
+  });
+  const sum = k => dims.reduce((s,d)=>s+d[k],0);
+  const ap=sum('aplica'), ob=sum('obtenido');
+  return {dims, aplica:ap, obtenido:ob, pct:pct(ob,ap), respondidos:sum('respondidos'), total:sum('total')};
+}
+/* Pauta B: misma regla, cada caso × criterio es un punto. */
+function scoreB(ev){
+  const sec = (crits, cases)=>{
+    let ap=0, ob=0, resp=0;
+    crits.forEach(c=>cases.forEach(k=>{
+      const v = ev.B.ans[c.id+'|'+k.id]||'';
+      if(v==='1'){ ap++; ob++; } else if(v==='0'){ ap++; }
+      if(v!=='') resp++;
+    }));
+    return {aplica:ap, obtenido:ob, pct:pct(ob,ap), respondidos:resp, total:crits.length*cases.length};
+  };
+  const g = sec(PB.gest, ev.B.gest), r = sec(PB.rn, ev.B.rn);
+  const ap=g.aplica+r.aplica, ob=g.obtenido+r.obtenido;
+  return {gest:g, rn:r, aplica:ap, obtenido:ob, pct:pct(ob,ap), respondidos:g.respondidos+r.respondidos, total:g.total+r.total};
+}
+function warnings(ev){
+  const w=[], sA=scoreA(ev), sB=scoreB(ev);
+  if(!ev.estab.nombre.trim()) w.push('Falta el nombre del establecimiento.');
+  if(!ev.gen.fecha) w.push('Falta la fecha de fiscalización.');
+  if(sA.total-sA.respondidos>0) w.push('Pauta A: '+(sA.total-sA.respondidos)+' criterio(s) sin responder (no suman al puntaje).');
+  if(sB.total-sB.respondidos>0) w.push('Pauta B: '+(sB.total-sB.respondidos)+' respuesta(s) sin completar (no suman al puntaje).');
+  let noObs=0;
+  DIMS.forEach(d=>d.items.forEach(i=>{ const a=ev.A[i.n]; if(a.v==='0' && !a.obs.trim()) noObs++; }));
+  PB.gest.concat(PB.rn).forEach(c=>{ const hasNo = ev.B.gest.concat(ev.B.rn).some(k=>ev.B.ans[c.id+'|'+k.id]==='0'); if(hasNo && !(ev.B.obs[c.id]||'').trim()) noObs++; });
+  if(noObs>0) w.push(noObs+' criterio(s) marcado(s) como "No" sin observación.');
+  DIMS.forEach(d=>{ const r=sA.dims.find(x=>x.id===d.id); if(r.total>0 && r.respondidos===r.total && r.aplica===0) w.push('Pauta A, '+d.short+': todos los criterios son NA / No evaluado, no hay puntaje que aplique.'); });
+  if(sB.gest.total===0 || sB.rn.total===0) w.push('Pauta B: falta agregar casos de gestante o de RN/lactante.');
+  return w;
+}
+
+/* =====================================================================
+   ALMACENAMIENTO (localStorage)
+   ===================================================================== */
+let store = {cur:null, items:{}};
+let ui = {tab:'antecedentes'};
+let storageOK = true;
+
+function loadStore(){
+  try{
+    const r = localStorage.getItem(LS_KEY);
+    if(r){ const s=JSON.parse(r); if(s && s.items){ Object.keys(s.items).forEach(k=>normalize(s.items[k])); return s; } }
+  }catch(e){ storageOK=false; }
+  return {cur:null, items:{}};
+}
+function persist(){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify(store));
+    setStatus('Guardado ✓ '+new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'}), false);
+  }catch(e){ setStatus('No se pudo guardar en el navegador', true); }
+}
+const persistSoon = debounce(persist, 350);
+function setStatus(t, err){ const el=document.getElementById('saveStatus'); if(el){ el.textContent=t; el.className=err?'err':''; } }
+function cur(){ return store.items[store.cur]; }
+function touch(){ cur().updated=Date.now(); persistSoon(); refreshStats(); }
+function evTitle(ev){ return (ev.estab.nombre.trim()||'Sin establecimiento')+' · '+(fmtDate(ev.gen.fecha)||'sin fecha')+(ev.gen.periodo.trim()?' · '+ev.gen.periodo.trim():''); }
+function setPath(obj, path, val){
+  const ks=path.split('.'); let o=obj;
+  for(let i=0;i<ks.length-1;i++){ if(o[ks[i]]==null) o[ks[i]]={}; o=o[ks[i]]; }
+  o[ks[ks.length-1]]=val;
+}
+
+/* =====================================================================
+   VISTAS
+   ===================================================================== */
+/* [id, nº, nombre completo (escritorio), nombre corto (móvil)] */
+const TABS = [['antecedentes','1','Antecedentes','Antecedentes'],['A','2','Pauta A','Pauta A'],['B','3','Pauta B','Pauta B'],['res','4','Resultados','Resultados'],['cierre','5','Comentarios y firmas','Cierre']];
+const MQ = (typeof window!=='undefined' && window.matchMedia) ? window.matchMedia('(max-width:700px)') : {matches:false};
+function isMobile(){ return !!MQ.matches; }
+
+function field(label, path, value, type, ph){
+  return '<label class="f"><span>'+esc(label)+'</span><input type="'+(type||'text')+'" data-bind="'+path+'" value="'+esc(value)+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+'></label>';
+}
+function area(label, path, value, ph, rows){
+  return '<label class="f"><span>'+esc(label)+'</span><textarea rows="'+(rows||2)+'" data-bind="'+path+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+'>'+esc(value)+'</textarea></label>';
+}
+function peopleTable(list, cols){
+  const ev=cur();
+  const rows = ev[list].map((p,i)=>'<tr>'+cols.map(c=>'<td data-label="'+c[1]+'"><input data-bind="'+list+'.'+i+'.'+c[0]+'" value="'+esc(p[c[0]])+'" aria-label="'+c[1]+'"></td>').join('')+'<td><button class="ico" data-act="delrow" data-list="'+list+'" data-i="'+i+'" title="Quitar fila" aria-label="Quitar fila">✕</button></td></tr>').join('');
+  return '<table class="ptable"><thead><tr>'+cols.map(c=>'<th>'+c[1]+'</th>').join('')+'<th></th></tr></thead><tbody>'+rows+'</tbody></table><button class="btn ghost sm" data-act="addrow" data-list="'+list+'">+ Agregar fila</button>';
+}
+function choiceGroup(kind, key, curVal, opts){
+  return '<div class="seg n'+opts.length+'" role="radiogroup">'+opts.map(o=>'<button type="button" class="segb '+o.cls+(curVal===o.v?' on':'')+'" data-act="set" data-kind="'+kind+'" data-key="'+esc(key)+'" data-val="'+o.v+'" role="radio" aria-checked="'+(curVal===o.v)+'">'+o.label+'</button>').join('')+'</div>';
+}
+
+function selectEstab(value){
+  const opts = ESTABLECIMIENTOS.slice();
+  if(value && opts.indexOf(value)<0) opts.push(value); /* conserva valores de evaluaciones antiguas */
+  return '<label class="f"><span>Establecimiento</span><select data-bind="estab.nombre"><option value=""'+(value?'':' selected')+'>Seleccione un establecimiento…</option>'+
+    opts.map(o=>'<option value="'+esc(o)+'"'+(o===value?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select></label>';
+}
+function viewAnt(){
+  const ev=cur(), g=ev.gen, e=ev.estab;
+  return ''+
+  '<section class="card"><h2>1. Antecedentes de la fiscalización</h2>'+
+    selectEstab(e.nombre)+
+    '<div class="grid2" style="margin-top:10px">'+field('Fecha de fiscalización','gen.fecha',g.fecha,'date')+field('Periodo a evaluar','gen.periodo',g.periodo,'text','Ej.: Año 2023')+'</div>'+
+    '<div style="margin-top:10px">'+area('Responsable de fiscalización','gen.responsable',g.responsable,'Nombre, correo, anexo, fono y cargo',3)+'</div>'+
+  '</section>'+
+  '<section class="card"><h2>2. Profesionales asociados al Programa de Chagas</h2>'+peopleTable('prof',PCOLS)+'</section>'+
+  '<section class="card"><h2>3. Participantes de visita representantes del establecimiento</h2>'+peopleTable('part',PCOLS)+
+    '<button class="btn ghost sm" data-act="copyprof">Copiar desde profesionales del programa</button></section>';
+}
+
+function viewA(){
+  const ev=cur();
+  let h='<section class="card"><h2>Pauta A · '+esc('Cumplimiento de la regulación de Chagas en APS sin tratamiento antiparasitario')+'</h2>'+
+    area('Objetivo general','gen.objA',ev.gen.objA,'',2)+
+    '<p class="muted" style="margin:10px 0 0">Marque cada criterio. <b>Cumple (1)</b> y <b>No cumple (0)</b> entran al puntaje; <b>NA</b> y <b>No evaluado</b> no. Vuelva a pulsar una opción para desmarcarla.</p></section>';
+  DIMS.forEach(d=>{
+    h+='<details class="dim" open><summary><span class="dnum">'+d.id+'</span>'+esc(d.name.toUpperCase())+'<span class="dstat" data-dstat="'+d.id+'"></span></summary>';
+    d.items.forEach(i=>{
+      const a=ev.A[i.n];
+      h+='<div class="crit"><div class="crit-head"><span class="cn">'+i.n+'</span><p class="ct">'+esc(i.t)+'</p></div>'+
+        '<details class="metad"'+(isMobile()?'':' open')+'><summary>Regulación y verificación</summary><dl class="meta"><div><dt>Regulación ministerial que lo indica</dt><dd>'+esc(i.reg)+'</dd></div><div><dt>Procedimiento de verificación</dt><dd>'+esc(i.proc)+'</dd></div></dl></details>'+
+        choiceGroup('A',i.n,a.v,OPTS_A)+
+        '<textarea class="obs" rows="2" placeholder="Observación…" data-bind="A.'+i.n+'.obs">'+esc(a.obs)+'</textarea>'+
+        (d.noCasos?'':'<div class="casos" id="casos-'+i.n+'">'+casosHTML(i.n)+'</div>')+'</div>';
+    });
+    h+='</details>';
+  });
+  return h;
+}
+/* Detalle de casos de un criterio de la Pauta A: solo registro, no entra al puntaje */
+function casosHTML(n){
+  const cs=cur().A[n].casos;
+  return '<div class="casos-h"><span>Detalle de casos <small>(solo registro; no afecta el cumplimiento)</small></span><b>'+cs.length+'/'+MAX_CASOS+'</b></div>'+
+    cs.map((c,i)=>'<div class="caso"><span class="badge">Caso '+(i+1)+'</span><textarea rows="2" placeholder="Comentario del caso '+(i+1)+'…" aria-label="Comentario del caso '+(i+1)+' del criterio '+n+'" data-bind="A.'+n+'.casos.'+i+'.txt">'+esc(c.txt)+'</textarea>'+
+      '<button class="ico" data-act="delcaso" data-n="'+n+'" data-i="'+i+'" title="Quitar caso" aria-label="Quitar caso '+(i+1)+'">✕</button></div>').join('')+
+    (cs.length<MAX_CASOS?'<button class="btn ghost sm" data-act="addcaso" data-n="'+n+'">+ Agregar caso</button>':'');
+}
+function refreshCasos(n){
+  const el=document.getElementById('casos-'+n); if(!el) return;
+  el.innerHTML=casosHTML(n); el.querySelectorAll('textarea').forEach(autosize);
+}
+
+function viewB(){
+  const ev=cur();
+  const cases=(kind,title)=>'<div class="card"><h2>'+title+'</h2>'+
+    (ev.B[kind].map((c,i)=>'<div class="caserow"><span class="badge">Caso '+(i+1)+'</span><input data-bind="B.'+kind+'.'+i+'.nombre" data-casename="'+c.id+'" data-fallback="Caso '+(i+1)+'" value="'+esc(c.nombre)+'" placeholder="Iniciales o código (evite datos sensibles)"><button class="ico" data-act="delcase" data-kind="'+kind+'" data-i="'+i+'" title="Quitar caso" aria-label="Quitar caso">✕</button></div>').join('')||'<p class="muted">Sin casos. Agregue al menos uno.</p>')+
+    '<button class="btn ghost sm" data-act="addcase" data-kind="'+kind+'">+ Agregar caso</button></div>';
+  const sec=(kind,title,crits)=>'<details class="dim" open><summary>'+title+'<span class="dstat" data-bstat="'+kind+'"></span></summary>'+
+    crits.map(c=>'<div class="crit"><div class="crit-head"><span class="cn">'+c.n+'</span><p class="ct">'+esc(c.t)+'</p></div>'+
+      '<details class="metad"'+(isMobile()?'':' open')+'><summary>Verificador</summary><dl class="meta"><div><dt>Verificador</dt><dd>'+esc(c.v)+'</dd></div></dl></details>'+
+      ev.B[kind].map((k,i)=>'<div class="caseans"><span class="clabel" data-caselabel="'+k.id+'">'+esc(k.nombre||('Caso '+(i+1)))+'</span>'+choiceGroup('B',c.id+'|'+k.id,ev.B.ans[c.id+'|'+k.id]||'',OPTS_B)+'</div>').join('')+
+      '<textarea class="obs" rows="2" placeholder="Observación…" data-bind="B.obs.'+c.id+'">'+esc(ev.B.obs[c.id]||'')+'</textarea></div>').join('')+
+    '</details>';
+  return '<section class="card"><h2>Pauta B · Gestante y proceso diagnóstico de RN/lactantes</h2>'+area('Objetivo','gen.objB',ev.gen.objB,'',3)+
+    '<div class="note">Use solo iniciales o un código para identificar los casos; el archivo y el PDF quedan con lo que escriba aquí.</div></section>'+
+    cases('gest','Casos de gestante')+cases('rn','Casos de recién nacido / lactante')+
+    sec('gest','SOBRE GESTANTE',PB.gest)+sec('rn','SOBRE RECIÉN NACIDO / LACTANTE',PB.rn);
+}
+
+function viewRes(){
+  const ev=cur(), a=scoreA(ev), b=scoreB(ev), w=warnings(ev);
+  const row=(label,o,tot)=>'<tr class="'+(tot?'tot':'')+'"><td>'+label+'</td><td class="n">'+o.aplica+'</td><td class="n">'+o.obtenido+'</td><td class="p"><span class="bar"><i style="width:'+(o.pct||0)+'%"></i></span><span>'+fmtPct(o.pct)+'</span></td></tr>';
+  const head='<thead><tr><th>Aspecto evaluado</th><th class="n">Puntaje que aplica</th><th class="n">Puntaje obtenido</th><th>% de cumplimiento</th></tr></thead>';
+  return '<section class="card"><h2>5. Resultados · Pauta A</h2><table class="res">'+head+'<tbody>'+
+      a.dims.map(d=>row(d.id+'. '+esc(d.short),d,false)).join('')+row('Total',a,true)+'</tbody></table>'+
+      '<p class="muted" style="margin:6px 0 0">% = puntaje obtenido ÷ puntaje que aplica, redondeado a un decimal.</p></section>'+
+    '<section class="card"><h2>5. Resultados · Pauta B</h2><table class="res">'+head+'<tbody>'+
+      row('Sobre gestante',b.gest,false)+row('Sobre RN / lactante',b.rn,false)+row('Total',b,true)+'</tbody></table></section>'+
+    '<section class="card"><h2>Revisión antes de exportar</h2>'+(w.length?'<ul class="warns">'+w.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'<p style="margin:0">Sin observaciones: todo está completo.</p>')+'</section>';
+}
+
+function viewCierre(){
+  const ev=cur();
+  return '<section class="card"><h2>6. Comentarios</h2>'+area('Comentarios Pauta A','comA',ev.comA,'',4)+'<div style="margin-top:10px">'+area('Comentarios Pauta B','comB',ev.comB,'',4)+'</div></section>'+
+    '<section class="card"><h2>7. Registro de firmas</h2><p class="muted" style="margin-top:0">Nombre, cargo e institución salen impresos; la columna «Firma» queda en blanco para firmar en el PDF impreso.</p>'+peopleTable('firmas',FCOLS)+'</section>';
+}
+
+const VIEWS = {antecedentes:viewAnt, A:viewA, B:viewB, res:viewRes, cierre:viewCierre};
+
+function render(){
+  const v=document.getElementById('view');
+  v.innerHTML = VIEWS[ui.tab]();
+  document.getElementById('tabs').innerHTML = TABS.map(t=>'<button role="tab" class="'+(ui.tab===t[0]?'on':'')+'" aria-selected="'+(ui.tab===t[0])+'" aria-label="'+t[1]+' · '+t[2]+'" data-act="tab" data-tab="'+t[0]+'"><span class="tn">'+t[1]+'</span><span class="tfull">'+t[2]+'</span><span class="tshort">'+t[3]+'</span></button>').join('');
+  v.querySelectorAll('textarea').forEach(autosize);
+  renderSelect(); refreshStats();
+}
+function renderSelect(){
+  const s=document.getElementById('evSelect');
+  const ids=Object.keys(store.items).sort((a,b)=>store.items[b].updated-store.items[a].updated);
+  s.innerHTML = ids.map(id=>'<option value="'+id+'"'+(id===store.cur?' selected':'')+'>'+esc(evTitle(store.items[id]))+'</option>').join('');
+  const ct=document.getElementById('curTitle'); if(ct) ct.textContent=evTitle(cur());
+}
+function autosize(t){ t.style.height='auto'; t.style.height=(t.scrollHeight+2)+'px'; }
+function refreshStats(){
+  const ev=cur(); if(!ev) return;
+  const a=scoreA(ev), b=scoreB(ev), pend=(a.total-a.respondidos)+(b.total-b.respondidos);
+  document.getElementById('chips').innerHTML =
+    '<span class="chip">Pauta A <b>'+fmtPct(a.pct)+'</b> <small>'+a.obtenido+'/'+a.aplica+'</small></span>'+
+    '<span class="chip">Pauta B <b>'+fmtPct(b.pct)+'</b> <small>'+b.obtenido+'/'+b.aplica+'</small></span>'+
+    (pend?'<span class="chip warn">'+pend+' sin responder</span>':'');
+  a.dims.forEach(d=>{ const el=document.querySelector('[data-dstat="'+d.id+'"]'); if(el) el.textContent=d.respondidos+'/'+d.total+' respondidos · '+fmtPct(d.pct); });
+  ['gest','rn'].forEach(k=>{ const el=document.querySelector('[data-bstat="'+k+'"]'); if(el) el.textContent=b[k].respondidos+'/'+b[k].total+' respondidos · '+fmtPct(b[k].pct); });
+  if(ui.tab==='res'){ const y=window.scrollY; document.getElementById('view').innerHTML=viewRes(); window.scrollTo(0,y); }
+}
+
+/* =====================================================================
+   EXPORTAR PDF (impresión del navegador → "Guardar como PDF")
+   ===================================================================== */
+function printDoc(ev){
+  const a=scoreA(ev), b=scoreB(ev), g=ev.gen, e=ev.estab;
+  const header=t=>'<div class="ph"><h1>'+t+'</h1></div>';
+  const sec=(n,t)=>'<div class="psec">'+n+'. '+t+'</div>';
+  const kv=rows=>'<table class="kv">'+rows.map(r=>'<tr><th>'+r[0]+'</th><td>'+nl(r[1])+'</td></tr>').join('')+'</table>';
+  const people=(list,cols)=>{
+    const filled=list.filter(p=>cols.some(c=>(p[c[0]]||'').trim()));
+    return '<table><thead><tr>'+cols.map(c=>'<th>'+c[1]+'</th>').join('')+'</tr></thead><tbody>'+
+      (filled.length?filled.map(p=>'<tr>'+cols.map(c=>'<td>'+nl(p[c[0]]||'')+'</td>').join('')+'</tr>').join(''):'<tr>'+cols.map(()=>'<td>&nbsp;</td>').join('')+'</tr>')+'</tbody></table>';
+  };
+  const antecedentes=(obj,objLabel)=>
+    sec(1,'ANTECEDENTES DE LA FISCALIZACIÓN')+
+    kv([['FECHA FISCALIZACIÓN',fmtDate(g.fecha)],['RESPONSABLE DE FISCALIZACIÓN',g.responsable],['ESTABLECIMIENTO',e.nombre],[objLabel,obj],['PERIODO A EVALUAR',g.periodo]])+
+    sec(2,'PROFESIONALES ASOCIADOS AL PROGRAMA DE CHAGAS')+people(ev.prof,PCOLS)+
+    sec(3,'PARTICIPANTES DE VISITA REPRESENTANTES DE ESTABLECIMIENTO DE SALUD')+people(ev.part,PCOLS);
+  const resTable=rows=>'<table><thead><tr><th style="text-align:left">Aspecto evaluado</th><th>Puntaje que aplica</th><th>Puntaje obtenido</th><th>Porcentaje de cumplimiento</th></tr></thead><tbody>'+
+    rows.map(r=>'<tr><td'+(r[4]?' style="font-weight:700"':'')+'>'+r[0]+'</td><td class="c">'+r[1]+'</td><td class="c">'+r[2]+'</td><td class="c"'+(r[4]?' style="font-weight:700"':'')+'>'+fmtPct(r[3])+'</td></tr>').join('')+'</tbody></table>';
+  const firmasFilled=ev.firmas.filter(p=>FCOLS.some(c=>(p[c[0]]||'').trim()));
+  const sigRows=firmasFilled.slice(); while(sigRows.length<5) sigRows.push({nombre:'',cargo:'',inst:''});
+  const firmas=sec(7,'REGISTRO DE FIRMAS')+'<table><thead><tr><th>Nombre</th><th>Cargo</th><th>Institución</th><th>Firma</th></tr></thead><tbody>'+
+    sigRows.map(p=>'<tr><td class="sig">'+nl(p.nombre)+'</td><td>'+nl(p.cargo)+'</td><td>'+nl(p.inst)+'</td><td></td></tr>').join('')+'</tbody></table>';
+
+  /* ---- Pauta A ---- */
+  let dt='<table><thead><tr><th style="width:29%">Criterio</th><th style="width:17%">Regulación ministerial que lo indica</th><th style="width:20%">Procedimiento de verificación</th><th style="width:9%">Cumple<br><small>1: Sí<br>0: No</small></th><th>Observación</th></tr></thead><tbody>';
+  DIMS.forEach(d=>{
+    dt+='<tr class="dimrow"><td colspan="5">'+d.id+'. '+esc(d.name.toUpperCase())+'</td></tr>';
+    d.items.forEach(i=>{ const x=ev.A[i.n]; dt+='<tr><td>'+i.n+'. '+esc(i.t)+'</td><td>'+esc(i.reg)+'</td><td>'+esc(i.proc)+'</td><td class="c">'+esc(VAL_A[x.v])+'</td><td>'+nl(x.obs)+casosPrint(x)+'</td></tr>'; });
+  });
+  dt+='</tbody></table>';
+  const docA='<div class="pdoc">'+header(TITLE_A)+antecedentes(g.objA,'OBJETIVO GENERAL')+sec(4,'DESARROLLO')+dt+
+    sec(5,'RESULTADOS')+resTable(a.dims.map(d=>[d.id+'. '+esc(d.short),d.aplica,d.obtenido,d.pct]).concat([['Total',a.aplica,a.obtenido,a.pct,true]]))+
+    sec(6,'COMENTARIOS')+'<div class="box">'+(nl(ev.comA)||'&nbsp;')+'</div>'+firmas+'</div>';
+
+  /* ---- Pauta B ---- */
+  const bTable=(kind,title,crits)=>{
+    const cs=ev.B[kind];
+    let t='<div class="psub" style="border-top:1px solid #444;margin-top:8px">'+title+'</div><table><thead><tr><th style="width:26%">Criterio</th><th style="width:20%">Verificador</th>'+
+      cs.map((k,i)=>'<th style="width:9%">Caso '+(i+1)+(k.nombre?'<br>'+esc(k.nombre):'')+'<br><small>Sí: 1<br>No: 0</small></th>').join('')+'<th>Observación</th></tr></thead><tbody>';
+    crits.forEach(c=>{ t+='<tr><td>'+esc(c.t)+'</td><td>'+esc(c.v)+'</td>'+cs.map(k=>'<td class="c">'+esc(ev.B.ans[c.id+'|'+k.id]||'')+'</td>').join('')+'<td>'+nl(ev.B.obs[c.id]||'')+'</td></tr>'; });
+    return t+'</tbody></table>';
+  };
+  const docB='<div class="pdoc pagebreak">'+header(TITLE_B)+antecedentes(g.objB,'OBJETIVO')+sec(4,'DESARROLLO')+
+    bTable('gest','SOBRE GESTANTE',PB.gest)+bTable('rn','SOBRE RECIÉN NACIDO/LACTANTE',PB.rn)+
+    sec(5,'RESULTADOS')+resTable([['Sobre gestante',b.gest.aplica,b.gest.obtenido,b.gest.pct],['Sobre RN/lactante',b.rn.aplica,b.rn.obtenido,b.rn.pct],['Total',b.aplica,b.obtenido,b.pct,true]])+
+    sec(6,'COMENTARIOS')+'<div class="box">'+(nl(ev.comB)||'&nbsp;')+'</div>'+firmas+'</div>';
+  return docA+docB;
+}
+function casosLista(x){ return (x.casos||[]).map((c,i)=>({n:i+1,t:(c.txt||'').trim()})).filter(c=>c.t); }
+function casosPrint(x){
+  const l=casosLista(x); if(!l.length) return '';
+  return '<div class="pcasos"><b>Detalle de casos</b>'+l.map(c=>'<div><b>Caso '+c.n+':</b> '+nl(c.t)+'</div>').join('')+'</div>';
+}
+function fileBase(ev){ return 'Chagas_'+(slug(ev.estab.nombre)||'establecimiento')+'_'+(ev.gen.fecha||today()); }
+function exportPDF(){
+  const ev=cur(); persist();
+  document.getElementById('printRoot').innerHTML=printDoc(ev);
+  const t=document.title; document.title=fileBase(ev);
+  const restore=()=>{ document.title=t; window.removeEventListener('afterprint',restore); };
+  window.addEventListener('afterprint',restore);
+  setTimeout(()=>window.print(),80);
+}
+
+/* =====================================================================
+   EXPORTAR XLSX (sin librerías: ZIP "store" + SpreadsheetML escritos a mano)
+   ===================================================================== */
+const CRC_T = (()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c = c&1 ? 0xEDB88320^(c>>>1) : c>>>1; t[n]=c>>>0; } return t; })();
+function crc32(buf){ let c=0xFFFFFFFF; for(let i=0;i<buf.length;i++) c=CRC_T[(c^buf[i])&0xFF]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+function zipStore(files){
+  const enc=new TextEncoder(), parts=[], central=[]; let offset=0;
+  files.forEach(f=>{
+    const nameB=enc.encode(f.name), data=enc.encode(f.text), crc=crc32(data), size=data.length;
+    const lh=new DataView(new ArrayBuffer(30));
+    lh.setUint32(0,0x04034b50,true); lh.setUint16(4,20,true); lh.setUint16(6,0x0800,true); lh.setUint16(8,0,true);
+    lh.setUint16(10,0,true); lh.setUint16(12,0x21,true); lh.setUint32(14,crc,true); lh.setUint32(18,size,true); lh.setUint32(22,size,true);
+    lh.setUint16(26,nameB.length,true); lh.setUint16(28,0,true);
+    parts.push(new Uint8Array(lh.buffer), nameB, data);
+    const ch=new DataView(new ArrayBuffer(46));
+    ch.setUint32(0,0x02014b50,true); ch.setUint16(4,20,true); ch.setUint16(6,20,true); ch.setUint16(8,0x0800,true); ch.setUint16(10,0,true);
+    ch.setUint16(12,0,true); ch.setUint16(14,0x21,true); ch.setUint32(16,crc,true); ch.setUint32(20,size,true); ch.setUint32(24,size,true);
+    ch.setUint16(28,nameB.length,true); ch.setUint32(42,offset,true);
+    central.push(new Uint8Array(ch.buffer), nameB);
+    offset += 30+nameB.length+size;
+  });
+  const cdSize=central.reduce((s,x)=>s+x.length,0);
+  const eo=new DataView(new ArrayBuffer(22));
+  eo.setUint32(0,0x06054b50,true); eo.setUint16(8,files.length,true); eo.setUint16(10,files.length,true); eo.setUint32(12,cdSize,true); eo.setUint32(16,offset,true);
+  const all=parts.concat(central,[new Uint8Array(eo.buffer)]);
+  const out=new Uint8Array(all.reduce((s,x)=>s+x.length,0)); let p=0; all.forEach(x=>{ out.set(x,p); p+=x.length; });
+  return out;
+}
+const xmlEsc = s => String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function colName(i){ let s=''; i++; while(i>0){ const m=(i-1)%26; s=String.fromCharCode(65+m)+s; i=Math.floor((i-1)/26); } return s; }
+/* Estilos: 0 normal · 1 negrita · 2 título · 3 encabezado · 4 celda con borde · 5 porcentaje · 6 sección · 7 centrado con borde */
+function sheetXml(rows, widths, freeze){
+  let x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+  if(freeze) x+='<sheetViews><sheetView workbookViewId="0"><pane ySplit="'+freeze+'" topLeftCell="A'+(freeze+1)+'" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>';
+  if(widths) x+='<cols>'+widths.map((w,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>').join('')+'</cols>';
+  x+='<sheetData>';
+  rows.forEach((r,ri)=>{
+    x+='<row r="'+(ri+1)+'">';
+    r.forEach((c,ci)=>{
+      if(c===null||c===undefined) return;
+      const cell=(typeof c==='object')?c:{v:c,s:0}, ref=colName(ci)+(ri+1), s=cell.s||0;
+      if(cell.v===null||cell.v===undefined||cell.v==='') x+='<c r="'+ref+'" s="'+s+'"/>';
+      else if(typeof cell.v==='number') x+='<c r="'+ref+'" s="'+s+'"><v>'+cell.v+'</v></c>';
+      else x+='<c r="'+ref+'" s="'+s+'" t="inlineStr"><is><t xml:space="preserve">'+xmlEsc(cell.v)+'</t></is></c>';
+    });
+    x+='</row>';
+  });
+  return x+'</sheetData></worksheet>';
+}
+const STYLES_XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+  '<numFmts count="1"><numFmt numFmtId="164" formatCode="0.0%"/></numFmts>'+
+  '<fonts count="3"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="14"/><name val="Calibri"/></font></fonts>'+
+  '<fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>'+
+  '<fill><patternFill patternType="solid"><fgColor rgb="FFD9E5F1"/><bgColor indexed="64"/></patternFill></fill>'+
+  '<fill><patternFill patternType="solid"><fgColor rgb="FFE8EBEF"/><bgColor indexed="64"/></patternFill></fill></fills>'+
+  '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border>'+
+  '<border><left style="thin"><color rgb="FF999999"/></left><right style="thin"><color rgb="FF999999"/></right><top style="thin"><color rgb="FF999999"/></top><bottom style="thin"><color rgb="FF999999"/></bottom><diagonal/></border></borders>'+
+  '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
+  '<cellXfs count="8">'+
+  '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'+
+  '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
+  '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
+  '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'+
+  '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>'+
+  '<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top"/></xf>'+
+  '<xf numFmtId="0" fontId="1" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>'+
+  '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top" wrapText="1"/></xf>'+
+  '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+
+function buildXlsx(ev){
+  const a=scoreA(ev), b=scoreB(ev), g=ev.gen, e=ev.estab;
+  const T=v=>({v,s:2}), H=v=>({v,s:3}), C=v=>({v,s:4}), CC=v=>({v,s:7}), S=v=>({v,s:6}), Bd=v=>({v,s:1});
+  const P=p=>p===null?CC('—'):{v:p/100,s:5};
+
+  /* Hoja 1: Antecedentes */
+  const ant=[[T('Evaluador · Programa de Chagas')],[],[S('1. Antecedentes de la fiscalización'),S('')],
+    [C('Establecimiento'),C(e.nombre)],[C('Fecha de fiscalización'),C(fmtDate(g.fecha))],[C('Responsable de fiscalización'),C(g.responsable)],[C('Periodo a evaluar'),C(g.periodo)],
+    [C('Objetivo general (Pauta A)'),C(g.objA)],[C('Objetivo (Pauta B)'),C(g.objB)],[],
+    [S('6. Comentarios'),S('')],[C('Comentarios Pauta A'),C(ev.comA)],[C('Comentarios Pauta B'),C(ev.comB)]];
+
+  /* Hoja 2: Resultados */
+  const res=[[T('Resultados')],[],[S('Pauta A · Cumplimiento de regulación'),S(''),S(''),S('')],
+    [H('Aspecto evaluado'),H('Puntaje que aplica'),H('Puntaje obtenido'),H('% de cumplimiento')]];
+  a.dims.forEach(d=>res.push([C(d.id+'. '+d.short),CC(d.aplica),CC(d.obtenido),P(d.pct)]));
+  res.push([S('Total'),{v:a.aplica,s:6},{v:a.obtenido,s:6},P(a.pct)]);
+  res.push([],[S('Pauta B · Gestante y RN/lactante'),S(''),S(''),S('')],
+    [H('Aspecto evaluado'),H('Puntaje que aplica'),H('Puntaje obtenido'),H('% de cumplimiento')],
+    [C('Sobre gestante'),CC(b.gest.aplica),CC(b.gest.obtenido),P(b.gest.pct)],
+    [C('Sobre RN / lactante'),CC(b.rn.aplica),CC(b.rn.obtenido),P(b.rn.pct)],
+    [S('Total'),{v:b.aplica,s:6},{v:b.obtenido,s:6},P(b.pct)]);
+
+  /* Hoja 3: Pauta A */
+  const pa=[[H('N°'),H('Dimensión'),H('Criterio'),H('Regulación ministerial que lo indica'),H('Procedimiento de verificación'),H('Cumple (1: Sí, 0: No)'),H('Observación'),H('Detalle de casos (no afecta el cumplimiento)')]];
+  DIMS.forEach(d=>d.items.forEach(i=>{
+    const x=ev.A[i.n], cv = x.v==='1'?{v:1,s:7} : x.v==='0'?{v:0,s:7} : CC(VAL_A[x.v]);
+    pa.push([CC(i.n),C(d.id+'. '+d.short),C(i.t),C(i.reg),C(i.proc),cv,C(x.obs),C(casosLista(x).map(c=>'Caso '+c.n+': '+c.t).join('\n'))]);
+  }));
+
+  /* Hoja 4: Pauta B */
+  const maxC=Math.max(ev.B.gest.length,ev.B.rn.length,1), obsCol=2+maxC;
+  const pb=[];
+  const blockB=(title,kind,crits)=>{
+    const cs=ev.B[kind], hdr=[H('Criterio'),H('Verificador')];
+    for(let i=0;i<maxC;i++) hdr.push(H(cs[i]?('Caso '+(i+1)+(cs[i].nombre?' · '+cs[i].nombre:'')):''));
+    hdr.push(H('Observación'));
+    pb.push([S(title)],hdr);
+    crits.forEach(c=>{
+      const r=[C(c.t),C(c.v)];
+      for(let i=0;i<maxC;i++){ const k=cs[i]; if(!k){ r.push(CC('')); continue; } const v=ev.B.ans[c.id+'|'+k.id]||''; r.push(v==='1'?{v:1,s:7}:v==='0'?{v:0,s:7}:CC(v)); }
+      r.push(C(ev.B.obs[c.id]||'')); pb.push(r);
+    });
+    pb.push([]);
+  };
+  blockB('SOBRE GESTANTE (Sí: 1 · No: 0)','gest',PB.gest);
+  blockB('SOBRE RECIÉN NACIDO / LACTANTE (Sí: 1 · No: 0)','rn',PB.rn);
+  const wB=[44,34]; for(let i=0;i<maxC;i++) wB.push(16); wB.push(55);
+
+  /* Hoja 5: Personas */
+  const per=[[H('Grupo'),H('Nombre'),H('Cargo'),H('Correo / Institución'),H('Fono')]];
+  const add=(grp,list,inst)=>list.forEach(p=>{ if(!(p.nombre||p.cargo||p.correo||p.inst||p.fono||'').toString().trim()) return; per.push([C(grp),C(p.nombre),C(p.cargo),C(inst?p.inst:p.correo),C(p.fono||'')]); });
+  add('Profesional del programa',ev.prof,false); add('Participante de la visita',ev.part,false); add('Registro de firmas',ev.firmas,true);
+
+  const sheets=[['Antecedentes',sheetXml(ant,[40,100])],['Resultados',sheetXml(res,[40,20,20,20])],
+    ['Pauta A',sheetXml(pa,[6,24,60,45,50,14,50,60],1)],['Pauta B',sheetXml(pb,wB)],['Personas',sheetXml(per,[26,34,36,40,18],1)]];
+  const NS='http://schemas.openxmlformats.org/spreadsheetml/2006/main', RN='http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  const files=[
+    {name:'[Content_Types].xml', text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+sheets.map((s,i)=>'<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('')+'<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'},
+    {name:'_rels/.rels', text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
+    {name:'xl/workbook.xml', text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="'+NS+'" xmlns:r="'+RN+'"><sheets>'+sheets.map((s,i)=>'<sheet name="'+s[0]+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>').join('')+'</sheets></workbook>'},
+    {name:'xl/_rels/workbook.xml.rels', text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+sheets.map((s,i)=>'<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>').join('')+'<Relationship Id="rId'+(sheets.length+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'},
+    {name:'xl/styles.xml', text:STYLES_XML}
+  ];
+  sheets.forEach((s,i)=>files.push({name:'xl/worksheets/sheet'+(i+1)+'.xml', text:s[1]}));
+  return zipStore(files);
+}
+
+function download(data, name, mime){
+  const blob=new Blob([data],{type:mime}), url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+function exportXLSX(){ const ev=cur(); persist(); download(buildXlsx(ev), fileBase(ev)+'.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); }
+function exportJSON(){ const ev=cur(); persist(); download(JSON.stringify(ev,null,1), fileBase(ev)+'.json', 'application/json'); }
+function importJSON(file){
+  const fr=new FileReader();
+  fr.onload=()=>{
+    try{
+      const o=JSON.parse(fr.result);
+      const list = o && o.items ? Object.values(o.items) : [o];
+      let last=null;
+      list.forEach(ev=>{ if(!ev||!ev.A||!ev.gen) throw new Error('formato'); normalize(ev); if(store.items[ev.id]) ev.id=uid(); ev.updated=Date.now(); store.items[ev.id]=ev; last=ev.id; });
+      store.cur=last; persist(); render();
+    }catch(err){ alert('El archivo no corresponde a un respaldo válido de este evaluador.'); }
+  };
+  fr.readAsText(file);
+}
+
+/* =====================================================================
+   EVENTOS
+   ===================================================================== */
+function closeMenu(){ const top=document.querySelector('.top'); if(top){ top.classList.remove('menu-open'); const mb=top.querySelector('.menu-btn'); if(mb) mb.setAttribute('aria-expanded','false'); } }
+function onClick(e){
+  const el=e.target.closest('[data-act]'); if(!el) return;
+  const act=el.dataset.act, ev=store.cur?cur():null;
+  if(['new','del','pdf','xlsx','jsonexp','jsonimp','tab'].indexOf(act)>=0) closeMenu();
+  switch(act){
+    case 'tab': ui.tab=el.dataset.tab; render(); window.scrollTo(0,0); break;
+    case 'set': {
+      const kind=el.dataset.kind, key=el.dataset.key;
+      const before = kind==='A' ? ev.A[key].v : (ev.B.ans[key]||'');
+      const nv = before===el.dataset.val ? '' : el.dataset.val;
+      if(kind==='A') ev.A[key].v=nv; else { if(nv==='') delete ev.B.ans[key]; else ev.B.ans[key]=nv; }
+      el.parentElement.querySelectorAll('.segb').forEach(b=>{ const on=b.dataset.val===nv; b.classList.toggle('on',on); b.setAttribute('aria-checked',on); });
+      touch(); break;
+    }
+    case 'addrow': ev[el.dataset.list].push(BLANK[el.dataset.list]()); touch(); render(); break;
+    case 'delrow': ev[el.dataset.list].splice(+el.dataset.i,1); touch(); render(); break;
+    case 'copyprof': ev.part=clone(ev.prof); touch(); render(); break;
+    case 'addcaso': {
+      const n=el.dataset.n, cs=ev.A[n].casos;
+      if(cs.length<MAX_CASOS){ cs.push({txt:''}); touch(); refreshCasos(n); const tas=document.querySelectorAll('#casos-'+n+' textarea'); if(tas.length) tas[tas.length-1].focus(); }
+      break;
+    }
+    case 'delcaso': {
+      const n=el.dataset.n, i=+el.dataset.i, cs=ev.A[n].casos;
+      if(cs[i] && (!cs[i].txt.trim() || confirm('¿Quitar el caso '+(i+1)+' del criterio '+n+' y su comentario?'))){ cs.splice(i,1); touch(); refreshCasos(n); }
+      break;
+    }
+    case 'addcase': ev.B[el.dataset.kind].push({id:uid(),nombre:''}); touch(); render(); break;
+    case 'delcase': {
+      const arr=ev.B[el.dataset.kind], c=arr[+el.dataset.i];
+      if(c && confirm('¿Quitar este caso y sus respuestas?')){ Object.keys(ev.B.ans).forEach(k=>{ if(k.split('|')[1]===c.id) delete ev.B.ans[k]; }); arr.splice(+el.dataset.i,1); touch(); render(); }
+      break;
+    }
+    case 'menu': { const top=document.querySelector('.top'), o=top.classList.toggle('menu-open'); el.setAttribute('aria-expanded',o); break; }
+    case 'new': { const n=newEval(); store.items[n.id]=n; store.cur=n.id; ui.tab='antecedentes'; persist(); render(); window.scrollTo(0,0); break; }
+    case 'del':
+      if(confirm('¿Eliminar la evaluación «'+evTitle(ev)+'»? Esta acción no se puede deshacer. Considere descargar antes un respaldo .json.')){
+        delete store.items[store.cur];
+        const ids=Object.keys(store.items);
+        if(!ids.length){ const n=newEval(); store.items[n.id]=n; ids.push(n.id); }
+        store.cur=ids[0]; persist(); render();
+      }
+      break;
+    case 'pdf': exportPDF(); break;
+    case 'xlsx': exportXLSX(); break;
+    case 'jsonexp': exportJSON(); break;
+    case 'jsonimp': document.getElementById('fileImp').click(); break;
+  }
+}
+function onInput(e){
+  const t=e.target;
+  if(t.dataset && t.dataset.bind){
+    setPath(cur(), t.dataset.bind, t.value);
+    if(t.tagName==='TEXTAREA') autosize(t);
+    if(t.dataset.casename){
+      document.querySelectorAll('[data-caselabel="'+t.dataset.casename+'"]').forEach(l=>{ l.textContent=t.value.trim()||t.dataset.fallback; });
+    }
+    touch();
+    if(/^(estab\.nombre|gen\.fecha|gen\.periodo)$/.test(t.dataset.bind)) renderSelect();
+  }
+}
+function onChange(e){
+  const t=e.target;
+  if(t.id==='evSelect'){ store.cur=t.value; persist(); render(); window.scrollTo(0,0); closeMenu(); }
+  else if(t.id==='fileImp' && t.files[0]){ importJSON(t.files[0]); t.value=''; }
+}
+function init(){
+  store=loadStore();
+  if(!store.cur || !store.items[store.cur]){
+    const ids=Object.keys(store.items);
+    if(ids.length) store.cur=ids[0]; else { const n=newEval(); store.items[n.id]=n; store.cur=n.id; }
+  }
+  try{ localStorage.removeItem(LS_LOGO); }catch(e){}
+  if(MQ.addEventListener) MQ.addEventListener('change',render);
+  document.addEventListener('click',onClick);
+  document.addEventListener('input',onInput);
+  document.addEventListener('change',onChange);
+  window.addEventListener('beforeunload',()=>{ try{ localStorage.setItem(LS_KEY,JSON.stringify(store)); }catch(e){} });
+  document.addEventListener('visibilitychange',()=>{ if(document.hidden) persist(); });
+  render();
+  if(!storageOK) setStatus('Almacenamiento del navegador no disponible', true); else persist();
+}
+
+if(typeof document==='undefined'){ globalThis.__T={DIMS,PB,newEval,scoreA,scoreB,buildXlsx,printDoc:null,fmtPct,pct,normalize}; }
+else init();
+</script>
+</body>
+</html>

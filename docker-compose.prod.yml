@@ -31,6 +31,7 @@ services:
       ConnectionStrings__PostgreSQL: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
       Paths__BaseSA: /app/resources/${BASE_SA}
       Paths__BaseSP: /app/resources/${BASE_SP}
+      Ingest__ApiKey: ${INGEST_API_KEY}
     volumes:
       - ./api/resources:/app/resources:ro
     ports:

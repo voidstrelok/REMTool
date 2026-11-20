@@ -147,15 +147,19 @@ export const NAVIGATION_SECTIONS: readonly NavigationSection[] = [
         icon: Lock,
         badge: "Nuevo",
       },
-      {
-        id: "repositorio-rem",
-        label: "Repositorio REM",
-        href: "https://drive.google.com/drive/folders/1vlCWcZMrdayOv5n8-ev1PstQCQIoSQCT?usp=sharing",
-        description: "Archivos REM y consolidados en Google Drive.",
-        icon: ExternalLink,
-        external: true,
-      },
     ],
+  },
+];
+
+// Enlaces directos de la navbar (sin desplegable).
+export const NAVIGATION_LINKS: readonly NavigationItem[] = [
+  {
+    id: "repositorio-rem",
+    label: "Repositorio REM",
+    href: "https://drive.google.com/drive/folders/1vlCWcZMrdayOv5n8-ev1PstQCQIoSQCT?usp=sharing",
+    description: "Archivos REM y consolidados en Google Drive.",
+    icon: ExternalLink,
+    external: true,
   },
 ];
 

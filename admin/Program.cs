@@ -27,6 +27,7 @@ builder.Services.Configure<LocalPathsOptions>(builder.Configuration.GetSection("
 builder.Services.AddSingleton(sp => new LocalPathPolicy(sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<LocalPathsOptions>>().Value));
 builder.Services.AddScoped<InformativoService>();
 builder.Services.AddSingleton<RemImportService>();
+builder.Services.AddSingleton<ProductionPublisher>();
 builder.Services.AddSingleton<IndicatorCalculationService>();
 builder.Services.AddSingleton<RemIntegrityService>();
 ExcelPackage.License.SetNonCommercialOrganization("DESAM Monte Patria");
@@ -59,6 +60,8 @@ api.MapPost("/rem/import", async (HttpRequest request, RemImportService service,
     finally { foreach (var path in saved) if (File.Exists(path)) File.Delete(path); }
 });
 api.MapPost("/indicators/calculate/{year:int}", async (int year, IndicatorCalculationService service, CancellationToken ct) => Results.Ok(await service.CalculateAsync(year, ct)));
+api.MapPost("/publish/{year:int}", async (int year, bool? percapita, bool? fonasa, ProductionPublisher publisher, IConfiguration config, CancellationToken ct) =>
+    Results.Ok(await publisher.PublishAsync(year, percapita == true, fonasa == true, config["Production:BaseUrl"] ?? string.Empty, config["Production:IngestApiKey"] ?? string.Empty, ct)));
 api.MapPost("/rem/integrity", async (HttpRequest request, RemIntegrityService service, LocalPathPolicy paths, CancellationToken ct) =>
 {
     var files = (await request.ReadFormAsync(ct)).Files.GetFiles("files"); if (files.Count == 0) throw new ArgumentException("Debe adjuntar archivos REM."); var saved = new List<string>();

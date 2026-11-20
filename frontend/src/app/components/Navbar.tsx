@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import InfoActualizacion from "../InfoActualizacion";
 import {
   isNavigationItemActive,
+  NAVIGATION_LINKS,
   NAVIGATION_SECTIONS,
   type NavigationItem,
 } from "./navigation";
@@ -123,6 +124,18 @@ function NavbarContent() {
               </div>
             );
           })}
+          {NAVIGATION_LINKS.map((link) => (
+            <Link
+              key={link.id}
+              href={link.href}
+              target={link.external ? "_blank" : undefined}
+              rel={link.external ? "noopener noreferrer" : undefined}
+              className="flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <span>{link.label}</span>
+              {link.external && <ExternalLink size={13} aria-hidden="true" className="opacity-60" />}
+            </Link>
+          ))}
         </nav>
 
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -159,6 +172,11 @@ function NavbarContent() {
                   </details>
                 );
               })}
+              {NAVIGATION_LINKS.map((link) => (
+                <div key={link.id} style={{ color: "var(--text)" }}>
+                  <NavigationLink item={link} mobile onNavigate={() => setMobileOpen(false)} />
+                </div>
+              ))}
             </nav>
           </SheetContent>
         </Sheet>

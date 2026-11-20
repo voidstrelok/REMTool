@@ -1,0 +1,1548 @@
+{
+ "secciones": [
+  {
+   "id": "0",
+   "titulo": "Centrado en las personas",
+   "items": [
+    {
+     "id": "0-0",
+     "n": "1",
+     "texto": "1.1. Comunidad capacitada en la formulación de proyectos que aborden condicionantes de salud local.",
+     "grupo": "COMUNIDAD",
+     "detalles": [
+      [
+       "Objetivo",
+       "1. Promover instancias y procesos de participación  que contribuyan al desarrollo de condiciones salutogénicas durante el curso de vida, a través de relaciones vinculares entre el equipo de salud y la comunidad para la identificación, diseño y gestión de cuidados de salud colectivos con pertinencia social y cultural."
+      ],
+      [
+       "Cálculo",
+       "Instancia educativa anual con un mínimo de 8 horas pedagógicas en temas de elaboración/gestión de proyectos y/o iniciativas comunitarias salutogénicas que aborden condicionantes de la salud y bienestar de las personas, que son acompañadas por el equipo de salud"
+      ],
+      [
+       "Verificador",
+       "- Documento con plan educativo de formación comunitaria que detalle población objetivo, objetivos educativos, contenidos, metodología, evaluación y actas de asistencia. - Nómina de integrantes del equipo de salud que participan y acompañan el proceso"
+      ],
+      [
+       "Mínimo requerido",
+       "El establecimiento/comuna gestiona curso/taller con un mínimo de 8 horas pedagógicas en temas de elaboración/gestión de proyectos y/o iniciativas comunitarias que aborden determinantes de la salud y bienestar de las personas, dirigido a lideres/dirigentes locales."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Instancia de capacitación ejecutada con actas de asistencia; plan educativo último año)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (Documento con Plan Educativo y Carta Gantt (último año))",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "0-1",
+     "n": "2",
+     "texto": "1.2. Existencia proyectos comunitarios con enfoque salutogénico",
+     "grupo": "COMUNIDAD",
+     "detalles": [
+      [
+       "Objetivo",
+       "1. Promover instancias y procesos de participación  que contribuyan al desarrollo de condiciones salutogénicas durante el curso de vida, a través de relaciones vinculares entre el equipo de salud y la comunidad para la identificación, diseño y gestión de cuidados de salud colectivos con pertinencia social y cultural."
+      ],
+      [
+       "Cálculo",
+       "Proyectos comunitarios ejecutados por la comunidad, con enfoque salutogénico que aborden determinantes de la salud y bienestar de las personas"
+      ],
+      [
+       "Verificador",
+       "- Proyectos comunitarios ejecutados por la comunidad, con enfoque salutogénico que aborden determinantes de la salud y bienestar de las personas, con participación del equipo de salud. -Nómina de integrantes del equipo de salud que participan y acompañan el proceso para la formulación y ejecución de proyectos. (Ejemplo; registro de reuniones; registro de asesorías) No sirve sólo fotos."
+      ],
+      [
+       "Mínimo requerido",
+       "Al menos, 1 proyecto elaborado y ejecutado desde la comunidad, con enfoque salutogénico. El equipo de salud acompaña el proceso de elaboración y ejecución."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Documento con proyecto elaborado, ejecutado (o en ejecución) desde la comunidad ( últimos 12 meses) con acompañamiento del equipo de salud)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (Documento con proyecto elaborado desde la comunidad (últimos 12 meses))",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "0-2",
+     "n": "3",
+     "texto": "1.3. Evaluación y análisis de brechas del uso del protocolo/documento de buen trato (vigencia 3 años)",
+     "grupo": "COMUNIDAD",
+     "obligatoria": true,
+     "detalles": [
+      [
+       "Objetivo",
+       "1. Promover instancias y procesos de participación  que contribuyan al desarrollo de condiciones salutogénicas durante el curso de vida, a través de relaciones vinculares entre el equipo de salud y la comunidad para la identificación, diseño y gestión de cuidados de salud colectivos con pertinencia social y cultural."
+      ],
+      [
+       "Cálculo",
+       "Protocolo/documento de buen trato evaluado (elaborado, actualizado de manera consensuada con la comunidad y se realiza análisis de brechas al menos 1 vez al año."
+      ],
+      [
+       "Verificador",
+       "- Informe de evaluación y plan de mejora según análisis de brechas identificadas que contenga: a) Protocolo/documento de buen trato vigente que incorpore mínimos b) Acta de reunión ampliada de difusión del protocolo a equipo de trabajo. c) Mecanismo de difusión del protocolo y medio de divulgación de resultados a la comunidad d) Disponibilización del documento para libre acceso."
+      ],
+      [
+       "Mínimo requerido",
+       "El establecimiento elabora plan de mejora a partir de brechas identificadas a través de la aplicación del protocolo/documento de buen trato. Se solicitará que demuestren mecanismos usados para la validación con la comunidad, difusión, toma de conocimiento de todos los miembros del establecimiento y comunidad."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Informe de ejecución con cumplimiento de 95% del plan de mejora a partir de brechas identificadas según cronograma.)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.75 punto (Informe de ejecución con cumplimiento entre un 70-95% del plan de mejora a partir de brechas identificadas según cronograma.)",
+       "pts": 0.75
+      },
+      {
+       "label": "Cumple 0.5 punto (Informe plan de mejora a partir de brechas identificadas.)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 punto",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "0-3",
+     "n": "4",
+     "texto": "2.1. Continuidad de la atención para ingresos y controles de salud médicos en extensión horaria.",
+     "grupo": "PERSONAS Y FAMILIAS",
+     "detalles": [
+      [
+       "Objetivo",
+       "2. Lograr equidad en el acceso de las personas y sus familias a los servicios de salud."
+      ],
+      [
+       "Cálculo",
+       "Número Ingresos y controles médicos en extensión horaria / Total de atenciones medicas en extensión horaria La revisión corresponde a un periodo dentro de los últimos 12 meses de a lo menos una semana"
+      ],
+      [
+       "Verificador",
+       "Reporte de agendas donde se constate ingresos y/o controles médicos en extensión horaria. (últimos 12 meses)"
+      ],
+      [
+       "Mínimo requerido",
+       "Cumple con continuidad horaria para ingresos y/o controles médicos de al menos 20% del total de los cupos de la extensión horaria."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Al menos 20% del total de los cupos de la extensión horaria para actividades de ingresos y/o controles de salud)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (Entre 10-19% del total de los cupos de la extensión horaria en actividades de ingresos y/o controles de salud)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos (menos del 10% de cupos en extensión horaria)",
+       "pts": 0
+      },
+      {
+       "label": "No Aplica (PSR)",
+       "pts": null
+      }
+     ]
+    },
+    {
+     "id": "0-4",
+     "n": "5",
+     "texto": "2.2. Agendamiento remoto de horas para atención de salud.",
+     "grupo": "PERSONAS Y FAMILIAS",
+     "detalles": [
+      [
+       "Objetivo",
+       "2. Lograr equidad en el acceso de las personas y sus familias a los servicios de salud."
+      ],
+      [
+       "Cálculo",
+       "Número de cupos agendados por estrategia remota / Total de cupos agendados. Cada servicio de Salud define de conjunto con la comuna la estrategia remota a utilizar"
+      ],
+      [
+       "Verificador",
+       "El establecimiento presenta alguna estrategia de acceso remoto a agendamiento de hora. Ej.: Telesalud, Hora Fácil, Línea 800, mensajería, portal paciente de los sistemas informáticos de APS, otros. Las prestaciones deben definirse a nivel local."
+      ],
+      [
+       "Mínimo requerido",
+       "20% de cupos agendados por estrategia de acceso remoto. Estrategia de acceso remoto se define a nivel local"
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (20% de cupos agendados por estrategia de acceso remoto.)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (10-19% de cupos agendados de forma remota.)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos (menos del 10% de cupos agendados remotamente)",
+       "pts": 0
+      },
+      {
+       "label": "No Aplica (No cuenta con acceso a internet)",
+       "pts": null
+      }
+     ]
+    },
+    {
+     "id": "0-5",
+     "n": "6",
+     "texto": "2.3. Personas reciben información sobre el funcionamiento de la red comunal y su centro de salud.",
+     "grupo": "PERSONAS Y FAMILIAS",
+     "detalles": [
+      [
+       "Objetivo",
+       "2. Lograr equidad en el acceso de las personas y sus familias a los servicios de salud."
+      ],
+      [
+       "Cálculo",
+       "Cuenta con tutorial digital de información a personas sobre el funcionamiento de la red comunal y su centro de salud."
+      ],
+      [
+       "Verificador",
+       "Demostración en terreno de acceso digital sobre el funcionamiento de la red comunal y su centro de salud. Acceso al tutorial en puntos visibles y de alta concurrencia del establecimiento: Inscripción, OIRS, SOME central/Satélite, Salas de espera."
+      ],
+      [
+       "Mínimo requerido",
+       "Tutorial de información para las personas que incluya MINIMO: Nombre del centro, red comunal APS, horario de funcionamiento, cartera de prestaciones (farmacia, leche, vacunas, urgencias, controles),"
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Tutorial de información digital operativo sobre el funcionamiento de la red comunal y su centro de salud con acceso al tutorial en puntos visibles y de alta concurrencia del establecimiento: Inscripción, OIRS, SOME central/Satélite, Salas de espera.)",
+       "pts": 1
+      },
+      {
+       "label": "No Cumple 0 punto (no cuenta con tutorial digital)",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "0-6",
+     "n": "7",
+     "texto": "3.1. Familias participan en consejería familiar como parte del Plan de Cuidado Integral",
+     "grupo": "PERSONAS Y FAMILIAS",
+     "detalles": [
+      [
+       "Objetivo",
+       "3. Incorporar acciones con enfoque promocional y preventivo en personas, familias."
+      ],
+      [
+       "Cálculo",
+       "Revisión de 3 fichas clínicas seleccionadas aleatoriamente, de personas inscritas en el establecimiento de atención primaria que participan en consejería familiar como parte de su Plan de Cuidados Integral Consensuado. Puede ser realizada en el establecimiento o fuera de este"
+      ],
+      [
+       "Verificador",
+       "Auditoría de ficha clínica"
+      ],
+      [
+       "Mínimo requerido",
+       "Consejería familiar agendada como prestación única que se demuestre en la ficha clínica que proviene del plan de cuidado integral considerando temas abordados y acuerdos."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (3 fichas clínicas donde constate consejería familiar como parte de su Plan de Cuidado Integral Consensuado según Orientación Técnica Instrumento MAIS vigente.)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (2 fichas clínicas donde constate consejería familiar como parte de su Plan de Cuidado Integral Consensuado según Orientación Técnica Instrumento MAIS vigente.)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos (con menos de 2 fichas)",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "0-7",
+     "n": "8",
+     "texto": "3.2 Educación individual con apoyo de material educativo",
+     "grupo": "PERSONAS Y FAMILIAS",
+     "detalles": [
+      [
+       "Objetivo",
+       "3. Incorporar acciones con enfoque promocional y preventivo en personas, familias."
+      ],
+      [
+       "Cálculo",
+       "Revisión de 3 fichas clínicas seleccionadas aleatoriamente, de personas inscritas en el establecimiento de atención primaria que evidencia registro de educación individual con apoyo de material educativo en distintas temáticas por ciclo vital; infancia, adolescencia, adultos (incluidos temas de Salud Sexual y Reproductiva (SSyR) y personas mayores."
+      ],
+      [
+       "Verificador",
+       "Auditoría de ficha clínica"
+      ],
+      [
+       "Mínimo requerido",
+       "El equipo de salud ejecuta el proceso de educación individual con apoyo de material educativo según protocolo."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Presenta protocolo en los 4 ciclos vitales para 3 fichas que cumple con pauta de cotejo)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.75 punto (Presenta protocolo en 3 ciclos vitales para 3 fichas que cumplen con pauta de cotejo)",
+       "pts": 0.75
+      },
+      {
+       "label": "Cumple 0.5 punto (Presenta protocolo en 2 ciclos vitales para 3 fichas que cumplen con pauta de cotejo)",
+       "pts": 0.5
+      },
+      {
+       "label": "Cumple 0.25 punto (Presenta protocolo al menos 1 ciclo vital cumple con pauta de cotejo en 3 fichas.)",
+       "pts": 0.25
+      },
+      {
+       "label": "No Cumple 0 punto (No presenta)",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "0-8",
+     "n": "9",
+     "texto": "3.3 Educación participativa grupal que promueva el autocuidado o automanejo en salud.",
+     "grupo": "PERSONAS Y FAMILIAS",
+     "detalles": [
+      [
+       "Objetivo",
+       "3. Incorporar acciones con enfoque promocional y preventivo en personas, familias."
+      ],
+      [
+       "Cálculo",
+       "Revisar planificación y evaluación de 4 actividades educativas (una por ciclo vital infancia, adolescencia, adultos y personas mayores ). Con metodología de educación participativa según Orientación Técnica Instrumento MAIS vigente."
+      ],
+      [
+       "Verificador",
+       "Planificación de la actividad realizada de acuerdo a Orientación Técnica Instrumento MAIS vigente por el equipo de salud y lista de asistencia de participantes."
+      ],
+      [
+       "Mínimo requerido",
+       "El establecimiento planifica y realiza al menos una actividad educativa en el ultimo año según Orientación Técnica Instrumento MAIS vigente, por ciclo vital: infancia, adolescencia, adultos y personas mayores."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Presenta planificación y lista de asistencia de 4 actividades educativas, distintas por ciclo vital.)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.75 punto (Presenta planificación y lista de asistencia de 3 actividades educativas distintas por ciclo vital.)",
+       "pts": 0.75
+      },
+      {
+       "label": "Cumple 0.5 punto (Presenta planificación y lista de asistencia 2 actividades educativas distintas por ciclo vital.)",
+       "pts": 0.5
+      },
+      {
+       "label": "Cumple 0.25 punto (Presenta planificación y lista de asistencia de 1 actividad educativa.)",
+       "pts": 0.25
+      },
+      {
+       "label": "No Cumple 0 punto (No presenta)",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "0-9",
+     "n": "10",
+     "texto": "4.1 Familias identificadas y agrupadas en ficha clínica, Cartola familiar o equivalente.",
+     "grupo": "PERSONAS Y FAMILIAS",
+     "obligatoria": true,
+     "detalles": [
+      [
+       "Objetivo",
+       "4. Promover el enfoque/abordaje familiar en la población a cargo."
+      ],
+      [
+       "Cálculo",
+       "(Número de familias agrupadas en registro clínico electrónico, cartola familiar o equivalente disponible en el establecimiento / (Población Inscrita validada o Población adscrita /3,3)) x100 * *Si establecimiento cuenta con dato de numero de familias o promedio de integrantes por familia, puede utilizar esa información."
+      ],
+      [
+       "Verificador",
+       "Reporte del registro clínico electrónico, cartola familiar o equivalente disponible en el establecimiento Población Inscrita validada o Adscrita/3.3"
+      ],
+      [
+       "Mínimo requerido",
+       "El establecimiento cuenta con a lo menos un 30% de las familias agrupadas en registro clínico electrónico, cartola familiar o equivalente."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Establecimiento cuenta con a lo menos el 30% de las familias agrupadas en ficha clínica o cartola familiar.)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (Establecimiento cuenta entre 20% y 29% de las familias agrupadas en ficha clínica o cartola familiar y cuenta con plan de acción para lograrlo.)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos (con menos de 20%)",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "0-10",
+     "n": "11",
+     "texto": "4.2 familias identificadas de acuerdo al riesgo o priorización según instrumento aprobado por el Servicio de Salud con foco en los determinantes del territorio.",
+     "grupo": "PERSONAS Y FAMILIAS",
+     "detalles": [
+      [
+       "Objetivo",
+       "4. Promover el enfoque/abordaje familiar en la población a cargo."
+      ],
+      [
+       "Cálculo",
+       "Número de familias evaluadas mediante screening de riesgo /Número de familias inscritas/Adscritas *100 Vigencia 3 años."
+      ],
+      [
+       "Verificador",
+       "REM P7 Numero de familias inscritas o adscritas (Población Inscrita Validada o Población adscrita /3,3)) x100"
+      ],
+      [
+       "Mínimo requerido",
+       "El establecimiento cuenta con un sistema de evaluación de familias inscritas/adscritas aprobado por el Servicio de Salud con foco en las determinantes del territorio y lo aplica al 30% de las familias inscritas/adscritas Solicitud escrita de aprobación al Servicio de Salud (canal formal de comunicación)"
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Aplicado al 30% o más familias inscritas/adscritas)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.75 punto (Aplicado entre el 29% y 25% familias inscritas/adscritas)",
+       "pts": 0.75
+      },
+      {
+       "label": "Cumple 0.5 punto (Aplicado entre el 24% y 20% de familias inscritas/adscritas)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 punto (Aplicado a menos del 20% de familias inscritas/adscritas)",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "0-11",
+     "n": "12",
+     "texto": "4.3 Familias reciben visita domiciliaria integral (VDI) como parte del Plan de Cuidado Integral cuando su condición sociosanitaria lo requiere, bajo un método estandarizado. Según pauta de cotejo basada en Orientación Técnica de VDI.",
+     "grupo": "PERSONAS Y FAMILIAS",
+     "detalles": [
+      [
+       "Objetivo",
+       "4. Promover el enfoque/abordaje familiar en la población a cargo."
+      ],
+      [
+       "Cálculo",
+       "Revisión de 4 fichas clínicas seleccionadas aleatoriamente, de personas inscritas en el establecimiento de atención primaria que evidencia de pauta de VDI como parte del Plan de Cuidado Integral, acorde a los mínimos definidos en la orientación técnica de visita domiciliaria integral."
+      ],
+      [
+       "Verificador",
+       "Auditoría de ficha clínica"
+      ],
+      [
+       "Mínimo requerido",
+       "VDI como parte del Plan de Cuidado Integral registrada en ficha clínica con los acuerdos e intervenciones por ciclo vital Seguimiento asociado a la VDI registrado en ficha clínica."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (4 fichas con evidencia de aplicación de pauta de VDI)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.75 punto (3 fichas con evidencia de aplicación de pauta de VDI)",
+       "pts": 0.75
+      },
+      {
+       "label": "Cumple 0.5 punto (2 fichas con evidencia de aplicación de pauta de VDI)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 punto (con menos de 2 fichas)",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "0-12",
+     "n": "13",
+     "texto": "5.1 Planes de cuidados integrales que incorporan mínimos requeridos según Orientación Técnica Instrumento MAIS vigente y Marco Operativo de la ECICEP.",
+     "grupo": "PERSONAS Y FAMILIAS",
+     "obligatoria": true,
+     "detalles": [
+      [
+       "Objetivo",
+       "5. Incorporar y/o fortalecer la participación y avanzar hacia la toma de decisiones compartidas en salud."
+      ],
+      [
+       "Cálculo",
+       "Revisión de 4 fichas clínicas seleccionadas aleatoriamente, de personas inscritas en el establecimiento de atención primaria que evidencia registro de planes de cuidado integral realizados a lo largo del curso de vida y este contiene mínimos requeridos según Orientación Técnica Instrumento MAIS vigente y Marco Operativo de la ECICEP vigentes"
+      ],
+      [
+       "Verificador",
+       "Auditoría de ficha clínica"
+      ],
+      [
+       "Mínimo requerido",
+       "Plan de cuidado integral consensuado registrado en ficha clínica que contenga: Problemas priorizados, objetivos, opciones ofrecidas, acuerdos y seguimiento de los acuerdos asociados. Integra todas las condiciones de salud de una persona. Incorpora un enfoque familiar a través de identificación del grupo familiar, factores protectores y de riesgo."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (si presenta 4 fichas con plan consensuado con opciones ofrecidas, acuerdos y seguimiento de los acuerdos.)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.75 punto (si presenta 3 fichas con plan consensuado con opciones ofrecidas, acuerdos y seguimiento de los acuerdos.)",
+       "pts": 0.75
+      },
+      {
+       "label": "Cumple 0.5 punto (si presenta 2 fichas con plan consensuado con opciones ofrecidas, acuerdos y seguimiento de los acuerdos.)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 punto (con menos de 2 fichas)",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "0-13",
+     "n": "14",
+     "texto": "5.2 Alfabetización de personas en toma de decisiones compartida (TDC )",
+     "grupo": "PERSONAS Y FAMILIAS",
+     "detalles": [
+      [
+       "Objetivo",
+       "5. Incorporar y/o fortalecer la participación y avanzar hacia la toma de decisiones compartidas en salud."
+      ],
+      [
+       "Cálculo",
+       "Documento que describa el proceso de alfabetización de personas/usuarios sobre TDC."
+      ],
+      [
+       "Verificador",
+       "Documento con descripción del proceso de alfabetización (activación) de personas/usuarios sobre TDC."
+      ],
+      [
+       "Mínimo requerido",
+       "Documento local alfabetización (activación) de personas/usuarios sobre TDC."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Cuentan con documento local de alfabetización (activación) de personas/usuarios sobre TDC.)",
+       "pts": 1
+      },
+      {
+       "label": "No Cumple 0 punto (no tiene documento)",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "0-14",
+     "n": "15",
+     "texto": "6.1. Sectorización del centro",
+     "grupo": "EQUIPO DE SALUD",
+     "obligatoria": true,
+     "detalles": [
+      [
+       "Objetivo",
+       "6. Organizar y aplicar acciones de salud teniendo como eje central las necesidades de salud de las personas, familia y la comunidad"
+      ],
+      [
+       "Cálculo",
+       "El establecimiento se encuentra sectorizado y con su equipo identificado. Cada Servicio de Salud (SS) determina universo a evaluar. Revisión de 3 fichas clínicas seleccionadas aleatoriamente, de personas inscritas en el establecimiento de atención primaria que evidencia que el último control haya sido realizado por el equipo de sector."
+      ],
+      [
+       "Verificador",
+       "1. Acto administrativo del Director del establecimiento con conformación de los equipos de sector del centro (El establecimiento madre debe incluir CECOSF y PSR) 2. Documento de caracterización de los procesos de sectorización (criterios de definición de sectores, de equipos por sector, cantidad de inscritos, entre otros). 3. Auditoría de ficha clínica con correspondencia de sector"
+      ],
+      [
+       "Mínimo requerido",
+       "El establecimiento presenta el acto administrativo del equipo de sector"
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (acto administrativo más documento de caracterización de los procesos de sectorización mas 3 fichas con ultimo control en sector correspondiente.)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.75 punto (acto administrativo más documento de caracterización de los procesos de sectorización, mas 2 fichas con ultimo control en sector correspondiente.)",
+       "pts": 0.75
+      },
+      {
+       "label": "Cumple 0.5 punto (acto administrativo más documento de caracterización de los procesos de sectorización)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 punto (no tiene acto administrativo ni documento)",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "0-15",
+     "n": "16",
+     "texto": "6.2 Capacitación en Toma de decisiones compartida (TDC)",
+     "grupo": "EQUIPO DE SALUD",
+     "detalles": [
+      [
+       "Objetivo",
+       "6. Organizar y aplicar acciones de salud teniendo como eje central las necesidades de salud de las personas, familia y la comunidad"
+      ],
+      [
+       "Cálculo",
+       "Número de funcionarios que realizan atención directa capacitados en TDC/Número Total de funcionarios que realizan atención directa comprometidos a capacitar en TDC) *100"
+      ],
+      [
+       "Verificador",
+       "Listado de funcionarios que realizan atención directa capacitados en Toma decisiones compartida Documento formal(1) que de cuenta de los funcionarios de atención directa comprometidos a capacitar (1) Cualquier documento que va de una institución a otra incluyendo los email"
+      ],
+      [
+       "Mínimo requerido",
+       "Al menos 2 profesionales que realicen atención directa capacitados por sector al año."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (si cuenta con la cobertura mínima requerida.)",
+       "pts": 1
+      },
+      {
+       "label": "No Cumple 0 punto (no cuenta con la cobertura mínima requerida.)",
+       "pts": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "1",
+   "titulo": "Integralidad",
+   "items": [
+    {
+     "id": "1-0",
+     "n": "1",
+     "texto": "1.1. Diagnóstico de Salud comunitaria con enfoque de Derechos Humanos, de DSS y de activos comunitarios en el territorio de acción del establecimiento.",
+     "grupo": "COMUNIDAD",
+     "detalles": [
+      [
+       "Objetivo",
+       "1. Conocer el territorio de su establecimiento y sus comunidades en sus distintas dimensiones (historia, cultura, Determinantes Sociales de la Salud (DSS), epidemiología, recursos, activos de salud, red intersectorial) para identificar y diseñar cuidados de salud colectivos con pertinencia social y cultural."
+      ],
+      [
+       "Cálculo",
+       "Establecimiento cuenta con diagnóstico de salud comunitario En PSR se considera un diagnóstico por sector territorial"
+      ],
+      [
+       "Verificador",
+       "Documento de Diagnóstico de Salud comunitario con enfoque de Derechos Humanos, DSS, incorporando el modelo de activos comunitarios. Vigencia 3 años."
+      ],
+      [
+       "Mínimo requerido",
+       "Informe de Diagnóstico de Salud comunitario que incluya detalle de convocatoria, objetivos, metodología utilizada, áreas priorizadas a incorporar en el Plan de trabajo Comunitario"
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Diagnóstico de Salud Comunitario integra enfoque de derechos humanos, DSS y modelo de activos comunitarios)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (Diagnóstico Comunitario integra DSS)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "1-1",
+     "n": "2",
+     "texto": "2.1. Existencia de Plan de Trabajo de Salud Comunitaria que aborde las áreas priorizadas del diagnóstico de salud comunitario",
+     "grupo": "COMUNIDAD",
+     "obligatoria": true,
+     "detalles": [
+      [
+       "Objetivo",
+       "2. Generar espacios de gestión participativa permanente en salud , con pertinencia territorial y cultural, para fortalecer las capacidades de cuidados personales y colectivos recogiendo los saberes y conocimientos del territorio."
+      ],
+      [
+       "Cálculo",
+       "Establecimiento cuenta con Plan de Trabajo de Salud Comunitaria que aborde las áreas priorizadas del diagnóstico de salud comunitario reconociendo brechas de acceso a salud e incorporando líneas de Participación social, Intersectorialidad, Promoción de la Salud y Comunicación Social"
+      ],
+      [
+       "Verificador",
+       "Documento del plan de trabajo de Salud Comunitaria anual Informes de avance semestral de la ejecución del plan de trabajo de salud comunitaria *El establecimiento debe realizar un solo plan de trabajo de salud comunitario para los indicadores que lo solicitan (Integralidad 2.1, Continuidad 2.1)"
+      ],
+      [
+       "Mínimo requerido",
+       "Documento del plan de trabajo de Salud Comunitaria anual indicando la periodicidad de las actividades, contenido de las mismas y elementos de evaluación"
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Presenta Plan de trabajo de Salud Comunitario (reconociendo brechas de acceso a salud y considerando las 4 líneas) validado y difundido al equipo de salud y comunidad. Informe de evaluación cualitativa y registro de difusión a equipos y comunidad)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (Presenta sólo Plan de trabajo de Salud Comunitario reconociendo brechas de acceso a salud y considerando las 4 líneas validado por equipo técnico.)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "1-2",
+     "n": "3",
+     "texto": "3.1 Intervención en crisis normativa y/o no normativa",
+     "grupo": "PERSONAS Y FAMILIAS",
+     "detalles": [
+      [
+       "Objetivo",
+       "3. Articular acciones de cuidado en salud a través del curso de vida."
+      ],
+      [
+       "Cálculo",
+       "Revisión de 3 fichas clínicas seleccionadas aleatoriamente de personas inscritas en el establecimiento de atención primaria que evidencia plan de cuidados integrales."
+      ],
+      [
+       "Verificador",
+       "Auditoría de ficha clínica"
+      ],
+      [
+       "Mínimo requerido",
+       "El establecimiento cuenta a lo menos con protocolo de abordaje de crisis y registro en ficha clínica: Problema identificado, conducta y/o manejo acordado en la primera atención y seguimiento."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (3 fichas clínicas donde consta uso del protocolo)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.75 punto (2 fichas clínicas donde consta uso del protocolo)",
+       "pts": 0.75
+      },
+      {
+       "label": "Cumple 0.5 punto (1 ficha clínica donde consta uso del protocolo)",
+       "pts": 0.5
+      },
+      {
+       "label": "Cumple 0.25 punto (Solo cuenta con el protocolo)",
+       "pts": 0.25
+      },
+      {
+       "label": "No Cumple 0 punto",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "1-3",
+     "n": "4",
+     "texto": "4.1. Gestión de casos para personas de alto riesgo (G3) y de moderado riesgo (G2) priorizados. Según Marco Operativo ECICEP",
+     "grupo": "PERSONAS Y FAMILIAS",
+     "detalles": [
+      [
+       "Objetivo",
+       "4. Contribuir a la continuidad del cuidado a través de la gestión de casos"
+      ],
+      [
+       "Cálculo",
+       "Revisión de 3 fichas clínica seleccionadas aleatoriamente de personas alto riesgo (G3) y de moderado riesgo (G2) priorizados ingresados a Gestión de casos."
+      ],
+      [
+       "Verificador",
+       "Auditoría de ficha clínica"
+      ],
+      [
+       "Mínimo requerido",
+       "Cada ficha consigna información respecto de: objetivos para la gestión de casos, presentación en reunión de equipo de sector, acciones interdisciplinarias, gestión de cartera de prestaciones, evaluación, seguimiento, entre otros. Aplica a establecimientos que cuentan con registro clínico electrónico"
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (3 fichas con registro de gestión de casos de acuerdo al mínimo requerido.)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.75 punto (2 fichas con registro de gestión de casos de acuerdo al mínimo requerido.)",
+       "pts": 0.75
+      },
+      {
+       "label": "Cumple 0.5 punto (1 ficha con registro de gestión de casos de acuerdo al mínimo requerido.)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 punto",
+       "pts": 0
+      },
+      {
+       "label": "No Aplica",
+       "pts": null
+      }
+     ]
+    },
+    {
+     "id": "1-4",
+     "n": "5",
+     "texto": "5.1. Funcionarios que realizan atención directa capacitados en cursos de la ECICEP (A lo menos Curso básico de Herramientas o equivalente min 28 hrs cronológicas)",
+     "grupo": "EQUIPO DE SALUD",
+     "detalles": [
+      [
+       "Objetivo",
+       "5. Proporcionar prestaciones continuas, coherentes y consistentes que consideren las dimensiones de la persona, familia y comunidad; las cuales han sido previamente identificadas, diseñadas, planificadas y evaluadas por equipos competentes e interdisciplinarios."
+      ],
+      [
+       "Cálculo",
+       "(Número de funcionarios que realizan atención directa del centro capacitadas en curso básico de la ECICEP /Número total de funcionarios que realizan atención directa que trabajan en el centro * 100."
+      ],
+      [
+       "Verificador",
+       "Certificado de encargado RRHH o de Capacitación Comunal que incluye listado y proporción de funcionarios capacitados en la ECICEP (a lo menos 28 hrs pedagógicas)"
+      ],
+      [
+       "Mínimo requerido",
+       "Establecimiento presenta ambos documentos (certificados más listado) Aplica para todos los centros indistintamente de si están en la ECICEP (CESFAM, CECOSF, HFC y PSR)"
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (>50% de funcionarios que realizan atención directa capacitados en cursos de la ECICEP)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.75 punto (entre un 40% y 49% de funcionarios que realizan atención directa capacitados en cursos de la ECICEP)",
+       "pts": 0.75
+      },
+      {
+       "label": "Cumple 0.5 punto (entre un 20% y 39% de funcionarios que realizan atención directa capacitados en cursos de la ECICEP)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 punto (<19% de funcionarios que realizan atención directa capacitados en cursos de la ECICEP)",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "1-5",
+     "n": "6",
+     "texto": "5.2. Evaluación de requisitos mínimos de calidad en la implementación de la ECICEP",
+     "grupo": "EQUIPO DE SALUD",
+     "obligatoria": true,
+     "detalles": [
+      [
+       "Objetivo",
+       "5. Proporcionar prestaciones continuas, coherentes y consistentes que consideren las dimensiones de la persona, familia y comunidad; las cuales han sido previamente identificadas, diseñadas, planificadas y evaluadas por equipos competentes e interdisciplinarios."
+      ],
+      [
+       "Cálculo",
+       "Revisión de 3 fichas clínicas seleccionadas aleatoriamente de personas inscritas en el centro con más de 12 meses ingresadas a la ECICEP, que cumplen mínimos requeridos."
+      ],
+      [
+       "Verificador",
+       "Auditoría de ficha clínica"
+      ],
+      [
+       "Mínimo requerido",
+       "Revisión de fichas de personas inscritas en el centro con más de 12 meses ingresadas a la ECICEP Se revisará aplicación de auditoria de ficha y esta debe tener el 100% de cumplimiento de los mínimos requeridos (ingreso, controles y seguimiento)"
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (3 fichas)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.75 punto (2 fichas)",
+       "pts": 0.75
+      },
+      {
+       "label": "Cumple 0.5 punto (1 ficha)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 punto (0 fichas)",
+       "pts": 0
+      },
+      {
+       "label": "No Aplica",
+       "pts": null
+      }
+     ]
+    },
+    {
+     "id": "1-6",
+     "n": "7",
+     "texto": "5.3. Perfiles de cargos por competencia y funciones difundidos entre los funcionarios.",
+     "grupo": "EQUIPO DE SALUD",
+     "detalles": [
+      [
+       "Objetivo",
+       "5. Proporcionar prestaciones continuas, coherentes y consistentes que consideren las dimensiones de la persona, familia y comunidad; las cuales han sido previamente identificadas, diseñadas, planificadas y evaluadas por equipos competentes e interdisciplinarios."
+      ],
+      [
+       "Cálculo",
+       "Perfiles de cargos definidos comunal/local, funcionario toma conocimiento de sus funciones según cargo y firma en hoja de vida o carpeta funcionaria"
+      ],
+      [
+       "Verificador",
+       "Verificar evidencia de toma de conocimiento firmada por el funcionario y documento con perfiles de cargo disponible para los funcionarios."
+      ],
+      [
+       "Mínimo requerido",
+       "Toma de conocimiento y firma al momento de inducción del perfil/función en carpeta funcionaria/hoja de vida. Documento con perfiles para a lo menos los siguientes actores claves en el desarrollo del MAIS (Jefe SOME o encargado de agenda, jefe de sector, encargado MAIS-ECICEP , encargado de promoción, participación)"
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Si presenta todos los documentos de toma de conocimiento y documento con perfiles para los actores claves)",
+       "pts": 1
+      },
+      {
+       "label": "No Cumple 0 punto",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "1-7",
+     "n": "8",
+     "texto": "5.4. Funcionarios del establecimiento capacitados en el Modelo de Atención Integral de Salud Familiar y Comunitario",
+     "grupo": "EQUIPO DE SALUD",
+     "detalles": [
+      [
+       "Objetivo",
+       "5. Proporcionar prestaciones continuas, coherentes y consistentes que consideren las dimensiones de la persona, familia y comunidad; las cuales han sido previamente identificadas, diseñadas, planificadas y evaluadas por equipos competentes e interdisciplinarios."
+      ],
+      [
+       "Cálculo",
+       "(Número de funcionarios del establecimiento capacitados en MAIS /Número total de funcionarios que trabajan en el establecimiento) * 100."
+      ],
+      [
+       "Verificador",
+       "Certificado de encargado de gestión de las personas (RRHH) o Capacitación Comunal que incluye proporción de funcionarios (dotación) capacitados en MAIS (mínimo 20 hrs pedagógicas) y anexo con listado de personas capacitadas en el Modelo (nombre, RUT y cargo, nombre del curso y horas)"
+      ],
+      [
+       "Mínimo requerido",
+       "Listado de personas capacitadas en el Modelo (nombre, RUT y cargo, nombre del curso y horas)"
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (>= 80% funcionarios del establecimiento capacitados)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.75 punto (70 - 79% funcionarios del establecimiento capacitados)",
+       "pts": 0.75
+      },
+      {
+       "label": "Cumple 0.5 punto (69 - 50% funcionarios del establecimiento capacitados)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 punto (< 50% funcionarios del establecimiento capacitados)",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "1-8",
+     "n": "9",
+     "texto": "5.5. Planificación de actividades orientadas a la mejora del bienestar de los funcionarios de los centros de salud",
+     "grupo": "EQUIPO DE SALUD",
+     "detalles": [
+      [
+       "Objetivo",
+       "5. Proporcionar prestaciones continuas, coherentes y consistentes que consideren las dimensiones de la persona, familia y comunidad; las cuales han sido previamente identificadas, diseñadas, planificadas y evaluadas por equipos competentes e interdisciplinarios."
+      ],
+      [
+       "Cálculo",
+       "Documento de planificación de actividades orientadas al bienestar de trabajadores/as y ambientes laborales saludables de acuerdo con los 4 componentes de Saludablemente funcionarios/as incluidas en las Orientaciones para la Planificación y Programación en red"
+      ],
+      [
+       "Verificador",
+       "Matriz de planificación de saludablemente funcionarios, priorizando acciones para el establecimiento de salud."
+      ],
+      [
+       "Mínimo requerido",
+       "Presenta documento con la planificación y evaluación de actividades semestrales que se enmarcan en los 4 componentes de la estrategia saludablemente APS. Las acciones presentan planificación con objetivos, periodicidad y verificadores."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Presenta documento de planificación y evaluación de acción en los 4 componentes.)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (Solo presenta documento de planificación y evaluación en 2 de los 4 componentes.)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos (no presenta documento)",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "1-9",
+     "n": "10",
+     "texto": "5.6. Encargado en áreas estratégicas para el desarrollo del Modelo: MAIS, ECICEP, Calidad, Promoción y Participación.",
+     "grupo": "EQUIPO DE SALUD",
+     "obligatoria": true,
+     "detalles": [
+      [
+       "Objetivo",
+       "5. Proporcionar prestaciones continuas, coherentes y consistentes que consideren las dimensiones de la persona, familia y comunidad; las cuales han sido previamente identificadas, diseñadas, planificadas y evaluadas por equipos competentes e interdisciplinarios."
+      ],
+      [
+       "Cálculo",
+       "Acto administrativo local con nombramiento de encargados y horas asignadas, firmado por el funcionario"
+      ],
+      [
+       "Verificador",
+       "Acto administrativo local (decreto alcaldicio u oficio de la dirección de salud o corporación) con nombramiento de encargados y horas asignadas."
+      ],
+      [
+       "Mínimo requerido",
+       "Presentan acto administrativo que cuenta con nombramiento de encargados y horas según corresponda: 1) MAIS- ECICEP: al menos 22 hrs 2) Promoción: al menos 11 hrs. 3) Participación: al menos 22 hrs. 4) Calidad: al menos 22 hrs"
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (presenta todos los referentes señalados)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.75 punto (presenta referente MAIS, ECICEP y 2 referentes de los señalados)",
+       "pts": 0.75
+      },
+      {
+       "label": "Cumple 0.5 punto (presenta referente MAIS, ECICEP y 1 referentes de los señalados)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 punto (no presenta ninguno)",
+       "pts": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "titulo": "Continuidad del cuidado",
+   "items": [
+    {
+     "id": "2-0",
+     "n": "1",
+     "texto": "1.1. Mapeo de instituciones, recursos y activos comunitarios del territorio de cada establecimiento",
+     "grupo": "COMUNIDAD",
+     "detalles": [
+      [
+       "Objetivo",
+       "1. Conocer el territorio y sus comunidades en sus distintas dimensiones (historia, cultura, determinantes sociales de la salud, epidemiología, recursos, activos comunitarios de salud, red intersectorial) para identificar y diseñar cuidados de salud colectivos con pertinencia social y cultural."
+      ],
+      [
+       "Cálculo",
+       "Establecimiento cuenta con mapa elaborado participativamente de instituciones, recursos y activos comunitarios en salud"
+      ],
+      [
+       "Verificador",
+       "Mapa de instituciones, recursos y activos comunitarios en salud con validación de quienes participaron, actualizado al menos 1 vez al año. Acta con asistencia de quienes participaron y validaron el mapa de instituciones y recursos"
+      ],
+      [
+       "Mínimo requerido",
+       "Establecimiento cuenta con mapa de instituciones y recursos Actualizado participativamente al menos 1 vez al año, disponible para la comunidad y el equipo de salud."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Establecimiento cuenta con mapa de instituciones, recursos y activos comunitarios en salud validado por quienes participaron)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (Establecimiento cuenta con mapa de instituciones, recursos)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "2-1",
+     "n": "2",
+     "texto": "1.2. Documento que describa la articulación del equipo de salud con el intersector y organizaciones para la gestión y continuidad de cuidados",
+     "grupo": "COMUNIDAD",
+     "detalles": [
+      [
+       "Objetivo",
+       "1. Conocer el territorio y sus comunidades en sus distintas dimensiones (historia, cultura, determinantes sociales de la salud, epidemiología, recursos, activos comunitarios de salud, red intersectorial) para identificar y diseñar cuidados de salud colectivos con pertinencia social y cultural."
+      ],
+      [
+       "Cálculo",
+       "Protocolo/documento que estandarice la articulación del equipo de salud con el intersector y organizaciones para la gestión de la continuidad de cuidados"
+      ],
+      [
+       "Verificador",
+       "Protocolo/documento actualizado al menos 1 vez al año."
+      ],
+      [
+       "Mínimo requerido",
+       "Protocolo/documento que articule la relación del equipo de salud con el intersector y organizaciones para la gestión y continuidad de cuidados Debe ser validado y difundido en el equipo de Salud e Intersector con actualización anual."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Protocolo/documento que articule la relación del equipo de salud con el intersector y organizaciones para la gestión y continuidad de cuidados, validado, difundido y con actualización anual.)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (Protocolo/documento que articule la relación del equipo de salud con el intersector y organizaciones en la gestión y continuidad de cuidados.)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "2-2",
+     "n": "3",
+     "texto": "2.1. Plan de Salud Comunitario que incorpora gestión intersectorial de trabajo con activos comunitarios.",
+     "grupo": "COMUNIDAD",
+     "obligatoria": true,
+     "detalles": [
+      [
+       "Objetivo",
+       "2. Promover y facilitar la articulación y encuentro de forma coordinada, coherente e integrada de redes comunitarias e institucionales (salud e intersector) que conozcan y compartan el diagnóstico comunitario y elaboren estrategias participativas por curso de vida para el abordaje de determinantes de la salud"
+      ],
+      [
+       "Cálculo",
+       "Establecimiento cuenta con Plan de Salud Comunitario que incorpora gestión intersectorial de trabajo con activos comunitarios."
+      ],
+      [
+       "Verificador",
+       "Existencia de documento de Plan de Salud Comunitario que incorpora gestión intersectorial de trabajo con activos comunitarios. *El establecimiento debe realizar un solo plan de trabajo de salud comunitario para los indicadores que lo solicitan (Integralidad 2.1, Continuidad 2.1)"
+      ],
+      [
+       "Mínimo requerido",
+       "Plan de Salud Comunitario que incorpora gestión intersectorial de trabajo con activos comunitarios."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Plan de Salud Comunitario que incorpora gestión intersectorial de trabajo con activos comunitarios en implementación y con informe de avance semestrales)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (Plan de Salud Comunitario que incorpora gestión intersectorial de trabajo con activos comunitarios.)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "2-3",
+     "n": "4",
+     "texto": "3.1. Monitoreo y gestión de la contrarreferencia",
+     "grupo": "PERSONAS Y FAMILIAS",
+     "detalles": [
+      [
+       "Objetivo",
+       "3. Procurar la continuidad del cuidado a los usuarios y su familia en la red asistencial."
+      ],
+      [
+       "Cálculo",
+       "Existencia de protocolo de contrarreferencia e informes semestrales de cumplimiento del protocolo."
+      ],
+      [
+       "Verificador",
+       "Protocolo de contrarreferencia e informes semestrales de cumplimiento del protocolo."
+      ],
+      [
+       "Mínimo requerido",
+       "Protocolo de contrarreferencia incluye articulación con la red, descripción del proceso de contrarreferencia, indicadores de proceso y resultado."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Protocolo de contrarreferencia e informes del periodo)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (Protocolo de contrarreferencia)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "2-4",
+     "n": "5",
+     "texto": "3.2 Manejo de personas egresadas de alta hospitalaria por causa de NM, DM2, amputaciones por DM2, IAM, ACV, ERC etapa 5.",
+     "grupo": "PERSONAS Y FAMILIAS",
+     "obligatoria": true,
+     "detalles": [
+      [
+       "Objetivo",
+       "3. Procurar la continuidad del cuidado a los usuarios y su familia en la red asistencial."
+      ],
+      [
+       "Cálculo",
+       "Informe semestral que contenga descripción de plazos de atención y cobertura de atención. Revisión de fichas clínicas seleccionadas aleatoriamente, de personas inscritas en el establecimiento de APS que cuentan con un plan de acción post alta hospitalaria por causa de NM, DM2, amputaciones por DM2, IAM, ACV, ERC etapa 5, según protocolo local."
+      ],
+      [
+       "Verificador",
+       "Protocolo, informe semestral y auditoria de ficha clínica"
+      ],
+      [
+       "Mínimo requerido",
+       "Existencia de protocolo de articulación vigente e informe semestral."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Informe semestral y 3 fichas demuestran uso del protocolo)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.75 punto (Informe semestral y 2 fichas demuestran uso del protocolo.)",
+       "pts": 0.75
+      },
+      {
+       "label": "Cumple 0.5 punto (Presenta el protocolo e informe semestral.)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 punto (No presenta protocolo e informe)",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "2-5",
+     "n": "6",
+     "texto": "4.1. EMPA alterados con seguimiento",
+     "grupo": "PERSONAS Y FAMILIAS",
+     "detalles": [
+      [
+       "Objetivo",
+       "4. Desarrollar acciones de salud en el continuo salud-enfermedad.(Implementar el seguimiento de las acciones preventivas realizadas)"
+      ],
+      [
+       "Cálculo",
+       "Revisión de 5 fichas seleccionadas aleatoriamente de personas inscritas en el establecimiento de atención primaria con EMPA cerrados y alterados (presión arterial, glicemia, colesterol, entre otros)"
+      ],
+      [
+       "Verificador",
+       "Auditoría de ficha clínica"
+      ],
+      [
+       "Mínimo requerido",
+       "Personas con EMPA cerrado y alterado que cuentan con seguimiento."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (5 fichas de personas con EMPA cerrado y alterado demuestran seguimiento.)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (3 fichas de personas con EMPA cerrado y alterado demuestran seguimiento.)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos (0 fichas.)",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "2-6",
+     "n": "7",
+     "texto": "5.1. Trabajo con enfoque familiar del equipo de sector",
+     "grupo": "EQUIPO DE SALUD",
+     "obligatoria": true,
+     "detalles": [
+      [
+       "Objetivo",
+       "5. Procurar la continuidad de cuidados coherentes y consistentes a lo largo del curso de vida de la persona y su familia; mediante la identificación, comunicación y coordinación con los actores de la red, intersector y comunidad"
+      ],
+      [
+       "Cálculo",
+       "Análisis de casos en reunión de sector"
+      ],
+      [
+       "Verificador",
+       "Actas mensuales de reunión de sector incorporan análisis de casos con enfoque familiar. Calendarización de reuniones validada por la Dirección del establecimiento. El Universo será el total de reuniones de sector del establecimiento a la fecha de corte."
+      ],
+      [
+       "Mínimo requerido",
+       "Acta mensual de reuniones del equipo de sector."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Al menos 10 a 12 reuniones al año presentan análisis de caso con enfoque familiar)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (Al menos 5 a 6 reuniones al año presentan análisis de caso con enfoque familiar)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0.25 punto (Al menos 3 a 4 reuniones al año presentan análisis de casos con enfoque familiar)",
+       "pts": 0.25
+      },
+      {
+       "label": "No Cumple 0 punto",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "2-7",
+     "n": "8",
+     "texto": "5.2. Rescate efectivo de personas inscritas en el establecimiento derivadas desde Urgencia primaria hacia APS según protocolo local visado por el Servicio de Salud",
+     "grupo": "EQUIPO DE SALUD",
+     "detalles": [
+      [
+       "Objetivo",
+       "5. Procurar la continuidad de cuidados coherentes y consistentes a lo largo del curso de vida de la persona y su familia; mediante la identificación, comunicación y coordinación con los actores de la red, intersector y comunidad"
+      ],
+      [
+       "Cálculo",
+       "Existencia de protocolo de rescate efectivo"
+      ],
+      [
+       "Verificador",
+       "1. Protocolo/documento de rescate efectivo (debe contener coordinación entre encargados, frecuencia de análisis en el informe, a quienes voy a rescatar) 2. Informe (análisis cualitativo de las brechas) al corte de la evaluación con trabajo realizado según protocolo."
+      ],
+      [
+       "Mínimo requerido",
+       "El establecimiento presenta protocolo de rescate efectivo"
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (protocolo de rescate efectivo + informe)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (protocolo de rescate efectivo)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "2-8",
+     "n": "9",
+     "texto": "5.3. Plan de gestión de la demanda",
+     "grupo": "EQUIPO DE SALUD",
+     "detalles": [
+      [
+       "Objetivo",
+       "5. Procurar la continuidad de cuidados coherentes y consistentes a lo largo del curso de vida de la persona y su familia; mediante la identificación, comunicación y coordinación con los actores de la red, intersector y comunidad"
+      ],
+      [
+       "Cálculo",
+       "El establecimiento cuenta con plan de gestión de la demanda, visado por Director/a de establecimiento"
+      ],
+      [
+       "Verificador",
+       "1. Existencia de Plan de gestión de la demanda que indique, al menos: como abordan la continuidad de atención desde urgencia primaria a establecimientos primarios, consultas de morbilidad, ingresos y controles según ciclo vital en CESFAM; objetivos, actividades e indicadores. 2. Evaluación trimestral de los indicadores y plan de mejora para la gestión de la demanda."
+      ],
+      [
+       "Mínimo requerido",
+       "El establecimiento presenta plan de gestión de la demanda visado por Director/a de establecimiento"
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (plan de gestión de la demanda visado por Director/a de establecimiento + evaluación trimestral)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (Plan de gestión de la demanda visado por Director/a de establecimiento)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "2-9",
+     "n": "10",
+     "texto": "5.4. Análisis y gestión de la información de personas inscritas en el establecimiento que son poli consultantes en Servicio de Urgencia primario (SAPU/SAR/SUR) y/o Servicio de Urgencia hospitalaria.",
+     "grupo": "EQUIPO DE SALUD",
+     "detalles": [
+      [
+       "Objetivo",
+       "5. Procurar la continuidad de cuidados coherentes y consistentes a lo largo del curso de vida de la persona y su familia; mediante la identificación, comunicación y coordinación con los actores de la red, intersector y comunidad"
+      ],
+      [
+       "Cálculo",
+       "1. El establecimiento identifica y analiza el perfil de las personas inscritas y poli consultantes (según definición y protocolo local) en Servicio de Urgencia APS (SAPU/SAR/SUR) y/o Servicio de Urgencia hospitalaria. 2. Personas poli consultantes gestionadas/Población Inscrita o adscrita, según corresponda."
+      ],
+      [
+       "Verificador",
+       "Protocolo con flujograma de articulación y rescate de pacientes poli consultantes a Servicio de Urgencia primario (SAPU/SAR/SUR) y/o Servicio de Urgencia hospitalaria. Informe semestral que recoja la situación de los últimos seis meses."
+      ],
+      [
+       "Mínimo requerido",
+       "El establecimiento presenta protocolo con flujo de personas poli consultantes en Servicio de Urgencia primario (SAPU/SAR/SUR) y/o Servicio de Urgencia hospitalaria."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (Protocolo + informe + aumenta cobertura respecto al año anterior)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (Protocolo + informe + mantiene/crea línea base)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "2-10",
+     "n": "11",
+     "texto": "5.5. Seguimiento y evaluación del cumplimiento de la programación operativa en aspectos críticos como control sano niño y niña, control de salud integral del adolescente, control integral ECICEP, control gestantes (prenatal)",
+     "grupo": "EQUIPO DE SALUD",
+     "detalles": [
+      [
+       "Objetivo",
+       "5. Procurar la continuidad de cuidados coherentes y consistentes a lo largo del curso de vida de la persona y su familia; mediante la identificación, comunicación y coordinación con los actores de la red, intersector y comunidad"
+      ],
+      [
+       "Cálculo",
+       "Informe semestral de evaluación de la programación operativa en aspectos críticos como control sano niño y niña, control de salud integral del adolescente, control integral ECICEP, control gestantes (prenatal)"
+      ],
+      [
+       "Verificador",
+       "Informe de evaluación del proceso de programación y lo que se registra a la fecha"
+      ],
+      [
+       "Mínimo requerido",
+       "INFORME SEMESTRAL que incluya evaluaciones de programación trimestral."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (El informe y refleja los ajustes necesarios en el proceso programático y diseño de las agendas)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (El informe solo describe y compara lo programado con la producción.)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos",
+       "pts": 0
+      }
+     ]
+    },
+    {
+     "id": "2-11",
+     "n": "12",
+     "texto": "5.6. Continuidad de la atención ante emergencias y desastres",
+     "grupo": "EQUIPO DE SALUD",
+     "detalles": [
+      [
+       "Objetivo",
+       "5. Procurar la continuidad de cuidados coherentes y consistentes a lo largo del curso de vida de la persona y su familia; mediante la identificación, comunicación y coordinación con los actores de la red, intersector y comunidad"
+      ],
+      [
+       "Cálculo",
+       "Plan que resguarde la continuidad de atención ante emergencias y desastres"
+      ],
+      [
+       "Verificador",
+       "1. Existencia de Plan de emergencia en establecimientos de atención primaria, de acuerdo a guía de planes de emergencia APS emitida por Minsal. 2. Evaluación del plan de acuerdo a guía de planes de emergencia APS emitida por Minsal (tras su puesta en practica en una emergencia o desastre o en un ejercicio de simulación)"
+      ],
+      [
+       "Mínimo requerido",
+       "Plan de emergencia en establecimiento primario que indique, al menos: como abordan la continuidad de atención ante emergencias y desastres en coordinación con la red, intersector y comunidad; Que considere objetivos, actividades e indicadores, responsables, seguimiento y evaluación."
+      ]
+     ],
+     "opciones": [
+      {
+       "label": "Cumple 1 punto (plan de emergencia + evaluación)",
+       "pts": 1
+      },
+      {
+       "label": "Cumple 0.5 punto (Plan de emergencia)",
+       "pts": 0.5
+      },
+      {
+       "label": "No Cumple 0 puntos",
+       "pts": 0
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

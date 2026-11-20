@@ -1,0 +1,633 @@
+{
+ "secciones": [
+  {
+   "id": "0",
+   "titulo": "Resultados",
+   "subtitulo": "Ítems 1–3",
+   "items": [
+    {
+     "id": "0-0",
+     "n": "1",
+     "texto": "Porcentaje de personas con enfermedad no oncológica que disminuyen su sufrimiento en el año t.",
+     "detalles": [
+      [
+       "Verificación",
+       "Meta anual: 100%. Verificador: REM A33. Numerador: personas con enfermedades no oncológicas que disminuyen su sufrimiento. Denominador: personas que requieren cuidados paliativos por enfermedad no oncológica, según DIVAP."
+      ],
+      [
+       "Dimensión",
+       "Efectividad"
+      ],
+      [
+       "Subdimensión",
+       "Resultados"
+      ]
+     ]
+    },
+    {
+     "id": "0-1",
+     "n": "2",
+     "texto": "Porcentaje de atenciones domiciliarias realizadas a personas con enfermedades no oncológicas en CPU durante el año t.",
+     "detalles": [
+      [
+       "Verificación",
+       "Meta anual: mayor o igual a 60%. Verificador: REM A33. Numerador: atenciones domiciliarias a personas CPU no oncológicas. Denominador: total de atenciones a estas personas."
+      ],
+      [
+       "Dimensión",
+       "Efectividad"
+      ],
+      [
+       "Subdimensión",
+       "Resultados"
+      ]
+     ]
+    },
+    {
+     "id": "0-2",
+     "n": "3",
+     "texto": "Porcentaje de funcionarios/as de APS y hospitales comunitarios con capacitación vigente en CPU durante el año t.",
+     "detalles": [
+      [
+       "Verificación",
+       "Meta anual: mayor o igual a 80%. Verificador: fuente local. Numerador: funcionarios del equipo CPU con capacitación vigente. Denominador: total de funcionarios del equipo CPU."
+      ],
+      [
+       "Dimensión",
+       "Efectividad"
+      ],
+      [
+       "Subdimensión",
+       "Resultados"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "1",
+   "titulo": "Estructura",
+   "subtitulo": "Ítems 4–14",
+   "items": [
+    {
+     "id": "1-0",
+     "n": "4",
+     "texto": "Manual de inducción o programa de orientación que incluye seguridad del paciente y materias del Programa CPU o ECICEP.",
+     "detalles": [
+      [
+       "Verificación",
+       "Solicitar el manual o programa y el registro del personal profesional o técnico que recibió la inducción. Si está incompleto o no existe registro, se consigna no cumplido."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Estructura y organización"
+      ]
+     ]
+    },
+    {
+     "id": "1-1",
+     "n": "5",
+     "texto": "Protocolo de coordinación entre niveles de atención para usuarios/as CPU.",
+     "detalles": [
+      [
+       "Verificación",
+       "Solicitar protocolo de referencia y contrarreferencia que incorpore usuarios/as CPU. Si está incompleto o no incluye CPU, se consigna no cumplido."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Estructura y organización"
+      ]
+     ]
+    },
+    {
+     "id": "1-2",
+     "n": "6",
+     "texto": "Transferencia de conocimientos en temáticas de cuidados paliativos dirigida al sector del CESFAM, postas o CECOSF.",
+     "detalles": [
+      [
+       "Verificación",
+       "Solicitar programa de capacitación, con actividad a pares de al menos 20 horas pedagógicas, contenidos, evaluación y registros o certificados."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Estructura y organización"
+      ]
+     ]
+    },
+    {
+     "id": "1-3",
+     "n": "7",
+     "texto": "Equipo interdisciplinario CPU con programación de horas en agenda.",
+     "detalles": [
+      [
+       "Verificación",
+       "Verificar al menos tres tipos de profesionales o técnicos con programación de horas en el sistema de agendamiento del CESFAM durante el último mes completo."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Estructura y organización"
+      ]
+     ]
+    },
+    {
+     "id": "1-4",
+     "n": "8",
+     "texto": "Equipamiento completo para la atención de las personas del Programa CPU.",
+     "detalles": [
+      [
+       "Verificación",
+       "Aplicar Anexo N.º 1 cuando corresponda: box, oficina o maletín de terreno. Si falta algún equipo, describirlo en observaciones y consignar cero."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Infraestructura y equipamiento"
+      ]
+     ]
+    },
+    {
+     "id": "1-5",
+     "n": "9",
+     "texto": "Protocolo para mantención de equipos clínicos o del transporte utilizado.",
+     "detalles": [
+      [
+       "Verificación",
+       "Solicitar protocolo vigente con directrices de mantención o reposición. Revisar registro de mantenciones y reposiciones de los últimos 12 meses."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Infraestructura y equipamiento"
+      ]
+     ]
+    },
+    {
+     "id": "1-6",
+     "n": "10",
+     "texto": "Disponibilidad de fármacos de la canasta CPU.",
+     "detalles": [
+      [
+       "Verificación",
+       "Aplicar Anexo N.º 3. Confirmar disponibilidad de la canasta de fármacos indicada para CPU en APS y registrar las brechas detectadas."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Infraestructura y equipamiento"
+      ]
+     ]
+    },
+    {
+     "id": "1-7",
+     "n": "11",
+     "texto": "Disponibilidad de todos los insumos generales de la canasta CPU.",
+     "detalles": [
+      [
+       "Verificación",
+       "Aplicar Anexo N.º 2. Se asigna un punto solo con 100% de los insumos; describir en observaciones cada elemento faltante."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Infraestructura y equipamiento"
+      ]
+     ]
+    },
+    {
+     "id": "1-8",
+     "n": "12",
+     "texto": "Acceso a oxígeno.",
+     "detalles": [
+      [
+       "Verificación",
+       "Verificar convenio o compra de concentradores o balón de oxígeno tipo H/E. Revisar tres fichas, o todas si hay menos de tres personas usuarias de oxígeno CPU."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Infraestructura y equipamiento"
+      ]
+     ]
+    },
+    {
+     "id": "1-9",
+     "n": "13",
+     "texto": "Afiche de Cuidados Paliativos Universales.",
+     "detalles": [
+      [
+       "Verificación",
+       "Observar en salas de espera o sectores de alta afluencia de público la disponibilidad del afiche CPU."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Infraestructura y equipamiento"
+      ]
+     ]
+    },
+    {
+     "id": "1-10",
+     "n": "14",
+     "texto": "Registro de opioides conforme al formato definido.",
+     "detalles": [
+      [
+       "Verificación",
+       "Aplicar Anexo N.º 4: verificar que la planilla por receta incorpore establecimiento, folio, fecha, identificación, prescripción, despacho y equivalentes de morfina."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Sistema de registros y documentación"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "titulo": "Proceso",
+   "subtitulo": "Ítems 15–25",
+   "items": [
+    {
+     "id": "2-0",
+     "n": "15",
+     "texto": "Registro actualizado de cuidadores/as.",
+     "detalles": [
+      [
+       "Verificación",
+       "Verificar que incluye el registro de cuidadores/as, con estipendio otorgado o en trámite cuando corresponda."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Sistema de registros y documentación"
+      ]
+     ]
+    },
+    {
+     "id": "2-1",
+     "n": "16",
+     "texto": "Protocolo local de voluntades anticipadas de CPU.",
+     "detalles": [
+      [
+       "Verificación",
+       "Si el protocolo local se encuentra en elaboración, se consigna cumplido conforme a la pauta."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Sistema de registros y documentación"
+      ]
+     ]
+    },
+    {
+     "id": "2-2",
+     "n": "17",
+     "texto": "Comité CPU o telecomité con especialistas de nivel secundario.",
+     "detalles": [
+      [
+       "Verificación",
+       "Solicitar listado de personas presentadas, registro en ficha clínica y acta del comité o telecomité. Seleccionar tres fichas de personas bajo control. Debe cumplir los tres verificables."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Sistema de registros, documentación y gestión clínica"
+      ]
+     ]
+    },
+    {
+     "id": "2-3",
+     "n": "18",
+     "texto": "Evaluación de criterios de ingreso al Programa CPU.",
+     "detalles": [
+      [
+       "Verificación",
+       "Revisar herramienta de identificación de terminalidad aplicada, como NECPAL 4 u otra estandarizada y validada, junto con derivación u otro documento oficial vigente. Seleccionar tres fichas al azar."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Gestión clínica: atención a persona y familia"
+      ]
+     ]
+    },
+    {
+     "id": "2-4",
+     "n": "19",
+     "texto": "Prescripción clínica de opioides por el Programa CPU.",
+     "detalles": [
+      [
+       "Verificación",
+       "Revisar número de recetas de opioides prescritas el mes previo. Solicitar informe del sistema y respaldos según formato requerido."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Gestión clínica: objetivos terapéuticos"
+      ]
+     ]
+    },
+    {
+     "id": "2-5",
+     "n": "20",
+     "texto": "Identificación de complejidad en personas ingresadas al Programa CPU.",
+     "detalles": [
+      [
+       "Verificación",
+       "Seleccionar tres fichas al azar y confirmar la identificación de complejidad alta, intermedia o baja mediante pauta aplicada en todas las muestras."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Gestión clínica: objetivos terapéuticos"
+      ]
+     ]
+    },
+    {
+     "id": "2-6",
+     "n": "21",
+     "texto": "Plan integrado de cuidados y toma de decisiones.",
+     "detalles": [
+      [
+       "Verificación",
+       "En tres fichas al azar, identificar plan integrado que contemple aspectos biomédicos, psicológicos, sociales y espirituales."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Gestión clínica: derechos de la persona y objetivos terapéuticos"
+      ]
+     ]
+    },
+    {
+     "id": "2-7",
+     "n": "22",
+     "texto": "Aplicación de escala validada de evaluación de síntomas.",
+     "detalles": [
+      [
+       "Verificación",
+       "Seleccionar tres fichas al azar. Verificar aplicación de ESAS u otra escala validada en todas las muestras."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Gestión clínica: objetivos terapéuticos"
+      ]
+     ]
+    },
+    {
+     "id": "2-8",
+     "n": "23",
+     "texto": "Controles mensuales a las personas del programa.",
+     "detalles": [
+      [
+       "Verificación",
+       "Seleccionar tres fichas al azar y revisar frecuencia de los últimos tres controles médicos. Si no hay tres meses, revisar desde el ingreso reciente."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Gestión clínica: atención a persona y familia"
+      ]
+     ]
+    },
+    {
+     "id": "2-9",
+     "n": "24",
+     "texto": "Educación estructurada a través de talleres para cuidadores/as.",
+     "detalles": [
+      [
+       "Verificación",
+       "Revisar tres fichas de personas que participan en talleres y documento con plan educativo estructurado: objetivos, contenidos sobre CPU, metodología y evaluación."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Gestión clínica: trabajo en equipo"
+      ]
+     ]
+    },
+    {
+     "id": "2-10",
+     "n": "25",
+     "texto": "Participación del equipo local CPU en reuniones periódicas con equipos de sector.",
+     "detalles": [
+      [
+       "Verificación",
+       "Revisar actas, ordinarios o correos de reuniones sobre indicadores y resultados PRAPS. Deben existir al menos dos reuniones con estos verificables para cumplir."
+      ],
+      [
+       "Dimensión",
+       "Acceso · Oportunidad · Calidad · Continuidad"
+      ],
+      [
+       "Subdimensión",
+       "Gestión clínica: objetivos terapéuticos"
+      ]
+     ]
+    }
+   ]
+  }
+ ],
+ "anexos": [
+  {
+   "titulo": "Anexo N.º 1 · Equipamiento de box, oficina o maletín de terreno",
+   "opciones": [
+    "Sí",
+    "No",
+    "No aplica"
+   ],
+   "items": [
+    "Esfigmomanómetro validado",
+    "Analizador de glucosa capilar (glucómetro)",
+    "Oxímetro de pulso (saturómetro)",
+    "Fonendoscopio",
+    "Balanza adulta con tallímetro",
+    "Camilla de examen",
+    "Linterna de examen",
+    "Maletín de terreno",
+    "Oxígeno portátil tipo H/E",
+    "Box apto para silla de ruedas",
+    "Box con silla para acompañante",
+    "Dispensador de jabón funcionando",
+    "Dispensador de alcohol gel",
+    "Dispensador de toalla desechable funcionando",
+    "Lavamanos según normas universales",
+    "Computador",
+    "Papelero de oficina",
+    "Contenedores de residuos de 20 L, incluye cortopunzante",
+    "Escritorio",
+    "Set mural de otoscopio y oftalmoscopio",
+    "Escabel de dos peldaños en buenas condiciones",
+    "Concentradores"
+   ]
+  },
+  {
+   "titulo": "Anexo N.º 2 · Insumos de la canasta CPU en APS",
+   "opciones": [
+    "Sí",
+    "No"
+   ],
+   "items": [
+    "Apósito bacteriostático con DACC o PHMB",
+    "Apósito absorbente",
+    "Apósito hidratante: tull de silicona",
+    "Apósito transparente hidratante: poliéster",
+    "Protector cutáneo, cutimed o cavilon",
+    "Venda de gasa elasticada 10 cm x 4 m",
+    "Limpiador de heridas",
+    "Equipo de curación desechable",
+    "Gasa no tejida de poliéster elasticada y adhesiva 5 cm x 10 m",
+    "Sonda con balón 3–5 cc, 2 vías, 14 FR tipo Foley",
+    "Bolsa recolectora de orina",
+    "Bomba de infusión elastomérica 100 ml",
+    "Tapa amarilla L lock con goma para VSC",
+    "Catéter intravenoso #24G x 19 mm para VSC"
+   ]
+  },
+  {
+   "titulo": "Anexo N.º 3 · Fármacos de la canasta CPU en APS",
+   "opciones": [
+    "Sí",
+    "No"
+   ],
+   "items": [
+    "Amitriptilina 25 mg",
+    "Buprenorfina parche 35 mcg",
+    "Clorpromazina 100 mg",
+    "Dexametasona SC/EV 4 mg/mL",
+    "Dexametasona VO 4 mg",
+    "Domperidona gotas 10 mg/mL",
+    "Duloxetina 30 mg",
+    "Escopolamina SC/EV 20 mg/mL",
+    "Escitalopram 10 mg",
+    "Fosfato solución rectal adulto 4,4 g",
+    "Furosemida EV 20 mg/mL",
+    "Haloperidol SC 5 mg/mL",
+    "Haloperidol VO 1 mg",
+    "Ketorolaco SC/EV 30 mg/mL",
+    "Ketorolaco VO 10 mg",
+    "Lactulosa 65% a 70%",
+    "Melatonina 3 mg",
+    "Metamizol VO 300 mg",
+    "Metamizol EV 1000/2 mg/mL",
+    "Metoclopramida SC 10 mg/mL",
+    "Metoclopramida VO 10 mg",
+    "Midazolam SC/EV 5 mg/mL",
+    "Mirtazapina 30 mg",
+    "Morfina VO gotas 20 mg/mL",
+    "Morfina SC/EV 10 mg/mL",
+    "Morfina VO 30 mg",
+    "Nistatina 100.000 UI/mL",
+    "Omeprazol 20 mg",
+    "Ondansetrón EV 2 mg/mL",
+    "Ondansetrón SL 8 mg",
+    "Picosulfato de sodio gotas 7,5 mg/mL",
+    "Polietilenglicol 3350, 17 g",
+    "Pregabalina 75 mg",
+    "Quetiapina 100 mg",
+    "Risperidona VO 1 mg",
+    "Risperidona gotas 1 mg/mL",
+    "Sertralina 50 mg",
+    "Tramadol 100 mg",
+    "Tramadol/paracetamol 37,5/325 mg",
+    "Zopiclona 7,5 mg"
+   ]
+  },
+  {
+   "titulo": "Anexo N.º 4 · Formato de planilla de opioides",
+   "opciones": [
+    "Sí",
+    "No"
+   ],
+   "items": [
+    "Establecimiento",
+    "Folio de receta",
+    "Fecha de movimiento",
+    "RUT de la persona",
+    "Dígito verificador",
+    "Sexo",
+    "Artículo",
+    "Cantidad",
+    "Prescripción",
+    "Unidad",
+    "Frecuencia cada, en horas",
+    "Tiempo de prescripción por, en días",
+    "Vía de administración",
+    "Total recetado",
+    "Estado de receta",
+    "Cantidad de despacho",
+    "Milígramos de morfina equivalente día, MMED",
+    "Milígramos de morfina equivalente en 30 días, MMEM"
+   ]
+  }
+ ]
+}

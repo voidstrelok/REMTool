@@ -1,0 +1,532 @@
+{
+ "A": {
+  "tituloImpreso": "FISCALIZACIÓN · CUMPLIMIENTO DE REGULACIÓN MINISTERIAL RELATIVA A LA PREVENCIÓN Y CONTROL DE ENFERMEDAD DE CHAGAS EN ESTABLECIMIENTOS DE ATENCIÓN PRIMARIA SIN PRESTACIÓN DE TRATAMIENTO ANTIPARASITARIO",
+  "objetivo": "Constatar el cumplimiento de la regulación ministerial relativa a prevención y control de Enfermedad de Chagas en establecimiento de APS de la Región de Coquimbo.",
+  "secciones": [
+   {
+    "id": "I",
+    "titulo": "I. Pesquisa",
+    "corto": "Pesquisa",
+    "items": [
+     {
+      "id": "A1",
+      "n": "1",
+      "texto": "Se realiza tamizaje para detección de T. cruzi a toda gestante.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág. 33."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisar base de datos de gestantes y ficha clínica."
+       ]
+      ],
+      "detalleCasos": 5
+     },
+     {
+      "id": "A2",
+      "n": "2",
+      "texto": "Se realiza búsqueda activa de casos en mujeres en edad fértil (no embarazadas) con factores de riesgo, en periodo preconcepcional y seguimiento en el Programa de la Mujer.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág. 63."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisar base de datos de mujeres en control preconcepcional y ficha clínica."
+       ]
+      ],
+      "detalleCasos": 5
+     },
+     {
+      "id": "A3",
+      "n": "3",
+      "texto": "Se realiza estudio a familiares y personas con nexo epidemiológico de un caso confirmado de Enfermedad de Chagas.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág 31. Manual de Procedimientos para la atención de pacientes con Enfermedad de Chagas 2017. Pág 49."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisar estudio de contacto de 5 casos confirmados con entrega de resultado."
+       ]
+      ],
+      "detalleCasos": 5
+     },
+     {
+      "id": "A4",
+      "n": "4",
+      "texto": "Se realiza búsqueda activa de casos en todo RN/lactante hijo de madre con Enfermedad de Chagas conforme a algoritmo diagnóstico.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág. 31, 34 y 75."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Aplicación de pauta específica (ver Pauta B)."
+       ]
+      ],
+      "detalleCasos": 5
+     },
+     {
+      "id": "A5",
+      "n": "5",
+      "texto": "Si usuario que requiere toma de muestra para examen de Chagas, rechaza la realización de los exámenes respectivos, queda registro en ficha clínica con nombre, RUN y firma del usuario.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág. 41."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisar constancia de nombre, RUN y firma en 3 a 5 casos de usuarios que rechazan examen."
+       ]
+      ],
+      "detalleCasos": 5
+     }
+    ]
+   },
+   {
+    "id": "II",
+    "titulo": "II. Diagnóstico de laboratorio",
+    "corto": "Diagnóstico de laboratorio",
+    "items": [
+     {
+      "id": "A6",
+      "n": "6",
+      "texto": "El diagnóstico de laboratorio de la infección por T. cruzi por medio de pesquisa de anticuerpos solo es informado al paciente después de realizada la confirmación.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág. 37 y 78."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Verificar en laboratorio procedimiento respecto al resultado de tamizaje reactivo."
+       ]
+      ],
+      "detalleCasos": 5
+     }
+    ]
+   },
+   {
+    "id": "III",
+    "titulo": "III. Notificación",
+    "corto": "Notificación",
+    "items": [
+     {
+      "id": "A7",
+      "n": "7",
+      "texto": "Los casos confirmados de Enfermedad de Chagas en mayores de 2 años, son notificados como Chagas crónico en Sistema de notificación vigente.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Decreto 7/2019 y Ordinario B51/N° 4203"
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisar base de datos de casos confirmados de Enfermedad de Chagas en el año evaluado, pertenecientes a pacientes de Hospital respectivo y verificar su condición respecto a notificación."
+       ]
+      ],
+      "detalleCasos": 5
+     },
+     {
+      "id": "A8",
+      "n": "8",
+      "texto": "Los recién nacidos hijos de madres con Enfermedad de Chagas son notificados como Enfermedad de Chagas agudo en EPIVIGILA (sospecha o confirmación según corresponda).",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Decreto 7/2019 y Ordinario B51/N° 4203"
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisar base de datos y libro de partos de recién nacidos hijos de madre con Enfermedad de Chagas, nacidos en el año evaluado en Hospital respectivo y verificar su condición respecto a notificación."
+       ]
+      ],
+      "detalleCasos": 5
+     },
+     {
+      "id": "A9",
+      "n": "9",
+      "texto": "Los casos de Enfermedad de Chagas agudo no RN son notificados en sistema EPIVIGILA.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Decreto 7/2019 y Ordinario B51/N° 4203"
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisar los casos notificados como Chagas agudo no RN en EPIVIGILA y verificar que efectivamente sean casos sospechosos o confirmados de Chagas agudo, además revisar si existen casos confirmados de Chagas agudo no RN."
+       ]
+      ],
+      "detalleCasos": 5
+     }
+    ]
+   },
+   {
+    "id": "IV",
+    "titulo": "IV. Información",
+    "corto": "Información",
+    "items": [
+     {
+      "id": "A10",
+      "n": "10",
+      "texto": "Las personas confirmadas para Enfermedad de Chagas son informadas de su condición.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág. 41."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisar base de datos de casos confirmados de Enfermedad de Chagas en el año evaluado, pertenecientes a pacientes de Hospital respectivo, seleccionar 5 casos en forma aleatoria y verificar si fueron informadas de su condición, revisando ficha clínica."
+       ]
+      ],
+      "detalleCasos": 5
+     },
+     {
+      "id": "A11",
+      "n": "11",
+      "texto": "Las personas confirmadas para Enfermedad de Chagas son informadas de su condición realizando educación que incluya aspectos como: sobre las características de la enfermedad, medidas de prevención, objetivo de sus controles y seguimiento futuro, síntomas que debiera conocer, como señales de consulta de urgencias.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág. 41."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisión de ficha clínica de 5 usuarios."
+       ]
+      ],
+      "detalleCasos": 5
+     },
+     {
+      "id": "A12",
+      "n": "12",
+      "texto": "Todo paciente diagnosticado debe ser informado del riesgo que conlleva una eventual inmunodepresión secundaria (cáncer u otras) que puede generar diseminación de la infección, cuadros graves y potencialmente letales.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág. 32."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisión de ficha clínica de 5 usuarios u otra evidencia."
+       ]
+      ],
+      "detalleCasos": 5
+     }
+    ]
+   },
+   {
+    "id": "V",
+    "titulo": "V. Derivaciones para tratamiento y seguimiento",
+    "corto": "Tratamiento",
+    "items": [
+     {
+      "id": "A13",
+      "n": "13",
+      "texto": "Se realiza o refuerza referencia oportuna al tratamiento de casos de puérperas post lactancia.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág. 44, 63."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisar registro de mujeres confirmadas para Enfermedad con parto en los dos años previos al evaluado respecto a tratamiento."
+       ]
+      ],
+      "detalleCasos": 5
+     },
+     {
+      "id": "A14",
+      "n": "14",
+      "texto": "Las personas menores 18 años son derivadas para inicio de tratamiento.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág. 44."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisión de interconsultas en menores de 18 años."
+       ]
+      ],
+      "detalleCasos": 5
+     },
+     {
+      "id": "A15",
+      "n": "15",
+      "texto": "Recién nacidos con Chagas congénito son derivados para inicio tratamiento.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág. 44."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisión de casos de Chagas congénito."
+       ]
+      ],
+      "detalleCasos": 5
+     },
+     {
+      "id": "A16",
+      "n": "16",
+      "texto": "Personas que pertenecen a otros grupos prioritarios o de mayor beneficio del tratamiento son derivadas para tratamiento antiparasitario.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisión de datos de notificados respecto a derivación."
+       ]
+      ],
+      "detalleCasos": 5
+     },
+     {
+      "id": "A17",
+      "n": "17",
+      "texto": "Los usuarios tratados realizan control médico anual durante por lo menos 10 años. Si la persona tiene enfermedades crónicas, el control se incorpora al control habitual dentro del control integral.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág. 50."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisión de base de datos de usuarios tratados."
+       ]
+      ],
+      "detalleCasos": 5
+     },
+     {
+      "id": "A18",
+      "n": "18",
+      "texto": "Todos los usuarios sin tratamiento mantienen controles anuales con el objetivo de pesquisar en forma precoz las manifestaciones de la etapa crónica y sus complicaciones.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág. 51."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisión de base de datos de usuarios no tratados."
+       ]
+      ],
+      "detalleCasos": 5
+     }
+    ]
+   },
+   {
+    "id": "VI",
+    "titulo": "VI. Roles y organización",
+    "corto": "Roles y organización",
+    "items": [
+     {
+      "id": "A19",
+      "n": "19",
+      "texto": "La Dirección del establecimiento ha nombrado un profesional responsable de la coordinación.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág 61."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisar documento de nombramiento."
+       ]
+      ]
+     },
+     {
+      "id": "A20",
+      "n": "20",
+      "texto": "Existe diagnóstico de situación del establecimiento.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág 61."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisión documental."
+       ]
+      ]
+     },
+     {
+      "id": "A21",
+      "n": "21",
+      "texto": "Existe un plan de gestión local.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág 61."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisión documental."
+       ]
+      ]
+     },
+     {
+      "id": "A22",
+      "n": "22",
+      "texto": "Establecimiento realiza envío periódico y oportuno de la información de actividades realizadas a su servicio de salud.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág 61."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Revisar REM y reporte semestral de indicadores programáticos a Servicio de Salud."
+       ]
+      ]
+     },
+     {
+      "id": "A23",
+      "n": "23",
+      "texto": "El equipo de trabajo en Enfermedad de Chagas cuenta con capacitación avalada por Servicio de Salud.",
+      "detalles": [
+       [
+        "Regulación ministerial que lo indica",
+        "Norma General Técnica Control y Prevención Nacional de la Enfermedad de Chagas. Pág 61."
+       ],
+       [
+        "Procedimiento de verificación",
+        "Verificar registros de capacitación del médico, enfermera, matrona y TENS del Programa de Chagas."
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "B": {
+  "tituloImpreso": "ACTA DE VISITA · FISCALIZACIÓN Y AUDITORÍA · GESTANTE Y PROCESO DIAGNÓSTICO DE RN/LACTANTES HIJOS/AS DE MADRES CON ENFERMEDAD DE CHAGAS, EN CONTEXTO DE CUMPLIMIENTO DE NORMATIVA.",
+  "objetivo": "Constatar el cumplimiento de la regulación ministerial en relación a la gestante y proceso diagnóstico del recién nacido, hijo/a de madre con Enfermedad de Chagas, en el establecimiento de salud, en relación a caso de gestante específica confirmada.",
+  "secciones": [
+   {
+    "id": "gest",
+    "titulo": "Sobre gestante",
+    "porCaso": "Casos de gestante",
+    "items": [
+     {
+      "id": "G1",
+      "n": "1",
+      "texto": "Examen de Chagas fue solicitado en primer control de gestación",
+      "detalles": [
+       [
+        "Verificador",
+        "Ficha clínica"
+       ]
+      ]
+     },
+     {
+      "id": "G2",
+      "n": "2",
+      "texto": "Caso de la gestante/madre está notificado según Decreto 7",
+      "detalles": [
+       [
+        "Verificador",
+        "Registro EPIVIGILA o registros antiguos de notificaciones en FILEMAKER, ISALUD"
+       ]
+      ]
+     },
+     {
+      "id": "G3",
+      "n": "3",
+      "texto": "Caso gestante fue derivado a poli ARO",
+      "detalles": [
+       [
+        "Verificador",
+        "Registro en FC e interconsulta"
+       ]
+      ]
+     },
+     {
+      "id": "G4",
+      "n": "4",
+      "texto": "Usuaria fue derivada a tratamiento una vez finalizado periodo de lactancia.",
+      "detalles": [
+       [
+        "Verificador",
+        "Registro en FC e interconsulta"
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "id": "rn",
+    "titulo": "Sobre recién nacido / lactante",
+    "porCaso": "Casos de RN / lactante",
+    "items": [
+     {
+      "id": "R1",
+      "n": "1",
+      "texto": "Se realizó seguimiento al recién nacido hijo de madre con enfermedad de Chagas conforme indica regulación MINSAL",
+      "detalles": [
+       [
+        "Verificador",
+        "Resultados de exámenes y registros de citaciones en casos de inasistencia"
+       ]
+      ]
+     },
+     {
+      "id": "R2",
+      "n": "2",
+      "texto": "RN lactante fue notificado en EPIVIGILA como Chagas agudo.",
+      "detalles": [
+       [
+        "Verificador",
+        "Registro EPIVIGILA"
+       ]
+      ]
+     },
+     {
+      "id": "R3",
+      "n": "3",
+      "texto": "Se realizó estudio de contactos a los otros hijos de la gestante",
+      "detalles": [
+       [
+        "Verificador",
+        "Registros de tarjetón y resultados de laboratorio"
+       ]
+      ]
+     },
+     {
+      "id": "R4",
+      "n": "4",
+      "texto": "Se realizó estudio de contacto a otros familiares consanguíneos línea materna o que comparten nexo epidemiológico.",
+      "detalles": [
+       [
+        "Verificador",
+        "Registros de tarjetón y resultados de laboratorio"
+       ]
+      ]
+     },
+     {
+      "id": "R5",
+      "n": "5",
+      "texto": "De confirmarse como caso Chagas el lactante, se deriva a tratamiento",
+      "detalles": [
+       [
+        "Verificador",
+        "Registros de FC e interconsulta"
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}
