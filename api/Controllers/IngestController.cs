@@ -11,8 +11,8 @@ using RemTool.Shared.Ingest;
 namespace RemTool.Api.Controllers;
 
 /// <summary>
-/// Recibe el batch que publica el admin local: estructura completa + datos de un año (resultados, y opcionalmente per cápita / fonasa).
-/// Todo corre en una transacción; si algo falla (p. ej. FK de registros a una prestación borrada) no queda nada a medias.
+/// Recibe el batch que publica el admin local: configuración siempre, y opcionalmente estructura REM y datos de un año
+/// (registros, per cápita, fonasa). Todo en una transacción: si algo falla, prod no cambia.
 /// </summary>
 [ApiController]
 [Route("api/ingest")]
@@ -27,48 +27,54 @@ public sealed class IngestController(RemToolDataContext db, IConfiguration confi
 
         using var doc = await JsonDocument.ParseAsync(Request.Body, cancellationToken: ct);
         var root = doc.RootElement;
-        var year = root.GetProperty("year").GetInt32();
-        if (year is < 2000 or > 2100) return BadRequest(new { error = "El año no es válido." });
         var tables = root.GetProperty("tables");
-        foreach (var name in IngestTables.Structure.Append(IngestTables.Results.Table))
-            if (!tables.TryGetProperty(name, out _)) return BadRequest(new { error = $"Falta la tabla {name} en el batch." });
-        // Resultados siempre; per cápita y fonasa sólo si el admin los incluyó.
-        var slices = IngestTables.Slices.Where(s => tables.TryGetProperty(s.Table, out _)).ToList();
+        var names = tables.EnumerateObject().Select(p => p.Name).ToHashSet();
+
+        var unknown = names.Except(IngestTables.FullTables).Except(IngestTables.Slices.Select(s => s.Table)).ToList();
+        if (unknown.Count > 0) return BadRequest(new { error = $"Tablas desconocidas: {string.Join(", ", unknown)}." });
+        // Grupos completos o nada: una tabla suelta de estructura dejaría prod inconsistente.
+        if (!IngestTables.Config.All(names.Contains)) return BadRequest(new { error = "El batch debe incluir toda la configuración." });
+        if (IngestTables.Structure.Any(names.Contains) && !IngestTables.Structure.All(names.Contains)) return BadRequest(new { error = "La estructura REM debe ir completa." });
+        if (names.Contains(IngestTables.Reporte.Table) != names.Contains(IngestTables.Registro.Table)) return BadRequest(new { error = "reporte y registro deben ir juntos." });
+
+        var full = IngestTables.FullTables.Where(names.Contains).ToList();
+        var slices = IngestTables.Slices.Where(s => names.Contains(s.Table)).ToList();
+        int year = 0;
+        if (slices.Count > 0 && !(root.TryGetProperty("year", out var y) && y.TryGetInt32(out year) && year is >= 2000 and <= 2100))
+            return BadRequest(new { error = "Los datos por año requieren un año válido." });
 
         db.Database.SetCommandTimeout(300);
-        try { return await ApplyAsync(year, tables, slices, ct); }
-        // La transacción se revierte al salir; el detalle de Postgres dice qué fila bloquea (p. ej. "Key (id)=(5) is still referenced from table registro").
+        try { return await ApplyAsync(year, tables, full, slices, ct); }
+        // La transacción se revierte al salir; el mensaje de Postgres dice qué constraint bloquea.
         catch (PostgresException e) { return Conflict(new { error = $"Batch revertido, prod no cambió. {e.MessageText}. {e.Detail}" }); }
     }
 
-    private async Task<IActionResult> ApplyAsync(int year, JsonElement tables, List<YearSlice> slices, CancellationToken ct)
+    private async Task<IActionResult> ApplyAsync(int year, JsonElement tables, List<string> full, List<YearSlice> slices, CancellationToken ct)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        string Json(string table) => tables.GetProperty(table).GetRawText();
 
-        // 1) Datos del año: se borran primero para no dejar huérfanos al reemplazar la estructura.
-        foreach (var slice in slices)
+        // 1) Datos del año: borrar (hijos primero) para no dejar huérfanos al reemplazar estructura.
+        foreach (var slice in Enumerable.Reverse(slices))
             await db.Database.ExecuteSqlRawAsync($"DELETE FROM {Target(slice.Table)} x WHERE {slice.Filter}", [year], ct);
 
-        // 2) Estructura: borrar filas que ya no existen en local (hijos primero), antes del upsert para que un
-        //    registro recreado (p. ej. un filtro con el mismo establecimiento) no choque con índices únicos.
-        //    Si prod tiene registros que usan una prestación borrada, falla y se revierte todo.
-        foreach (var table in IngestTables.Structure.Reverse())
-            await DeleteMissingAsync(table, tables.GetProperty(table).GetRawText(), ct);
+        // 2) Tablas completas: borrar lo que ya no existe en local (hijos primero), antes del upsert para que algo
+        //    recreado (p. ej. un filtro con el mismo establecimiento) no choque con índices únicos.
+        foreach (var table in Enumerable.Reverse(full))
+            await DeleteMissingAsync(table, Json(table), ct);
 
-        // 3) Estructura: upsert en orden padre → hijo, conservando los IDs locales.
+        // 3) Tablas completas: upsert padre → hijo, conservando los IDs locales.
         // ponytail: índices únicos no diferibles; intercambiar el "orden" de dos filas existentes puede fallar (rollback). Resolver si aparece.
-        foreach (var table in IngestTables.Structure)
-            await UpsertAsync(table, tables.GetProperty(table).GetRawText(), ct);
+        foreach (var table in full)
+            await UpsertAsync(table, Json(table), ct);
 
-        // 4) Datos del año: se insertan sin id (la secuencia de prod asigna los suyos) y sólo las filas de ese año.
+        // 4) Datos del año: insertar con los IDs locales (registro referencia reporte.id). Sólo filas de ese año.
         foreach (var slice in slices)
-            await InsertSliceAsync(slice, year, tables.GetProperty(slice.Table).GetRawText(), ct);
+            await InsertSliceAsync(slice, year, Json(slice.Table), ct);
 
         await transaction.CommitAsync(ct);
-
-        var counts = IngestTables.Structure.Concat(slices.Select(s => s.Table))
-            .ToDictionary(name => name, name => tables.GetProperty(name).GetArrayLength());
-        return Ok(new { year, tables = counts });
+        var counts = full.Concat(slices.Select(s => s.Table)).ToDictionary(t => t, t => tables.GetProperty(t).GetArrayLength());
+        return Ok(new { year = slices.Count > 0 ? year : (int?)null, tables = counts });
     }
 
     private bool IsAuthorized()
@@ -105,7 +111,7 @@ public sealed class IngestController(RemToolDataContext db, IConfiguration confi
     private async Task InsertSliceAsync(YearSlice slice, int year, string json, CancellationToken ct)
     {
         var target = Target(slice.Table);
-        var list = string.Join(", ", (await ColumnsAsync(slice.Table, ct)).Where(c => c != "\"id\""));
+        var list = string.Join(", ", await ColumnsAsync(slice.Table, ct));
         // Filter usa {0} = año; el JSON va como {1}.
         var sql = $"INSERT INTO {target} ({list}) SELECT {list} FROM json_populate_recordset(NULL::{target}, {{1}}::json) x WHERE {slice.Filter}";
         await db.Database.ExecuteSqlRawAsync(sql, [year, new NpgsqlParameter(null, json)], ct);

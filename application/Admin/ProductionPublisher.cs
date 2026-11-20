@@ -6,33 +6,36 @@ using RemTool.Shared.Ingest;
 
 namespace RemTool.Application.Admin;
 
+/// <summary>Qué subir además de la configuración (que va siempre). Registros/per cápita/fonasa son del año indicado.</summary>
+public sealed record PublishOptions(bool Structure = false, int? Year = null, bool Registros = false, bool Percapita = false, bool Fonasa = false);
+
 /// <summary>
-/// Calcula todo en local y sube a producción un batch con la estructura completa y los datos de un año:
-/// resultados siempre; per cápita y fonasa sólo cuando se piden (se recargaron o modificaron).
-/// Prod reemplaza esos datos con lo recibido; no ejecuta cálculos ni cargas pesadas.
+/// Todo se procesa en local; esto sube a producción un batch que prod reemplaza tal cual (sin cálculos ni cargas pesadas allá).
+/// La configuración del panel va siempre; estructura REM y datos por año sólo cuando se piden.
 /// </summary>
 public sealed class ProductionPublisher(IDbContextFactory<RemToolDataContext> factory)
 {
-    public async Task<JsonElement> PublishAsync(int year, bool percapita, bool fonasa, string baseUrl, string apiKey, CancellationToken ct)
+    public async Task<JsonElement> PublishAsync(PublishOptions options, string baseUrl, string apiKey, CancellationToken ct)
     {
-        if (year is < 2000 or > 2100) throw new ArgumentOutOfRangeException(nameof(year), "El año no es válido.");
         if (string.IsNullOrWhiteSpace(baseUrl) || string.IsNullOrWhiteSpace(apiKey))
             throw new InvalidOperationException("Configure Production:BaseUrl y Production:IngestApiKey en adminsettings.json.");
 
-        var slices = new List<YearSlice> { IngestTables.Results };
-        if (percapita) slices.Add(IngestTables.Percapita);
-        if (fonasa) slices.Add(IngestTables.Fonasa);
+        var slices = new List<YearSlice>();
+        if (options.Registros) slices.AddRange([IngestTables.Reporte, IngestTables.Registro]);
+        if (options.Percapita) slices.Add(IngestTables.Percapita);
+        if (options.Fonasa) slices.Add(IngestTables.Fonasa);
+        var year = options.Year ?? 0;
+        if (slices.Count > 0 && year is < 2000 or > 2100) throw new ArgumentException("Indique un año válido para los datos por año.");
 
+        var full = options.Structure ? IngestTables.FullTables : IngestTables.Config;
         var parts = new List<string>();
         await using (var db = await factory.CreateDbContextAsync(ct))
         {
             db.Database.SetCommandTimeout(300);
-            foreach (var table in IngestTables.Structure)
-                parts.Add(Entry(table, await JsonAsync(db, table, "TRUE", year, ct)));
-            foreach (var slice in slices)
-                parts.Add(Entry(slice.Table, await JsonAsync(db, slice.Table, slice.Filter, year, ct)));
+            foreach (var table in full) parts.Add(Entry(table, await JsonAsync(db, table, "TRUE", year, ct)));
+            foreach (var slice in slices) parts.Add(Entry(slice.Table, await JsonAsync(db, slice.Table, slice.Filter, year, ct)));
         }
-        var body = $"{{\"year\":{year},\"tables\":{{{string.Join(',', parts)}}}}}";
+        var body = $"{{\"year\":{(slices.Count > 0 ? year.ToString() : "null")},\"tables\":{{{string.Join(',', parts)}}}}}";
 
         using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(15) };
         using var request = new HttpRequestMessage(HttpMethod.Post, baseUrl.TrimEnd('/') + "/api/ingest/batch")
@@ -49,7 +52,7 @@ public sealed class ProductionPublisher(IDbContextFactory<RemToolDataContext> fa
 
     private static string Entry(string table, string json) => $"{JsonSerializer.Serialize(table)}:{json}";
 
-    // ponytail: una query por tabla y todo el JSON en memoria. Si fonasa crece mucho, pasar a streaming + gzip.
+    // ponytail: una query por tabla y todo el JSON en memoria. Si fonasa/registros crecen mucho, pasar a streaming + gzip.
     private static Task<string> JsonAsync(RemToolDataContext db, string table, string filter, int year, CancellationToken ct) =>
         db.Database.SqlQueryRaw<string>(
             $"SELECT COALESCE(json_agg(x), '[]'::json)::text AS \"Value\" FROM \"REMTool\".\"{table}\" x WHERE {filter}", year)

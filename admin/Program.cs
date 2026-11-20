@@ -60,8 +60,10 @@ api.MapPost("/rem/import", async (HttpRequest request, RemImportService service,
     finally { foreach (var path in saved) if (File.Exists(path)) File.Delete(path); }
 });
 api.MapPost("/indicators/calculate/{year:int}", async (int year, IndicatorCalculationService service, CancellationToken ct) => Results.Ok(await service.CalculateAsync(year, ct)));
-api.MapPost("/publish/{year:int}", async (int year, bool? percapita, bool? fonasa, ProductionPublisher publisher, IConfiguration config, CancellationToken ct) =>
-    Results.Ok(await publisher.PublishAsync(year, percapita == true, fonasa == true, config["Production:BaseUrl"] ?? string.Empty, config["Production:IngestApiKey"] ?? string.Empty, ct)));
+// Configuración siempre; ?structure=true&year=2026&registros=true&percapita=true&fonasa=true agrega lo pesado.
+api.MapPost("/publish", async (bool? structure, int? year, bool? registros, bool? percapita, bool? fonasa, ProductionPublisher publisher, IConfiguration config, CancellationToken ct) =>
+    Results.Ok(await publisher.PublishAsync(new PublishOptions(structure == true, year, registros == true, percapita == true, fonasa == true),
+        config["Production:BaseUrl"] ?? string.Empty, config["Production:IngestApiKey"] ?? string.Empty, ct)));
 api.MapPost("/rem/integrity", async (HttpRequest request, RemIntegrityService service, LocalPathPolicy paths, CancellationToken ct) =>
 {
     var files = (await request.ReadFormAsync(ct)).Files.GetFiles("files"); if (files.Count == 0) throw new ArgumentException("Debe adjuntar archivos REM."); var saved = new List<string>();
